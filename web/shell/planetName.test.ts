@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { planetNameMessage } from './planetName.ts';
+import { ApiError } from '../lib/api.ts';
+import { planetNameMessage, renameErrorMessage } from './planetName.ts';
 
 describe('planetNameMessage', () => {
   it('returns undefined when there is no error', () => {
@@ -13,6 +14,19 @@ describe('planetNameMessage', () => {
   });
 
   it('falls back to a generic message for an unknown code', () => {
-    expect(planetNameMessage('mystery' as never)).toBe('That name isn’t allowed.');
+    expect(planetNameMessage('mystery')).toBe('That name isn’t allowed.');
+  });
+});
+
+describe('renameErrorMessage', () => {
+  it('surfaces the validation code from an ApiError body', () => {
+    expect(renameErrorMessage(new ApiError(400, { error: 'validation', code: 'length' }))).toMatch(
+      /2.*20/,
+    );
+  });
+
+  it('falls back to a generic message for a non-validation failure', () => {
+    expect(renameErrorMessage(new Error('network'))).toBe('Couldn’t save that name. Try again.');
+    expect(renameErrorMessage(new ApiError(500, null))).toBe('Couldn’t save that name. Try again.');
   });
 });

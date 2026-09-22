@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { validatePlanetName } from '#shared/planetName.ts';
-import { ApiError, type PlanetSnapshot } from '../lib/api.ts';
-import { planetNameMessage } from './planetName.ts';
+import type { PlanetSnapshot } from '../lib/api.ts';
+import { planetNameMessage, renameErrorMessage } from './planetName.ts';
 
 interface PlanetPopoverProps {
   planet: PlanetSnapshot;
@@ -48,8 +48,7 @@ export function PlanetPopover({ planet, onRename, onClose }: PlanetPopoverProps)
       await onRename(result.name);
       onClose();
     } catch (err) {
-      const code = err instanceof ApiError ? err.body?.code : undefined;
-      setError(planetNameMessage(code as never) ?? 'Couldn’t save that name. Try again.');
+      setError(renameErrorMessage(err));
     } finally {
       setSaving(false);
     }

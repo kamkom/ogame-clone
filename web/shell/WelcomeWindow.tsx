@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { validatePlanetName } from '#shared/planetName.ts';
-import { ApiError, type PlanetSnapshot } from '../lib/api.ts';
+import type { PlanetSnapshot } from '../lib/api.ts';
 import { formatResource } from '../lib/format.ts';
 import { DEFAULT_PLANET_NAME } from './constants.ts';
-import { planetNameMessage } from './planetName.ts';
+import { planetNameMessage, renameErrorMessage } from './planetName.ts';
 
 interface WelcomeWindowProps {
   planet: PlanetSnapshot;
@@ -36,8 +36,7 @@ export function WelcomeWindow({ planet, username, onRename, onDismiss }: Welcome
       if (result.name !== planet.name) await onRename(result.name);
       onDismiss();
     } catch (err) {
-      const code = err instanceof ApiError ? err.body?.code : undefined;
-      setError(planetNameMessage(code as never) ?? 'Couldn’t save that name. Try again.');
+      setError(renameErrorMessage(err));
     } finally {
       setSaving(false);
     }
