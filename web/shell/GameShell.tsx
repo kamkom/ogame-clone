@@ -1,23 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, type PlanetSnapshot } from '../lib/api.ts';
+import { api, type PlanetSnapshot, type Session } from '../lib/api.ts';
 import { refetchDelay } from '../lib/liveResources.ts';
 import { CommandDeck } from './CommandDeck.tsx';
 import { Rail } from './Rail.tsx';
 import { TopBar } from './TopBar.tsx';
+import { WelcomeWindow } from './WelcomeWindow.tsx';
 
 interface GameShellProps {
-  initialPlanet: PlanetSnapshot;
+  session: Session;
+  onRename: (name: string) => Promise<PlanetSnapshot>;
   onLogout: () => void;
   loggingOut: boolean;
 }
 
-/** The logged-in game shell: rail, top bar and the screen content area. */
-export function GameShell({ initialPlanet, onLogout, loggingOut }: GameShellProps) {
+/** The logged-in game shell: rail, top bar, screen content, and the one-time welcome window. */
+export function GameShell({ session, onRename, onLogout, loggingOut }: GameShellProps) {
+  const { player } = session;
   const planetQuery = useQuery({
     queryKey: ['planet'],
     queryFn: () => api.planet(),
-    initialData: initialPlanet,
+    initialData: session.planet,
   });
   const planet = planetQuery.data;
 
@@ -34,12 +37,24 @@ export function GameShell({ initialPlanet, onLogout, loggingOut }: GameShellProp
     if (planetQuery.isSuccess) setDismissed(false);
   }, [planetQuery.isSuccess, planet.serverNow]);
 
+  // The welcome window trigger is the register response (firstLogin), not a persisted flag. Once
+  // either button dismisses it, this stays false for the rest of the session.
+  const [showWelcome, setShowWelcome] = useState(session.firstLogin ?? false);
+
   return (
     <>
       <Rail onLogout={onLogout} loggingOut={loggingOut} />
-      <TopBar planet={planet} />
+      <TopBar planet={planet} onRename={onRename} />
       <CommandDeck planet={planet} />
       {planetQuery.isError && !dismissed && <ErrorBanner onDismiss={() => setDismissed(true)} />}
+      {showWelcome && (
+        <WelcomeWindow
+          planet={planet}
+          username={player.username}
+          onRename={onRename}
+          onDismiss={() => setShowWelcome(false)}
+        />
+      )}
     </>
   );
 }

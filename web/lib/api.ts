@@ -35,6 +35,8 @@ export type FieldErrors = { username?: string; password?: string };
 export interface ApiErrorBody {
   error: string;
   fields?: FieldErrors;
+  /** A single validation code, e.g. from a failed Planet rename ('length' | 'chars' | 'spaces'). */
+  code?: string;
 }
 
 export class ApiError extends Error {
@@ -92,4 +94,6 @@ export const api = {
   login: (username: string, password: string, fetchImpl?: FetchImpl) =>
     post<Session>('/api/auth/login', { username, password }, fetchImpl),
   logout: (fetchImpl?: FetchImpl) => post<{ ok: true }>('/api/auth/logout', {}, fetchImpl),
+  renamePlanet: (name: string, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>('/api/planet/rename', { name }, fetchImpl),
 };

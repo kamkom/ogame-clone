@@ -41,6 +41,16 @@ describe('api wrapper', () => {
     }
   });
 
+  it('renames the Planet and returns the updated snapshot', async () => {
+    const { impl, calls } = fakeFetch(200, { id: 1, name: 'New Terra' });
+    const planet = await api.renamePlanet('New Terra', impl);
+    expect(planet.name).toBe('New Terra');
+    const { url, init } = calls[0]!;
+    expect(url).toBe('/api/planet/rename');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ name: 'New Terra' });
+  });
+
   it('POSTs JSON with a content-type header', async () => {
     const { impl, calls } = fakeFetch(200, { player: { id: 1, username: 'Vega' } });
     await api.login('Vega', 'password1', impl);
