@@ -22,6 +22,13 @@ export interface Player {
   username: string;
 }
 
+/** A Player plus the stored password hash, used only by the login path. */
+export interface PlayerAuth {
+  id: number;
+  username: string;
+  password_hash: string;
+}
+
 export interface PlanetRow {
   id: number;
   player_id: number;
@@ -38,16 +45,11 @@ export interface PlanetRow {
 export function findPlayerByUsernameLower(
   db: DatabaseSync,
   usernameLower: string,
-): {
-  id: number;
-  username: string;
-  password_hash: string;
-} | null {
+): PlayerAuth | null {
   return (
     (db
       .prepare(`SELECT id, username, password_hash FROM players WHERE username_lower = ?`)
-      .get(usernameLower) as { id: number; username: string; password_hash: string } | undefined) ??
-    null
+      .get(usernameLower) as PlayerAuth | undefined) ?? null
   );
 }
 
