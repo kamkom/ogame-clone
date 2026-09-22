@@ -40,6 +40,7 @@ export interface PlanetRow {
   alloy: number;
   crystal: number;
   deuterium: number;
+  resources_updated_at: number;
 }
 
 export function findPlayerByUsernameLower(

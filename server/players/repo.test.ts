@@ -106,12 +106,16 @@ describe('registerPlayer', () => {
       systems: 499,
       tokenHash: hashToken('t'),
     });
-    const snap = buildPlanetSnapshot(db, getPlanetByPlayer(db, playerId)!);
+    const snap = buildPlanetSnapshot(db, getPlanetByPlayer(db, playerId)!, {
+      serverNow: 1,
+      speed: 1,
+    });
     expect(snap.name).toBe('Homeworld');
     expect(snap.coordinatesLabel).toBe('[1:1:4]');
     expect(snap.fields).toEqual({ used: 0, max: 163 });
     expect(snap.diameterKm).toBe(12800);
     expect(snap.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
     expect(snap.temperature.min).toBe(snap.temperature.max - 40);
+    expect(snap.ratesPerHour).toEqual({ alloy: 30, crystal: 15, deuterium: 0 });
   });
 });

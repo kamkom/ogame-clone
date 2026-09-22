@@ -3,12 +3,8 @@ import { DUMMY_HASH, verifyPassword } from '../auth/passwords.ts';
 import { generateToken, hashToken } from '../auth/tokens.ts';
 import { createSession, deleteSession } from '../auth/sessions.ts';
 import { validateRegistration } from '../auth/validation.ts';
-import {
-  findPlayerByUsernameLower,
-  getPlanetByPlayer,
-  getPlayer,
-  registerPlayer,
-} from '../players/repo.ts';
+import { findPlayerByUsernameLower, getPlayer, registerPlayer } from '../players/repo.ts';
+import { loadAdvancedPlanet } from '../players/economy.ts';
 import { buildPlanetSnapshot } from '../players/snapshot.ts';
 import { SESSION_COOKIE, passesCsrf, resolvePlayerId, sessionCookieOptions } from './guards.ts';
 
@@ -20,9 +16,12 @@ interface Credentials {
 /** The `{ player, planet }` payload returned after auth and by /api/auth/me. */
 function sessionPayload(app: FastifyInstance, playerId: number) {
   const player = getPlayer(app.db, playerId);
-  const planet = getPlanetByPlayer(app.db, playerId);
-  if (!player || !planet) return null;
-  return { player, planet: buildPlanetSnapshot(app.db, planet) };
+  if (!player) return null;
+  const now = app.clock.now();
+  const speed = app.config.UNIVERSE_SPEED;
+  const planet = loadAdvancedPlanet(app.db, playerId, now, speed);
+  if (!planet) return null;
+  return { player, planet: buildPlanetSnapshot(app.db, planet, { serverNow: now, speed }) };
 }
 
 export function registerAuthRoutes(app: FastifyInstance): void {

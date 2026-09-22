@@ -37,7 +37,7 @@ export function App() {
     if (me.isSuccess) {
       return (
         <GameShell
-          planet={me.data.planet}
+          initialPlanet={me.data.planet}
           onLogout={() => logout.mutate()}
           loggingOut={logout.isPending}
         />
@@ -47,6 +47,16 @@ export function App() {
     if (me.isError) {
       return <AuthScreen universeSpeed={universeSpeed} onAuthenticated={onAuthenticated} />;
     }
-    return null; // brief loading flash on the empty stage
+    return <div style={loadingStyle}>Loading…</div>;
   }
 }
+
+const loadingStyle = {
+  position: 'absolute' as const,
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'var(--text-muted)',
+  fontFamily: 'var(--font-body)',
+};

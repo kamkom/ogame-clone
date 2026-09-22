@@ -16,6 +16,12 @@ export interface PlanetSnapshot {
   fields: { used: number; max: number };
   diameterKm: number;
   resources: { alloy: number; crystal: number; deuterium: number };
+  serverNow: number;
+  lastUpdatedAt: number;
+  ratesPerHour: { alloy: number; crystal: number; deuterium: number };
+  storageCapacity: { alloy: number; crystal: number; deuterium: number };
+  energy: { produced: number; consumed: number; productionFactor: number };
+  nextEventAt: number | null;
 }
 
 export interface Session {

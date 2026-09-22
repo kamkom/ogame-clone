@@ -1,5 +1,7 @@
 import type { PlanetSnapshot } from '../lib/api.ts';
 import { formatResource } from '../lib/format.ts';
+import { energyBalance, liveResources } from '../lib/liveResources.ts';
+import { useServerNow } from '../lib/useServerNow.ts';
 import { Icon, RESOURCES } from './icons.tsx';
 
 interface TopBarProps {
@@ -8,11 +10,13 @@ interface TopBarProps {
 
 /** The top bar: planet picker (name + Coordinates) and the four resource chips. */
 export function TopBar({ planet }: TopBarProps) {
+  const now = useServerNow(planet.serverNow);
+  const live = liveResources(planet, now);
   const amounts: Record<string, number> = {
-    ALLOY: planet.resources.alloy,
-    CRYSTAL: planet.resources.crystal,
-    DEUTERIUM: planet.resources.deuterium,
-    ENERGY: 0, // Energy balance lands with Live Resources.
+    ALLOY: live.alloy,
+    CRYSTAL: live.crystal,
+    DEUTERIUM: live.deuterium,
+    ENERGY: energyBalance(planet), // never stockpiled: a static balance
   };
 
   return (
@@ -35,7 +39,11 @@ export function TopBar({ planet }: TopBarProps) {
               <div className="disp" style={chipLabelStyle}>
                 <span>{res.name}</span>
               </div>
-              <div className="disp" style={{ fontSize: 15, fontWeight: 500 }}>
+              <div
+                className="disp"
+                style={{ fontSize: 15, fontWeight: 500 }}
+                title={Math.floor(amounts[res.name] ?? 0).toLocaleString('en-US')}
+              >
                 {formatResource(amounts[res.name] ?? 0)}
               </div>
             </div>

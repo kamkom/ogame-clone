@@ -44,5 +44,40 @@ describe('GET /api/planet', () => {
     expect(body.fields).toEqual({ used: 0, max: 163 });
     expect(body.coordinatesLabel).toMatch(/^\[\d+:\d+:\d+\]$/);
     expect(body.temperature.min).toBe(body.temperature.max - 40);
+    // Live-resource fields: base income only, capacity 10 000 each, Energy balanced.
+    expect(body.ratesPerHour).toEqual({ alloy: 30, crystal: 15, deuterium: 0 });
+    expect(body.storageCapacity).toEqual({ alloy: 10000, crystal: 10000, deuterium: 10000 });
+    expect(body.energy).toEqual({ produced: 0, consumed: 0, productionFactor: 1 });
+    expect(body.nextEventAt).toBeNull();
+  });
+
+  it('catches resources up by base income × Universe Speed and persists it', async () => {
+    const clock = new ManualClock(1_000_000);
+    app = buildApp({
+      dbPath: ':memory:',
+      clock,
+      config: loadConfig({ SERVE_WEB: 'false', UNIVERSE_SPEED: '2' }),
+      rng: () => 0.5,
+    });
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'Rigel', password: 'password1' },
+    });
+    const cookie = `session=${reg.cookies.find((c) => c.name === 'session')!.value}`;
+
+    clock.advance(3_600_000); // one hour
+    const res = await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } });
+    const body = res.json();
+    // 500 + 30/h × speed 2, 500 + 15/h × 2.
+    expect(body.resources.alloy).toBe(560);
+    expect(body.resources.crystal).toBe(530);
+    expect(body.lastUpdatedAt).toBe(4_600_000);
+
+    // The catch-up is persisted: a second read at the same time does not double-count.
+    const again = (
+      await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } })
+    ).json();
+    expect(again.resources.alloy).toBe(560);
   });
 });
