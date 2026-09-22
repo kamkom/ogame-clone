@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<!--
+  PROTOTYPE — throwaway. Answers "Login and registration screen" (kamkom/ogame-clone#11).
+  Three radically different variants of the auth screen + first-login flow, switchable
+  via ?variant=A|B|C and the floating bar at the bottom (or ← / →).
+  Backend is a fake in memory; reload wipes it. Seeded Player: Vega / password1.
+  Rules mirror the auth decision (#7): username 3–20 [A-Za-z0-9_-], unique ignoring case;
+  password 8–128; generic "invalid username or password"; 10 failures / 15 min → 429;
+  registering logs you in, Planet named "Homeworld" with random Coordinates.
+  Open straight from disk: `open design/prototypes/auth-screen.prototype.html`
+-->
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>PROTOTYPE · Auth screen</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<style>
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden}
+a{color:var(--accent);text-decoration:none;cursor:pointer}a:hover{color:var(--accent-hover)}
+#stage{position:absolute;left:50%;top:50%;width:1440px;height:900px;transform-origin:center;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+.stars{position:absolute;inset:0}.stars i{position:absolute;border-radius:50%;background:var(--star)}
+.label{font-family:var(--font-display);font-size:11px;letter-spacing:.12em;color:var(--text-muted);text-transform:uppercase}
+.disp{font-family:var(--font-display)}
+.field{display:flex;flex-direction:column;gap:8px}
+.input{height:48px;box-sizing:border-box;padding:0 14px;border-radius:var(--r-button);border:1px solid var(--line-strong);background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;outline:none;width:100%}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.input.bad{border-color:var(--danger)}
+.err{color:var(--danger);font-size:13px}
+.btn{height:50px;border-radius:var(--r-card);border:1px solid var(--line-strong);background:transparent;color:var(--text);font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.08em;cursor:pointer;text-transform:uppercase}
+.btn.fill{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:hover{border-color:var(--accent)}.btn.fill:hover{background:var(--accent-hover)}
+.btn:disabled{opacity:.5;cursor:default}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-panel)}
+.seg{display:flex;padding:4px;gap:4px;border:1px solid var(--line);border-radius:var(--r-card);background:var(--bg)}
+.seg button{flex:1;height:38px;border-radius:var(--r-segment);border:0;background:transparent;color:var(--text-muted);font-family:var(--font-display);font-size:13px;letter-spacing:.08em;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent-wash);color:var(--accent)}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-button);border:1px solid rgba(255,138,138,.35);background:rgba(255,138,138,.07);color:var(--danger);font-size:14px}
+.planet{border-radius:50%;background:radial-gradient(circle at 78% 76%, rgba(4,7,12,0.96), rgba(4,7,12,0) 64%), radial-gradient(ellipse 40% 10% at 45% 40%, rgba(255,255,255,0.25), rgba(255,255,255,0) 70%), radial-gradient(circle at 34% 30%, #f1f6ff 0%, var(--planet) 32%, #54708e 60%, #1a2736 92%);box-shadow:0 0 80px rgba(150,190,230,0.18)}
+.coords{font-family:var(--font-display);color:var(--accent);letter-spacing:.06em}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
+@keyframes scan{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:.2}}
+/* prototype chrome, deliberately not in the design's language */
+#switcher{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px;background:#fff;color:#111;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.5);font:600 13px system-ui;z-index:10}
+#switcher button{border:0;background:#eee;border-radius:999px;width:30px;height:30px;cursor:pointer;font-size:15px}
+#switcher span{padding:0 10px;min-width:260px;text-align:center}
+#state{position:fixed;left:12px;bottom:12px;width:300px;max-height:40vh;overflow:auto;background:rgba(255,255,255,.95);color:#111;font:11px/1.4 ui-monospace,monospace;padding:8px 10px;border-radius:8px;z-index:10;white-space:pre-wrap}
+#state b{font:700 11px system-ui}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="switcher"><button id="prev" aria-label="Previous variant">←</button><span id="vlabel"></span><button id="next" aria-label="Next variant">→</button></div>
+<div id="state"></div>
+<script>
+// ───────────────────────── fake backend (PROTOTYPE) ─────────────────────────
+const db = {
+  players: [{ username: 'Vega', password: 'password1', planet: { name: 'Kepler Verge', coords: '[4:212:8]' } }],
+  fails: {}, // username(lower) → count; real limiter is 10 / 15 min
+};
+let lastApi = null;
+const USER_RE = /^[A-Za-z0-9_-]{3,20}$/;
+function randCoords() { // range is undecided (#7 leaves it to rules/schema); placeholder
+  const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  return `[${r(1, 9)}:${r(1, 499)}:${r(4, 12)}]`;
+}
+function api(route, body) {
+  const res = (status, data) => (lastApi = { route, status, data }, { status, data });
+  const u = (body.username || '').trim(), key = u.toLowerCase();
+  if (route === 'POST /api/auth/login') {
+    if ((db.fails[key] || 0) >= 10) return res(429, { error: 'too_many_attempts' });
+    const p = db.players.find(p => p.username.toLowerCase() === key);
+    if (!p || p.password !== body.password) { db.fails[key] = (db.fails[key] || 0) + 1; return res(401, { error: 'invalid_credentials' }); }
+    delete db.fails[key];
+    return res(200, { player: { username: p.username }, planet: p.planet });
+  }
+  if (route === 'POST /api/auth/register') {
+    const errors = {};
+    if (!USER_RE.test(u)) errors.username = 'invalid';
+    else if (db.players.some(p => p.username.toLowerCase() === key)) errors.username = 'taken';
+    const pw = body.password || '';
+    if (pw.length < 8 || pw.length > 128) errors.password = 'length';
+    if (Object.keys(errors).length) return res(422, { errors });
+    const p = { username: u, password: pw, planet: { name: 'Homeworld', coords: randCoords() } };
+    db.players.push(p);
+    return res(201, { player: { username: p.username }, planet: p.planet, firstLogin: true });
+  }
+  if (route === 'POST /api/planet/rename') {
+    const n = (body.name || '').trim();
+    if (!n || n.length > 20) return res(422, { errors: { name: 'length' } });
+    session.planet.name = n;
+    db.players.find(p => p.username === session.player.username).planet.name = n;
+    return res(200, { planet: session.planet });
+  }
+}
+const MSG = {
+  invalid_credentials: 'Invalid username or password.',
+  too_many_attempts: 'Too many failed attempts. Try again in 15 minutes.',
+  username_invalid: 'Use 3–20 letters, digits, _ or -.',
+  username_taken: 'That username is taken.',
+  password_length: 'Use 8–128 characters.',
+  confirm_mismatch: 'Passwords don’t match.',
+  name_length: 'Use 1–20 characters.',
+};
+
+// ───────────────────────── app state ─────────────────────────
+let session = null;         // { player, planet, firstLogin }
+let ui = {};                // per-variant view state; reset on variant switch
+const VARIANTS = {
+  A: 'Airlock card · one screen, tab toggle, welcome modal',
+  B: 'Planet split · two screens, onboarding steps',
+  C: 'Locked deck · one form, two buttons, no blocking step',
+};
+let variant = new URLSearchParams(location.search).get('variant');
+if (!VARIANTS[variant]) variant = 'A';
+
+// ───────────────────────── shared bits ─────────────────────────
+const NAV = [["Overview","M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2","M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z"],["Build","M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3","M10.8 2h2.4v2.4h-2.4z"],["Research","M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7","M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z"],["Shipyard","M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z","M5 11h2.2v2H5z"],["Fleet","M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z","M12 3l3.6 7.2H8.4z"],["Galaxy","M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5","M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z"],["Alliance","M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8","M7.5 9.5h2v2h-2z"]];
+const RES = [["ALLOY","--alloy","M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5","M10.5 13.5h3v1.5h-3z","500"],["CRYSTAL","--crystal","M12 2.5l5 7-5 12-5-12z M7 9.5h10","M12 2.5l2.4 3.4H9.6z","500"],["DEUTERIUM","--deuterium","M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z","M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z","0"],["ENERGY","--energy","M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z","M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z","0"]];
+const icon = (p, f, size = 22, color = 'currentColor') => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/><path d="${f}" fill="${color}" stroke="none"/></svg>`;
+const logo = (s = 40) => `<div style="width:${s}px;height:${s}px;border:1.5px solid var(--accent);transform:rotate(45deg);display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="width:${s * .3}px;height:${s * .3}px;background:var(--accent)"></div></div>`;
+const HUD = `<svg width="100%" height="100%" viewBox="0 0 560 560" aria-hidden="true" style="position:absolute;inset:0"><circle cx="280" cy="280" r="200" fill="none" stroke="#5fe3c0" stroke-opacity=".35"/><ellipse cx="280" cy="280" rx="200" ry="60" fill="none" stroke="#5fe3c0" stroke-opacity=".14"/><ellipse cx="280" cy="280" rx="200" ry="130" fill="none" stroke="#5fe3c0" stroke-opacity=".10"/><ellipse cx="280" cy="280" rx="70" ry="200" fill="none" stroke="#5fe3c0" stroke-opacity=".12"/><ellipse cx="280" cy="280" rx="140" ry="200" fill="none" stroke="#5fe3c0" stroke-opacity=".08"/><circle cx="280" cy="280" r="252" fill="none" stroke="#2a3a4d" stroke-dasharray="1 7"/><path d="M40 60 V30 H70 M520 60 V30 H490 M40 500 V530 H70 M520 500 V530 H490" fill="none" stroke="#3b4d63" stroke-width="1.5"/></svg>`;
+const hudPlanet = (size, extra = '') => `<div style="position:relative;width:${size}px;height:${size}px">${HUD}<div class="planet" style="position:absolute;left:${size * .143}px;top:${size * .143}px;width:${size * .714}px;height:${size * .714}px"></div>${extra}</div>`;
+function stars() { // seed 57, 100 stars — same PRNG shape as the design
+  let s = 57; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let h = '<div class="stars">';
+  for (let i = 0; i < 100; i++) { const z = (0.5 + rnd() * 1.4).toFixed(1); h += `<i style="left:${(rnd() * 100).toFixed(2)}%;top:${(rnd() * 100).toFixed(2)}%;width:${z}px;height:${z}px;opacity:${(0.12 + rnd() * .45).toFixed(2)}"></i>`; }
+  return h + '</div>';
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const val = id => (document.getElementById(id) || {}).value || '';
+
+// The Command Deck stand-in: rail + top bar + planet. `locked` greys it out (variant C).
+function deck({ locked = false, inner = '', pickerHtml = null } = {}) {
+  const pl = session?.planet;
+  const rail = `<nav style="position:absolute;left:0;top:0;bottom:0;width:88px;box-sizing:border-box;padding:20px 0;background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div style="margin-bottom:18px">${logo()}</div>
+    ${NAV.map(([l, p, f], i) => `<a style="width:72px;height:62px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:${i === 0 && !locked ? 'var(--accent-wash)' : 'transparent'};color:${i === 0 && !locked ? 'var(--accent)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:11px;letter-spacing:.06em;opacity:${locked || i > 3 ? .4 : 1}">${icon(p, f)}${l}</a>`).join('')}
+    ${session ? `<a id="logout" style="margin-top:auto;font-family:var(--font-display);font-size:11px;letter-spacing:.06em;color:var(--text-muted)">LOG OUT</a>` : ''}
+  </nav>`;
+  const picker = pickerHtml ?? `<button style="height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line-control);background:var(--panel);color:var(--text);display:flex;align-items:center;gap:12px;font-family:var(--font-body)">
+      <span style="width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f1f6ff,#6c8aa8 70%)"></span>
+      <span class="disp" style="font-size:15px;font-weight:600">${pl ? esc(pl.name) : '———'}</span>
+      <span style="font-size:13px;color:var(--text-muted)">${pl ? pl.coords : '[–:–––:–]'}</span></button>`;
+  const top = `<header style="position:absolute;left:88px;right:0;top:0;height:72px;box-sizing:border-box;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)">
+    ${picker}
+    <div style="display:flex;gap:12px;opacity:${locked ? .4 : 1}">${RES.map(([n, c, p, f, v]) => `<div style="width:168px;box-sizing:border-box;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;gap:10px">${icon(p, f, 22, `var(${c})`)}<div style="flex-grow:1;display:flex;flex-direction:column;gap:4px"><div class="disp" style="display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;color:var(--text-muted)"><span>${n}</span></div><div class="disp" style="font-size:15px;font-weight:500">${locked ? '—' : v}</div><div style="height:3px;border-radius:3px;background:var(--line)"><div style="height:3px;border-radius:3px;width:${locked ? 0 : 4}%;background:var(${c})"></div></div></div></div>`).join('')}</div>
+  </header>`;
+  const body = inner || `<div style="position:absolute;left:112px;top:96px;right:24px;bottom:24px;display:flex;align-items:center;justify-content:center;gap:48px">
+      ${hudPlanet(460)}
+      <div style="display:flex;flex-direction:column;gap:10px"><div class="label">Planet</div><div class="disp" style="font-size:30px;font-weight:600">${esc(pl.name)}</div><div class="coords" style="font-size:18px">${pl.coords}</div>
+      <div style="color:var(--text-body);max-width:320px;margin-top:10px">Command Deck stand-in — the real Overview goes here.</div></div></div>`;
+  return stars() + rail + top + body;
+}
+
+// ───────────────────────── Variant A — Airlock card ─────────────────────────
+// One screen, LOG IN / REGISTER segmented toggle. Validation errors inline under each field;
+// credential / rate-limit errors as a banner at the card top. Show-password toggle, no confirm field.
+// First login: a welcome modal over the dimmed deck — Coordinates reveal + name your Planet.
+function A() {
+  if (session?.firstLogin) return deck() + A_welcome();
+  if (session) return deck();
+  const reg = ui.mode === 'register', e = ui.errors || {};
+  return stars() + `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+    <form id="f" class="panel" style="width:440px;box-sizing:border-box;padding:36px;display:flex;flex-direction:column;gap:22px;box-shadow:0 30px 80px rgba(0,0,0,.5)" novalidate>
+      <div style="display:flex;align-items:center;gap:18px">${logo(34)}<div><div class="disp" style="font-size:22px;font-weight:600;letter-spacing:.04em">${reg ? 'Join the Universe' : 'Return to command'}</div><div style="color:var(--text-muted);font-size:13px;margin-top:2px">Universe Speed x1</div></div></div>
+      <div class="seg"><button type="button" data-mode="login" aria-pressed="${!reg}">LOG IN</button><button type="button" data-mode="register" aria-pressed="${reg}">REGISTER</button></div>
+      ${e.banner ? `<div class="banner" role="alert">⚠ <span>${e.banner}</span></div>` : ''}
+      <div class="field"><label class="label" for="u">Username</label><input id="u" class="input ${e.username ? 'bad' : ''}" autocomplete="username" value="${esc(ui.u || '')}">${e.username ? `<div class="err">${e.username}</div>` : reg ? `<div style="font-size:12px;color:var(--text-muted)">3–20 letters, digits, _ or -. Can’t be changed later.</div>` : ''}</div>
+      <div class="field"><label class="label" for="p">Password</label><div style="position:relative"><input id="p" type="${ui.show ? 'text' : 'password'}" class="input ${e.password ? 'bad' : ''}" autocomplete="${reg ? 'new-password' : 'current-password'}" style="padding-right:64px"><a id="show" style="position:absolute;right:14px;top:15px;font-family:var(--font-display);font-size:11px;letter-spacing:.1em">${ui.show ? 'HIDE' : 'SHOW'}</a></div>${e.password ? `<div class="err">${e.password}</div>` : reg ? `<div style="font-size:12px;color:var(--text-muted)">At least 8 characters.</div>` : ''}</div>
+      <button class="btn fill" type="submit">${reg ? 'Create Player' : 'Log in'}</button>
+    </form></div>`;
+}
+function A_welcome() {
+  const pl = session.planet;
+  return `<div style="position:absolute;inset:0;background:rgba(4,7,12,.82);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center">
+    <form id="w" class="panel" style="width:880px;box-sizing:border-box;padding:40px;display:flex;gap:40px;align-items:center" novalidate>
+      ${hudPlanet(340, `<div class="coords" style="position:absolute;left:0;right:0;bottom:-6px;text-align:center;font-size:15px">${pl.coords}</div>`)}
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px">
+        <div class="label" style="color:var(--accent)">Homeworld established</div>
+        <div class="disp" style="font-size:28px;font-weight:600">Welcome, ${esc(session.player.username)}.</div>
+        <div style="color:var(--text-body);line-height:1.5">Your Planet sits at <span class="coords">${pl.coords}</span>. You start with <b style="color:var(--alloy)">500 Alloy</b> and <b style="color:var(--crystal)">500 Crystal</b> and nothing built. Name it — you can rename it later from the planet picker.</div>
+        <div class="field"><label class="label" for="pn">Planet name</label><input id="pn" class="input ${ui.nameErr ? 'bad' : ''}" value="${esc(pl.name)}" maxlength="20">${ui.nameErr ? `<div class="err">${ui.nameErr}</div>` : ''}</div>
+        <div style="display:flex;gap:12px"><button class="btn fill" type="submit" style="flex:1">Take command</button><button class="btn" type="button" id="skip" style="padding:0 20px">Keep “Homeworld”</button></div>
+      </div></form></div>`;
+}
+function A_bind() {
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui = { mode: b.dataset.mode, u: val('u') }; render(); });
+  const show = document.getElementById('show'); if (show) show.onclick = () => { const pw = val('p'); ui.show = !ui.show; ui.u = val('u'); render(); document.getElementById('p').value = pw; };
+  const f = document.getElementById('f');
+  if (f) f.onsubmit = ev => {
+    ev.preventDefault(); ui.u = val('u');
+    const reg = ui.mode === 'register', r = api(reg ? 'POST /api/auth/register' : 'POST /api/auth/login', { username: val('u'), password: val('p') });
+    if (r.status < 300) { session = { ...r.data }; ui = {}; return render(); }
+    ui.errors = r.status === 422
+      ? { username: r.data.errors.username && MSG['username_' + r.data.errors.username], password: r.data.errors.password && MSG.password_length }
+      : { banner: MSG[r.data.error] };
+    render();
+  };
+  bindRename('w', 'pn', () => { session.firstLogin = false; }, e => { ui.nameErr = e; });
+  const skip = document.getElementById('skip'); if (skip) skip.onclick = () => { session.firstLogin = false; render(); };
+}
+
+// ───────────────────────── Variant B — Planet split, two screens ─────────────────────────
+// Separate Log in and Register screens (#login / #register style, linked to each other).
+// Left: big planet + HUD. Right: form. Register adds confirm-password and a live rule checklist.
+// Errors: one summary box above the form listing every problem + red fields.
+// First login: onboarding steps on the right — Coordinates being assigned → revealed → name it.
+function B() {
+  if (session?.firstLogin) return B_onboard();
+  if (session) return deck();
+  const reg = ui.screen === 'register', e = ui.errors || {};
+  const list = Object.values(e).filter(Boolean);
+  const left = `<div style="position:absolute;left:0;top:0;bottom:0;width:760px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;border-right:1px solid var(--line)">
+      ${hudPlanet(520)}<div class="label">Universe Speed x1 · one Planet per Player</div></div>`;
+  const rules = reg ? `<div id="rules" style="display:flex;flex-direction:column;gap:6px;font-size:13px">${B_rules()}</div>` : '';
+  return stars() + left + `<form id="f" style="position:absolute;left:760px;right:0;top:0;bottom:0;box-sizing:border-box;padding:0 120px;display:flex;flex-direction:column;justify-content:center;gap:20px" novalidate>
+      <div style="display:flex;align-items:center;gap:14px">${logo(28)}<span class="label">${reg ? 'New Player' : 'Player login'}</span></div>
+      <div class="disp" style="font-size:30px;font-weight:600">${reg ? 'Create your Player' : 'Log in'}</div>
+      ${list.length ? `<div class="banner" role="alert"><div>${list.length > 1 ? '<b>Fix these:</b><br>' : ''}${list.join('<br>')}</div></div>` : ''}
+      <div class="field"><label class="label" for="u">Username</label><input id="u" class="input ${e.username || e.creds ? 'bad' : ''}" value="${esc(ui.u || '')}" autocomplete="username"></div>
+      <div class="field"><label class="label" for="p">Password</label><input id="p" type="password" class="input ${e.password || e.creds ? 'bad' : ''}" autocomplete="${reg ? 'new-password' : 'current-password'}"></div>
+      ${reg ? `<div class="field"><label class="label" for="p2">Confirm password</label><input id="p2" type="password" class="input ${e.confirm ? 'bad' : ''}" autocomplete="new-password"></div>` : ''}
+      ${rules}
+      <button class="btn fill" type="submit" style="margin-top:6px">${reg ? 'Create Player' : 'Log in'}</button>
+      <div style="color:var(--text-muted);font-size:14px">${reg ? 'Already have a Player? <a data-go="login">Log in</a>' : 'New here? <a data-go="register">Create a Player</a>'}</div>
+    </form>`;
+}
+function B_rules() {
+  const u = val('u'), p = val('p'), p2 = val('p2');
+  const row = (ok, t) => `<div style="color:${ok ? 'var(--accent)' : 'var(--text-muted)'}">${ok ? '✓' : '○'} ${t}</div>`;
+  return row(u.length >= 3 && u.length <= 20, 'Username 3–20 characters') + row(u && /^[A-Za-z0-9_-]*$/.test(u), 'Letters, digits, _ or - only') + row(p.length >= 8, 'Password at least 8 characters') + row(p && p === p2, 'Passwords match');
+}
+function B_onboard() {
+  const pl = session.planet, step = ui.step || 'scan';
+  const coordsLabel = step === 'scan' ? `<span style="animation:blink .6s infinite">[?:???:?]</span>` : pl.coords;
+  const left = `<div style="position:absolute;left:0;top:0;bottom:0;width:760px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;border-right:1px solid var(--line)">
+      ${hudPlanet(520, step === 'scan' ? `<div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 80%,rgba(95,227,192,.25) 100%);animation:scan 1.2s linear infinite"></div>` : '')}
+      <div class="coords" style="font-size:22px">${coordsLabel}</div></div>`;
+  const steps = ['Coordinates', 'Name', 'Command'].map((s, i) => { const at = { scan: 0, named: 1 }[step] ?? 0; return `<div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:3px;border-radius:3px;background:${i <= at ? 'var(--accent)' : 'var(--line)'}"></div><span class="label" style="color:${i <= at ? 'var(--accent)' : 'var(--text-muted)'}">${i + 1} · ${s}</span></div>`; }).join('');
+  const right = step === 'scan'
+    ? `<div class="disp" style="font-size:30px;font-weight:600">Welcome, ${esc(session.player.username)}.</div><div style="color:var(--text-body);font-size:16px">Surveying the Universe for a free orbit…</div>`
+    : `<div class="label" style="color:var(--accent)">Orbit assigned</div>
+       <div class="disp" style="font-size:30px;font-weight:600">Your Planet is at <span class="coords">${pl.coords}</span></div>
+       <div style="color:var(--text-body);line-height:1.5">Every Structure starts at level 0. You have 500 Alloy and 500 Crystal to begin with. Give your Planet a name.</div>
+       <div class="field"><label class="label" for="pn">Planet name</label><input id="pn" class="input ${ui.nameErr ? 'bad' : ''}" value="${esc(pl.name)}" maxlength="20">${ui.nameErr ? `<div class="err">${ui.nameErr}</div>` : ''}</div>
+       <button class="btn fill" type="submit">Enter Command Deck</button>`;
+  return stars() + left + `<form id="w" style="position:absolute;left:760px;right:0;top:0;bottom:0;box-sizing:border-box;padding:0 120px;display:flex;flex-direction:column;justify-content:center;gap:20px" novalidate><div style="display:flex;gap:10px;margin-bottom:12px">${steps}</div>${right}</form>`;
+}
+function B_bind() {
+  document.querySelectorAll('[data-go]').forEach(a => a.onclick = () => { ui = { screen: a.dataset.go }; render(); });
+  const rules = document.getElementById('rules');
+  if (rules) ['u', 'p', 'p2'].forEach(id => document.getElementById(id).oninput = () => rules.innerHTML = B_rules());
+  const f = document.getElementById('f');
+  if (f) f.onsubmit = ev => {
+    ev.preventDefault(); ui.u = val('u');
+    const reg = ui.screen === 'register';
+    if (reg && val('p') !== val('p2')) { ui.errors = { confirm: MSG.confirm_mismatch }; return render(); }
+    const r = api(reg ? 'POST /api/auth/register' : 'POST /api/auth/login', { username: val('u'), password: val('p') });
+    if (r.status < 300) { session = { ...r.data }; ui = {}; render(); if (session.firstLogin) setTimeout(() => { ui.step = 'named'; render(); }, 1400); return; }
+    ui.errors = r.status === 422
+      ? { username: r.data.errors.username && 'Username: ' + MSG['username_' + r.data.errors.username], password: r.data.errors.password && 'Password: ' + MSG.password_length }
+      : { creds: MSG[r.data.error] };
+    render();
+  };
+  bindRename('w', 'pn', () => { session.firstLogin = false; }, e => { ui.nameErr = e; });
+}
+
+// ───────────────────────── Variant C — Locked deck ─────────────────────────
+// No separate auth page: the Command Deck renders locked (rail dimmed, resources "—") with a
+// small console panel where the planet would be. One form, two buttons — LOG IN / CREATE PLAYER —
+// same two fields for both. Errors: a console status line under the buttons, panel shakes.
+// First login: nothing blocks. Deck unlocks with a welcome strip; the planet picker is
+// editable in place ("Homeworld" selected) so naming is optional.
+function C() {
+  if (!session) return deck({ locked: true, inner: C_panel() });
+  if (!session.firstLogin) return deck();
+  const pl = session.planet;
+  const picker = `<form id="w" style="height:44px;padding:0 8px 0 16px;border-radius:10px;border:1px solid var(--accent);background:var(--panel);display:flex;align-items:center;gap:10px;box-shadow:0 0 0 3px var(--accent-wash)" novalidate>
+      <span style="width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f1f6ff,#6c8aa8 70%)"></span>
+      <input id="pn" value="${esc(pl.name)}" maxlength="20" style="width:150px;background:transparent;border:0;outline:none;color:var(--text);font-family:var(--font-display);font-size:15px;font-weight:600">
+      <span style="font-size:13px;color:var(--text-muted)">${pl.coords}</span>
+      <button class="btn fill" style="height:30px;padding:0 10px;font-size:11px;border-radius:7px" type="submit">Save</button></form>`;
+  const strip = `<div style="position:absolute;left:112px;right:24px;top:96px;z-index:1;display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:var(--r-card);border:1px solid var(--accent-line);background:var(--accent-select)">
+      <span class="label" style="color:var(--accent)">Welcome</span>
+      <span style="flex:1;color:var(--text-body)">Homeworld established at <span class="coords">${pl.coords}</span>, ${esc(session.player.username)}. Name it in the planet picker above, or leave it for later. ${ui.nameErr ? `<span class="err">${ui.nameErr}</span>` : ''}</span>
+      <a id="dismiss" class="disp" style="font-size:12px;letter-spacing:.1em">DISMISS</a></div>`;
+  return deck({ pickerHtml: picker }) + strip;
+}
+function C_panel() {
+  const st = ui.status;
+  return `<div style="position:absolute;left:112px;top:96px;right:24px;bottom:24px;display:flex;align-items:center;justify-content:center">
+    <div style="position:relative;width:560px;height:560px;display:flex;align-items:center;justify-content:center">${HUD}
+      <form id="f" class="panel ${ui.shake ? 'shake' : ''}" style="position:relative;width:360px;box-sizing:border-box;padding:28px;display:flex;flex-direction:column;gap:16px;background:rgba(11,17,25,.94)" novalidate>
+        <div class="label">Command Deck · locked</div>
+        <div class="disp" style="font-size:20px;font-weight:600">Identify yourself</div>
+        <input id="u" class="input" placeholder="Username" value="${esc(ui.u || '')}" autocomplete="username" aria-label="Username">
+        <input id="p" type="password" class="input" placeholder="Password" autocomplete="current-password" aria-label="Password">
+        <div style="display:flex;gap:10px"><button class="btn fill" type="submit" data-act="login" style="flex:1">Log in</button><button class="btn" type="submit" data-act="register" style="flex:1">Create Player</button></div>
+        <div class="disp" style="font-size:12px;letter-spacing:.04em;min-height:34px;color:${st?.ok ? 'var(--accent)' : st ? 'var(--danger)' : 'var(--text-muted)'}">› ${st ? st.text : 'Awaiting credentials. New? Pick a username (3–20) and password (8+), then Create Player.'}</div>
+      </form></div></div>`;
+}
+function C_bind() {
+  const f = document.getElementById('f');
+  if (f) {
+    let act = 'login';
+    f.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act = b.dataset.act);
+    f.onsubmit = ev => {
+      ev.preventDefault(); ui.u = val('u');
+      const r = api(act === 'register' ? 'POST /api/auth/register' : 'POST /api/auth/login', { username: val('u'), password: val('p') });
+      if (r.status < 300) { session = { ...r.data }; ui = {}; return render(); }
+      const errs = r.status === 422 ? Object.entries(r.data.errors).map(([k, v]) => 'ERROR: ' + (k === 'username' ? MSG['username_' + v] : MSG.password_length)) : ['ERROR: ' + MSG[r.data.error]];
+      ui.status = { text: errs.join(' ') }; ui.shake = true; render(); ui.shake = false;
+    };
+  }
+  const d = document.getElementById('dismiss'); if (d) d.onclick = () => { session.firstLogin = false; render(); };
+  bindRename('w', 'pn', () => { session.firstLogin = false; }, e => { ui.nameErr = e; });
+}
+
+// ───────────────────────── wiring ─────────────────────────
+function bindRename(formId, inputId, done, fail) {
+  const w = document.getElementById(formId); if (!w) return;
+  w.onsubmit = ev => {
+    ev.preventDefault();
+    const r = api('POST /api/planet/rename', { name: val(inputId) });
+    if (r.status < 300) { done(); ui = {}; } else fail(MSG.name_length);
+    render();
+  };
+}
+const R = { A, B, C }, BIND = { A: A_bind, B: B_bind, C: C_bind };
+function render() {
+  document.getElementById('stage').innerHTML = R[variant]();
+  BIND[variant]();
+  const lo = document.getElementById('logout'); if (lo) lo.onclick = () => { session = null; ui = {}; lastApi = { route: 'POST /api/auth/logout', status: 204 }; render(); };
+  document.getElementById('vlabel').textContent = `${variant} — ${VARIANTS[variant]}`;
+  document.getElementById('state').innerHTML = `<b>PROTOTYPE STATE</b>  (seeded: Vega / password1)\n` + esc(JSON.stringify({ variant, session, ui, lastApi, failedLogins: db.fails, players: db.players.map(p => `${p.username} ${p.planet.coords} ${p.planet.name}`) }, null, 1));
+}
+function go(d) {
+  const ks = Object.keys(VARIANTS); variant = ks[(ks.indexOf(variant) + d + ks.length) % ks.length];
+  history.replaceState(null, '', '?variant=' + variant); ui = {}; render();
+}
+document.getElementById('prev').onclick = () => go(-1);
+document.getElementById('next').onclick = () => go(1);
+addEventListener('keydown', e => { if (e.target.closest('input,textarea,[contenteditable]')) return; if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); });
+function fit() { const s = Math.min(innerWidth / 1440, innerHeight / 900); document.getElementById('stage').style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+render();
+</script>
+</body></html>
