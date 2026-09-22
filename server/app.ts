@@ -8,11 +8,18 @@ import type { Clock } from './clock.ts';
 import { systemClock } from './clock.ts';
 import type { Config } from './config.ts';
 import { open } from './db/open.ts';
+import type { Rng } from './coords.ts';
+import { LoginLimiter } from './auth/limiter.ts';
+import { sweepExpiredSessions } from './auth/sessions.ts';
+import { registerAuthRoutes } from './routes/auth.ts';
+import { registerPlanetRoutes } from './routes/planet.ts';
 
 export interface BuildAppOptions {
   dbPath: string;
   clock?: Clock;
   config: Config;
+  /** Randomness source for Coordinates. Defaults to Math.random; tests inject a seeded rng. */
+  rng?: Rng;
 }
 
 // The built web app lives in ../dist relative to this file.
@@ -26,11 +33,16 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
   const clock = options.clock ?? systemClock;
   const db: DatabaseSync = open(options.dbPath);
 
+  // Sweep dead sessions once at startup so the table doesn't fill with expired rows (story 93).
+  sweepExpiredSessions(db, clock.now());
+
   const app = Fastify({ logger: false });
 
   app.decorate('db', db);
   app.decorate('clock', clock);
   app.decorate('config', options.config);
+  app.decorate('rng', options.rng ?? Math.random);
+  app.decorate('loginLimiter', new LoginLimiter(clock));
 
   app.addHook('onClose', () => {
     db.close();
@@ -43,6 +55,9 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
     serverNow: clock.now(),
     universeSpeed: options.config.UNIVERSE_SPEED,
   }));
+
+  registerAuthRoutes(app);
+  registerPlanetRoutes(app);
 
   // Serve the built SPA and fall back to index.html for client routes.
   if (options.config.SERVE_WEB && existsSync(WEB_DIST)) {
@@ -64,5 +79,7 @@ declare module 'fastify' {
     db: DatabaseSync;
     clock: Clock;
     config: Config;
+    rng: Rng;
+    loginLimiter: LoginLimiter;
   }
 }

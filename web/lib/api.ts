@@ -1,0 +1,89 @@
+// The typed fetch wrapper. Every call goes through `apiFetch`, which parses JSON, throws a
+// typed `ApiError` on any non-2xx, and flags 401s so the app can fall back to the auth screen
+// (spec story 15). `fetchImpl` is injectable so the wrapper is unit-testable without a browser.
+
+export interface Player {
+  id: number;
+  username: string;
+}
+
+export interface PlanetSnapshot {
+  id: number;
+  name: string;
+  coordinates: { galaxy: number; system: number; position: number };
+  coordinatesLabel: string;
+  temperature: { min: number; max: number };
+  fields: { used: number; max: number };
+  diameterKm: number;
+  resources: { alloy: number; crystal: number; deuterium: number };
+}
+
+export interface Session {
+  player: Player;
+  planet: PlanetSnapshot;
+  firstLogin?: boolean;
+}
+
+export type FieldErrors = { username?: string; password?: string };
+
+export interface ApiErrorBody {
+  error: string;
+  fields?: FieldErrors;
+}
+
+export class ApiError extends Error {
+  status: number;
+  body: ApiErrorBody | null;
+
+  constructor(status: number, body: ApiErrorBody | null) {
+    super(body?.error ?? `HTTP ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
+
+  get unauthorized(): boolean {
+    return this.status === 401;
+  }
+}
+
+type FetchImpl = typeof fetch;
+
+async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+  fetchImpl: FetchImpl = fetch,
+): Promise<T> {
+  const res = await fetchImpl(path, {
+    credentials: 'same-origin',
+    ...init,
+    headers: { 'content-type': 'application/json', ...init.headers },
+  });
+
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : null;
+
+  if (!res.ok) throw new ApiError(res.status, body);
+  return body as T;
+}
+
+function post<T>(path: string, payload: unknown, fetchImpl?: FetchImpl): Promise<T> {
+  return apiFetch<T>(path, { method: 'POST', body: JSON.stringify(payload) }, fetchImpl);
+}
+
+export interface Health {
+  status: string;
+  serverNow: number;
+  universeSpeed: number;
+}
+
+export const api = {
+  health: (fetchImpl?: FetchImpl) => apiFetch<Health>('/api/health', {}, fetchImpl),
+  me: (fetchImpl?: FetchImpl) => apiFetch<Session>('/api/auth/me', {}, fetchImpl),
+  planet: (fetchImpl?: FetchImpl) => apiFetch<PlanetSnapshot>('/api/planet', {}, fetchImpl),
+  register: (username: string, password: string, fetchImpl?: FetchImpl) =>
+    post<Session>('/api/auth/register', { username, password }, fetchImpl),
+  login: (username: string, password: string, fetchImpl?: FetchImpl) =>
+    post<Session>('/api/auth/login', { username, password }, fetchImpl),
+  logout: (fetchImpl?: FetchImpl) => post<{ ok: true }>('/api/auth/logout', {}, fetchImpl),
+};
