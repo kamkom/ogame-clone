@@ -25,6 +25,12 @@ export function App() {
     onSuccess: () => queryClient.resetQueries({ queryKey: ME_KEY }),
   });
 
+  const rename = useMutation({
+    mutationFn: (name: string) => api.renamePlanet(name),
+    onSuccess: (planet) =>
+      queryClient.setQueryData<Session>(ME_KEY, (prev) => (prev ? { ...prev, planet } : prev)),
+  });
+
   const universeSpeed = health.data?.universeSpeed ?? 1;
 
   function onAuthenticated(session: Session) {
@@ -37,7 +43,8 @@ export function App() {
     if (me.isSuccess) {
       return (
         <GameShell
-          planet={me.data.planet}
+          session={me.data}
+          onRename={(name) => rename.mutateAsync(name)}
           onLogout={() => logout.mutate()}
           loggingOut={logout.isPending}
         />

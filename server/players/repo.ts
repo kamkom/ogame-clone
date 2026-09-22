@@ -141,6 +141,13 @@ export function getPlanetByPlayer(db: DatabaseSync, playerId: number): PlanetRow
   );
 }
 
+/** Rename the Planet owned by `playerId`. Returns the updated row, or null if they have none. */
+export function renamePlanet(db: DatabaseSync, playerId: number, name: string): PlanetRow | null {
+  const info = db.prepare(`UPDATE planets SET name = ? WHERE player_id = ?`).run(name, playerId);
+  if (info.changes === 0) return null;
+  return getPlanetByPlayer(db, playerId);
+}
+
 export function getPlayer(db: DatabaseSync, playerId: number): Player | null {
   return (
     (db.prepare(`SELECT id, username FROM players WHERE id = ?`).get(playerId) as

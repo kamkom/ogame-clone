@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import type { PlanetSnapshot } from '../lib/api.ts';
 import { formatResource } from '../lib/format.ts';
 import { Icon, RESOURCES } from './icons.tsx';
+import { PlanetPopover } from './PlanetPopover.tsx';
 
 interface TopBarProps {
   planet: PlanetSnapshot;
+  onRename: (name: string) => Promise<PlanetSnapshot>;
 }
 
 /** The top bar: planet picker (name + Coordinates) and the four resource chips. */
-export function TopBar({ planet }: TopBarProps) {
+export function TopBar({ planet, onRename }: TopBarProps) {
+  const [open, setOpen] = useState(false);
+
   const amounts: Record<string, number> = {
     ALLOY: planet.resources.alloy,
     CRYSTAL: planet.resources.crystal,
@@ -17,15 +22,37 @@ export function TopBar({ planet }: TopBarProps) {
 
   return (
     <header style={headerStyle}>
-      <button type="button" style={pickerStyle} title={`${planet.name} ${planet.coordinatesLabel}`}>
-        <span style={pickerDotStyle} />
-        <span className="disp" style={{ fontSize: 15, fontWeight: 600 }}>
-          {planet.name}
-        </span>
-        <span className="coords" style={{ fontSize: 13 }}>
-          {planet.coordinatesLabel}
-        </span>
-      </button>
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          style={pickerStyle}
+          title={`${planet.name} ${planet.coordinatesLabel}`}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span style={pickerDotStyle} />
+          <span
+            className="disp"
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              maxWidth: 180,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {planet.name}
+          </span>
+          <span className="coords" style={{ fontSize: 13, flexShrink: 0 }}>
+            {planet.coordinatesLabel}
+          </span>
+        </button>
+        {open && (
+          <PlanetPopover planet={planet} onRename={onRename} onClose={() => setOpen(false)} />
+        )}
+      </div>
 
       <div style={{ display: 'flex', gap: 12 }}>
         {RESOURCES.map((res) => (
