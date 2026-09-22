@@ -4,6 +4,6 @@
     "zod": "^4.6.5"
   },
   "scripts": {
-    "sandcastle": "npx tsx .sandcastle/main.ts"
+    "sandcastle": "npx tsx .sandcastle/main.mts"
   }
 }
