@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>D · Shipyard</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+body{margin:0;background:#06090e}
+a{color:#5fe3c0;text-decoration:none}a:hover{color:#b8fff0}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #06090e; color: #d8e1ea; font-family: Barlow, system-ui, sans-serif;">
+
+  <!-- left rail -->
+  <nav aria-label="Main" style="position: absolute; left: 0; top: 0; bottom: 0; width: 88px; box-sizing: border-box; padding: 20px 0; background: rgba(8,12,18,0.9); border-right: 1px solid #16202c; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+    <div style="width: 40px; height: 40px; margin-bottom: 18px; border: 1.5px solid #5fe3c0; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;"><div style="width: 12px; height: 12px; background: #5fe3c0;"></div></div>
+    
+      <a href="CommandDeck.dc.html" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2"></path><path d="M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z" fill="currentColor" stroke="none"></path></svg>
+        Overview
+      </a>
+    
+      <a href="Buildings.dc.html" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3"></path><path d="M10.8 2h2.4v2.4h-2.4z" fill="currentColor" stroke="none"></path></svg>
+        Build
+      </a>
+    
+      <a href="Research.dc.html" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7"></path><path d="M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z" fill="currentColor" stroke="none"></path></svg>
+        Research
+      </a>
+    
+      <a href="Shipyard.dc.html" aria-current="page" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: rgba(95,227,192,0.10); color: #5fe3c0; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z"></path><path d="M5 11h2.2v2H5z" fill="currentColor" stroke="none"></path></svg>
+        Shipyard
+      </a>
+    
+      <a href="#" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z"></path><path d="M12 3l3.6 7.2H8.4z" fill="currentColor" stroke="none"></path></svg>
+        Fleet
+      </a>
+    
+      <a href="#" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5"></path><path d="M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z" fill="currentColor" stroke="none"></path></svg>
+        Galaxy
+      </a>
+    
+      <a href="#" aria-current="false" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #6f8196; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8"></path><path d="M7.5 9.5h2v2h-2z" fill="currentColor" stroke="none"></path></svg>
+        Alliance
+      </a>
+    
+  </nav>
+
+  <!-- top bar -->
+  <header style="position: absolute; left: 88px; right: 0; top: 0; height: 72px; box-sizing: border-box; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #16202c;">
+    <button style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #1f2b3a; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 12px; cursor: pointer; font-family: Barlow, sans-serif;">
+      <span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f1f6ff, #6c8aa8 70%);"></span>
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 600;">Kepler Verge</span>
+      <span style="font-size: 13px; color: #6f8196;">[4:212:8]</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; gap: 12px;">
+      
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c3cfdc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5"></path><path d="M10.5 13.5h3v1.5h-3z" fill="#c3cfdc" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>ALLOY</span><span style="color: #c3cfdc;">+42.1K</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">1,248,390</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: 72%; background: #c3cfdc;"></div></div>
+          </div>
+        </div>
+      
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fb8ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2.5l5 7-5 12-5-12z M7 9.5h10"></path><path d="M12 2.5l2.4 3.4H9.6z" fill="#7fb8ff" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>CRYSTAL</span><span style="color: #7fb8ff;">+21.9K</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">612,044</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: 54%; background: #7fb8ff;"></div></div>
+          </div>
+        </div>
+      
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5fe3c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z"></path><path d="M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z" fill="#5fe3c0" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>DEUTERIUM</span><span style="color: #5fe3c0;">+9.3K</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">208,715</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: 31%; background: #5fe3c0;"></div></div>
+          </div>
+        </div>
+      
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffc36b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z"></path><path d="M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z" fill="#ffc36b" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>ENERGY</span><span style="color: #ffc36b;">/ 1,860</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">1,420</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: 76%; background: #ffc36b;"></div></div>
+          </div>
+        </div>
+      
+    </div>
+  </header>
+
+  <!-- ship list -->
+  <section style="position: absolute; left: 112px; top: 96px; width: 300px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 28px;">Shipyard</h1>
+      <span style="font-size: 14px; color: #6f8196;">Orbital Shipyard level 10</span>
+    </div>
+    <div style="display: flex; gap: 6px; padding: 4px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c;">
+      <button aria-pressed="true" style="flex-grow: 1; height: 36px; border-radius: 7px; border: 0; background: #16202c; color: #d8e1ea; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Ships</button>
+      <button aria-pressed="false" style="flex-grow: 1; height: 36px; border-radius: 7px; border: 0; background: transparent; color: #6f8196; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Defenses</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M44 16 H52 M28 16 H38" stroke="#5d6f84" stroke-width="1"></path><path d="M3 14.5h5v3H3z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Interceptor</span>
+            <span style="font-size: 12px; color: #6f8196;">Light fighter</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">240</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M5 12 H14 L20 9 H42 L60 16 L42 23 H20 L14 20 H5 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M20 9 V23 M28 12.5 H44 M28 19.5 H44" stroke="#5d6f84" stroke-width="1"></path><path d="M1 12.5h4v2.5H1z M1 17h4v2.5H1z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Corvette</span>
+            <span style="font-size: 12px; color: #6f8196;">Escort</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">60</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #5fe3c0; background: rgba(95,227,192,0.07); color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M5 10 L13 7 H44 L62 16 L44 25 H13 L5 22 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M13 7 V25 M22 11 H40 M22 21 H40 M46 16 H54" stroke="#5d6f84" stroke-width="1"></path><path d="M1 11h4v3H1z M1 18h4v3H1z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Cruiser</span>
+            <span style="font-size: 12px; color: #6f8196;">Line ship</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">32</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M3 9 L11 4 H48 L62 12 V20 L48 28 H11 L3 23 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M11 4 V28 M22 4 V28 M32 9 H50 M32 23 H50 M26 16 H56" stroke="#5d6f84" stroke-width="1"></path><path d="M0 8.5h3v3.5H0z M0 14.2h3v3.6H0z M0 20h3v3.5H0z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Dreadnought</span>
+            <span style="font-size: 12px; color: #6f8196;">Capital ship</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">6</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M7 9 H44 L56 12 V20 L44 23 H7 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M17 9 V23 M27 9 V23 M37 9 V23" stroke="#5d6f84" stroke-width="1"></path><path d="M3 12h4v8H3z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Hauler</span>
+            <span style="font-size: 12px; color: #6f8196;">Small cargo</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">85</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M5 6 H42 L50 10 L60 16 L50 22 L42 26 H5 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M5 16 H50 M15 6 V26 M29 6 V26" stroke="#5d6f84" stroke-width="1"></path><path d="M1 8.5h4v4H1z M1 19.5h4v4H1z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Freighter</span>
+            <span style="font-size: 12px; color: #6f8196;">Large cargo</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">24</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 16 A10 6 0 1 0 42 16 A10 6 0 1 0 22 16 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M32 10 V4 M32 22 V28 M42 16 H56 M28 16 H36" stroke="#5d6f84" stroke-width="1"></path><path d="M18 15h4v2h-4z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Scout Drone</span>
+            <span style="font-size: 12px; color: #6f8196;">Espionage</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">40</span>
+        </button>
+      
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #16202c; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M7 11 H38 L46 14 V18 L38 21 H7 Z" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M46 16 L54 8 L60 10 M46 16 L54 24 L60 22 M18 11 V21" stroke="#5d6f84" stroke-width="1"></path><path d="M3 13h4v6H3z" fill="#5fe3c0"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">Salvager</span>
+            <span style="font-size: 12px; color: #6f8196;">Debris recovery</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">12</span>
+        </button>
+      
+    </div>
+  </section>
+
+  <!-- selected ship -->
+  <section style="position: absolute; left: 436px; top: 96px; width: 616px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="height: 236px; border-radius: 12px; border: 1px solid #1a2533; background-color: #0b1119; background-image: linear-gradient(rgba(95,227,192,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(95,227,192,0.05) 1px, transparent 1px); background-size: 24px 24px; position: relative; display: flex; align-items: center; justify-content: center;">
+      <svg width="560" height="220" viewBox="0 0 280 110" fill="none" stroke-linejoin="round" stroke-linecap="round" aria-label="Cruiser blueprint">
+        <path d="M14 38 L52 24 H198 L268 55 L198 86 H52 L14 72 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1"></path>
+        <path d="M52 24 V86 M198 24 L208 55 L198 86 M62 36 H186 M62 74 H186 M24 50 H44 M24 60 H44" stroke="#4d5f74" stroke-width="0.7"></path>
+        <path d="M148 47 H180 L188 55 L180 63 H148 Z" fill="rgba(95,227,192,0.10)" stroke="#5fe3c0" stroke-width="0.8"></path>
+        <path d="M86 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M86 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" stroke="#b7c6d6" stroke-width="0.8"></path>
+        <path d="M91 36 H103 M121 36 H133 M91 74 H103 M121 74 H133" stroke="#b7c6d6" stroke-width="1.4"></path>
+        <path d="M4 32 h10 v12 H4 z M4 66 h10 v12 H4 z" fill="#5fe3c0" fill-opacity="0.85"></path>
+        <path d="M52 100 H198 M52 97 V103 M198 97 V103" stroke="#4d5f74" stroke-width="0.6"></path>
+        <text x="125" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">184 M</text>
+        <path d="M208 55 L236 14 H262" stroke="#4d5f74" stroke-width="0.6"></path>
+        <text x="238" y="11" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">BRIDGE</text>
+      </svg>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">LINE SHIP · 32 IN ORBIT</span>
+        <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 26px;">Cruiser</h2>
+      </div>
+      <span style="font-size: 13px; color: #9fb0c2;">Rapid fire vs Interceptor <span style="color: #5fe3c0;">×6</span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">ATTACK</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">400</span>
+        </div>
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">SHIELDS</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">50</span>
+        </div>
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">HULL</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">27,000</span>
+        </div>
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">SPEED</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">15,000</span>
+        </div>
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">CARGO</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">800</span>
+        </div>
+      
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">FUEL / JUMP</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">300</span>
+        </div>
+      
+    </div>
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid rgba(95,227,192,0.35); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <label for="qty" style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">QUANTITY</label>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button aria-label="Fewer" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #243244; background: transparent; color: #d8e1ea; font-size: 20px; cursor: pointer;">−</button>
+          <input id="qty" value="10" style="width: 72px; height: 44px; box-sizing: border-box; border-radius: 8px; border: 1px solid #243244; background: #06090e; color: #d8e1ea; text-align: center; font-family: 'Chakra Petch', sans-serif; font-size: 18px;">
+          <button aria-label="More" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #243244; background: transparent; color: #d8e1ea; font-size: 20px; cursor: pointer;">+</button>
+        </div>
+        <a href="#" style="font-size: 13px;">Max 14</a>
+        <span style="margin-left: auto; font-family: 'Chakra Petch', sans-serif; font-size: 14px; color: #9fb0c2;">3h 20m</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 18px;">
+        <div style="flex-grow: 1; display: flex; gap: 18px; font-family: 'Chakra Petch', sans-serif; font-size: 15px;">
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c3cfdc" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5"></path></svg>200k</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fb8ff" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l5 7-5 12-5-12z M7 9.5h10"></path></svg>70k</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5fe3c0" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z"></path></svg>20k</span>
+        </div>
+        <button style="height: 48px; padding: 0 22px; border-radius: 10px; border: 0; background: #5fe3c0; color: #04120d; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.08em; cursor: pointer;">BUILD 10 CRUISERS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- production queue -->
+  <aside style="position: absolute; right: 24px; top: 96px; width: 340px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em;"><span style="color: #6f8196;">PRODUCTION QUEUE</span><span style="color: #5fe3c0;">2 ORDERS</span></div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="56" height="28" viewBox="0 0 64 32" fill="none" stroke-linejoin="round"><path d="M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="M44 16 H52 M28 16 H38" stroke="#5d6f84"></path><path d="M3 14.5h5v3H3z" fill="#5fe3c0"></path></svg>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Interceptor · 18 of 40</span><span style="font-family: 'Chakra Petch', sans-serif; color: #5fe3c0;">00:31:05</span></div>
+          <div style="height: 4px; border-radius: 4px; background: #16202c;"><div style="width: 45%; height: 4px; border-radius: 4px; background: #5fe3c0;"></div></div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid #16202c;">
+        <svg width="56" height="28" viewBox="0 0 64 32" fill="none" stroke-linejoin="round"><path d="M7 9 H44 L56 12 V20 L44 23 H7 Z" fill="rgba(159,177,197,0.08)" stroke="#6f8196" stroke-width="1.3"></path><path d="M17 9 V23 M27 9 V23 M37 9 V23" stroke="#3d4d60"></path></svg>
+        <div style="flex-grow: 1; display: flex; justify-content: space-between; font-size: 14px; color: #9fb0c2;"><span>Hauler · 20</span><span style="font-family: 'Chakra Petch', sans-serif;">queued · 1h 40m</span></div>
+      </div>
+    </div>
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 12px;">
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">FLEET STRENGTH</span>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'Chakra Petch', sans-serif; font-size: 30px;">499</span><span style="font-size: 13px; color: #6f8196;">ships docked</span></div>
+      <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px;">
+        <div style="width: 69%; background: #7fb8ff;"></div>
+        <div style="width: 25%; background: #c3cfdc;"></div>
+        <div style="width: 6%; background: #5fe3c0;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9fb0c2;">
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #7fb8ff;"></span>Combat</span><span style="font-family: 'Chakra Petch', sans-serif;">338</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #c3cfdc;"></span>Cargo</span><span style="font-family: 'Chakra Petch', sans-serif;">121</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #5fe3c0;"></span>Support</span><span style="font-family: 'Chakra Petch', sans-serif;">40</span></div>
+      </div>
+      <a href="#" style="height: 44px; margin-top: 4px; border-radius: 8px; border: 1px solid #243244; color: #d8e1ea; display: flex; align-items: center; justify-content: center; font-family: 'Chakra Petch', sans-serif; font-size: 13px; letter-spacing: 0.08em;">OPEN FLEET DISPATCH</a>
+    </div>
+  </aside>
+</div>
+</body></html>

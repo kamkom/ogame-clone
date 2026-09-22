@@ -1,0 +1,204 @@
+<!-- D · Shipyard — original design-tool component, extracted verbatim (fonts moved to ../fonts/fonts.css).
+     Template syntax: {{path}} interpolation, <sc-for list as>, <sc-if value>, sc-camel-* = camelCase SVG attrs.
+     The <script type="text/x-dc"> class computes every {{value}} the template reads. -->
+<style>
+body{margin:0;background:#06090e}
+a{color:#5fe3c0;text-decoration:none}a:hover{color:#b8fff0}
+</style>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #06090e; color: #d8e1ea; font-family: Barlow, system-ui, sans-serif;">
+
+  <!-- left rail -->
+  <nav aria-label="Main" style="position: absolute; left: 0; top: 0; bottom: 0; width: 88px; box-sizing: border-box; padding: 20px 0; background: rgba(8,12,18,0.9); border-right: 1px solid #16202c; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+    <div style="width: 40px; height: 40px; margin-bottom: 18px; border: 1.5px solid {{accent}}; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;"><div style="width: 12px; height: 12px; background: {{accent}};"></div></div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+      <a href="{{n.href}}" aria-current="{{n.cur}}" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: {{n.bg}}; color: {{n.fg}}; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.p}}"></path><path d="{{n.f}}" fill="currentColor" stroke="none"></path></svg>
+        {{n.label}}
+      </a>
+    </sc-for>
+  </nav>
+
+  <!-- top bar -->
+  <header style="position: absolute; left: 88px; right: 0; top: 0; height: 72px; box-sizing: border-box; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #16202c;">
+    <button style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #1f2b3a; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 12px; cursor: pointer; font-family: Barlow, sans-serif;">
+      <span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f1f6ff, #6c8aa8 70%);"></span>
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 600;">Kepler Verge</span>
+      <span style="font-size: 13px; color: #6f8196;">[4:212:8]</span>
+      <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; gap: 12px;">
+      <sc-for list="{{res}}" as="r" hint-placeholder-count="4">
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{r.c}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="{{r.p}}"></path><path d="{{r.f}}" fill="{{r.c}}" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>{{r.n}}</span><span style="color: {{r.c}};">{{r.d}}</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">{{r.v}}</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: {{r.pc}}%; background: {{r.c}};"></div></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </header>
+
+  <!-- ship list -->
+  <section style="position: absolute; left: 112px; top: 96px; width: 300px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 28px;">Shipyard</h1>
+      <span style="font-size: 14px; color: #6f8196;">Orbital Shipyard level 10</span>
+    </div>
+    <div style="display: flex; gap: 6px; padding: 4px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c;">
+      <button aria-pressed="true" style="flex-grow: 1; height: 36px; border-radius: 7px; border: 0; background: #16202c; color: #d8e1ea; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Ships</button>
+      <button aria-pressed="false" style="flex-grow: 1; height: 36px; border-radius: 7px; border: 0; background: transparent; color: #6f8196; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Defenses</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <sc-for list="{{ships}}" as="s" hint-placeholder-count="8">
+        <button style="height: 70px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid {{s.bd}}; background: {{s.bg}}; color: #d8e1ea; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; font-family: Barlow, sans-serif;">
+          <svg width="64" height="32" sc-camel-view-box="0 0 64 32" fill="none" stroke-linejoin="round" style="flex-shrink: 0;"><path d="{{s.hull}}" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="{{s.det}}" stroke="#5d6f84" stroke-width="1"></path><path d="{{s.glow}}" fill="{{accent}}"></path></svg>
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 15px; font-weight: 600;">{{s.n}}</span>
+            <span style="font-size: 12px; color: #6f8196;">{{s.role}}</span>
+          </span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 16px;">{{s.q}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- selected ship -->
+  <section style="position: absolute; left: 436px; top: 96px; width: 616px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="height: 236px; border-radius: 12px; border: 1px solid #1a2533; background-color: #0b1119; background-image: linear-gradient(rgba(95,227,192,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(95,227,192,0.05) 1px, transparent 1px); background-size: 24px 24px; position: relative; display: flex; align-items: center; justify-content: center;">
+      <svg width="560" height="220" sc-camel-view-box="0 0 280 110" fill="none" stroke-linejoin="round" stroke-linecap="round" aria-label="Cruiser blueprint">
+        <path d="M14 38 L52 24 H198 L268 55 L198 86 H52 L14 72 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1"></path>
+        <path d="M52 24 V86 M198 24 L208 55 L198 86 M62 36 H186 M62 74 H186 M24 50 H44 M24 60 H44" stroke="#4d5f74" stroke-width="0.7"></path>
+        <path d="M148 47 H180 L188 55 L180 63 H148 Z" fill="rgba(95,227,192,0.10)" stroke="{{accent}}" stroke-width="0.8"></path>
+        <path d="M86 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M86 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" stroke="#b7c6d6" stroke-width="0.8"></path>
+        <path d="M91 36 H103 M121 36 H133 M91 74 H103 M121 74 H133" stroke="#b7c6d6" stroke-width="1.4"></path>
+        <path d="M4 32 h10 v12 H4 z M4 66 h10 v12 H4 z" fill="{{accent}}" fill-opacity="0.85"></path>
+        <path d="M52 100 H198 M52 97 V103 M198 97 V103" stroke="#4d5f74" stroke-width="0.6"></path>
+        <text x="125" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">184 M</text>
+        <path d="M208 55 L236 14 H262" stroke="#4d5f74" stroke-width="0.6"></path>
+        <text x="238" y="11" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">BRIDGE</text>
+      </svg>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">LINE SHIP · 32 IN ORBIT</span>
+        <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 26px;">Cruiser</h2>
+      </div>
+      <span style="font-size: 13px; color: #9fb0c2;">Rapid fire vs Interceptor <span style="color: {{accent}};">×6</span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{stats}}" as="t" hint-placeholder-count="6">
+        <div style="padding: 10px 14px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">{{t.n}}</span>
+          <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px;">{{t.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid rgba(95,227,192,0.35); display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <label for="qty" style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">QUANTITY</label>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button aria-label="Fewer" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #243244; background: transparent; color: #d8e1ea; font-size: 20px; cursor: pointer;">−</button>
+          <input id="qty" value="10" style="width: 72px; height: 44px; box-sizing: border-box; border-radius: 8px; border: 1px solid #243244; background: #06090e; color: #d8e1ea; text-align: center; font-family: 'Chakra Petch', sans-serif; font-size: 18px;">
+          <button aria-label="More" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #243244; background: transparent; color: #d8e1ea; font-size: 20px; cursor: pointer;">+</button>
+        </div>
+        <a href="#" style="font-size: 13px;">Max 14</a>
+        <span style="margin-left: auto; font-family: 'Chakra Petch', sans-serif; font-size: 14px; color: #9fb0c2;">3h 20m</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 18px;">
+        <div style="flex-grow: 1; display: flex; gap: 18px; font-family: 'Chakra Petch', sans-serif; font-size: 15px;">
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="#c3cfdc" stroke-width="1.6" stroke-linejoin="round"><path d="{{ic.alloy}}"></path></svg>200k</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="#7fb8ff" stroke-width="1.6" stroke-linejoin="round"><path d="{{ic.crystal}}"></path></svg>70k</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.6" stroke-linejoin="round"><path d="{{ic.deut}}"></path></svg>20k</span>
+        </div>
+        <button style="height: 48px; padding: 0 22px; border-radius: 10px; border: 0; background: {{accent}}; color: #04120d; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.08em; cursor: pointer;">BUILD 10 CRUISERS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- production queue -->
+  <aside style="position: absolute; right: 24px; top: 96px; width: 340px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em;"><span style="color: #6f8196;">PRODUCTION QUEUE</span><span style="color: {{accent}};">2 ORDERS</span></div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="56" height="28" sc-camel-view-box="0 0 64 32" fill="none" stroke-linejoin="round"><path d="{{q1.hull}}" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3"></path><path d="{{q1.det}}" stroke="#5d6f84"></path><path d="{{q1.glow}}" fill="{{accent}}"></path></svg>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 14px;"><span>Interceptor · 18 of 40</span><span style="font-family: 'Chakra Petch', sans-serif; color: {{accent}};">00:31:05</span></div>
+          <div style="height: 4px; border-radius: 4px; background: #16202c;"><div style="width: 45%; height: 4px; border-radius: 4px; background: {{accent}};"></div></div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid #16202c;">
+        <svg width="56" height="28" sc-camel-view-box="0 0 64 32" fill="none" stroke-linejoin="round"><path d="{{q2.hull}}" fill="rgba(159,177,197,0.08)" stroke="#6f8196" stroke-width="1.3"></path><path d="{{q2.det}}" stroke="#3d4d60"></path></svg>
+        <div style="flex-grow: 1; display: flex; justify-content: space-between; font-size: 14px; color: #9fb0c2;"><span>Hauler · 20</span><span style="font-family: 'Chakra Petch', sans-serif;">queued · 1h 40m</span></div>
+      </div>
+    </div>
+    <div style="box-sizing: border-box; padding: 16px; border-radius: 12px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 12px;">
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">FLEET STRENGTH</span>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'Chakra Petch', sans-serif; font-size: 30px;">499</span><span style="font-size: 13px; color: #6f8196;">ships docked</span></div>
+      <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px;">
+        <div style="width: 69%; background: #7fb8ff;"></div>
+        <div style="width: 25%; background: #c3cfdc;"></div>
+        <div style="width: 6%; background: {{accent}};"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9fb0c2;">
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #7fb8ff;"></span>Combat</span><span style="font-family: 'Chakra Petch', sans-serif;">338</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #c3cfdc;"></span>Cargo</span><span style="font-family: 'Chakra Petch', sans-serif;">121</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{accent}};"></span>Support</span><span style="font-family: 'Chakra Petch', sans-serif;">40</span></div>
+      </div>
+      <a href="#" style="height: 44px; margin-top: 4px; border-radius: 8px; border: 1px solid #243244; color: #d8e1ea; display: flex; align-items: center; justify-content: center; font-family: 'Chakra Petch', sans-serif; font-size: 13px; letter-spacing: 0.08em;">OPEN FLEET DISPATCH</a>
+    </div>
+  </aside>
+</div>
+<script type="text/x-dc">
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#5fe3c0';
+    const ICON = {
+      overview: ['M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2', 'M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z'],
+      build: ['M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3', 'M10.8 2h2.4v2.4h-2.4z'],
+      research: ['M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7', 'M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z'],
+      shipyard: ['M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z', 'M5 11h2.2v2H5z'],
+      fleet: ['M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z', 'M12 3l3.6 7.2H8.4z'],
+      galaxy: ['M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5', 'M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z'],
+      alliance: ['M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8', 'M7.5 9.5h2v2h-2z'],
+      alloy: ['M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5', 'M10.5 13.5h3v1.5h-3z'],
+      crystal: ['M12 2.5l5 7-5 12-5-12z M7 9.5h10', 'M12 2.5l2.4 3.4H9.6z'],
+      deut: ['M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z', 'M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z'],
+      energy: ['M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z', 'M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z']
+    };
+    const SHIP = {
+      Interceptor: ['M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19', 'M44 16 H52 M28 16 H38', 'M3 14.5h5v3H3z'],
+      Corvette: ['M5 12 H14 L20 9 H42 L60 16 L42 23 H20 L14 20 H5 Z', 'M20 9 V23 M28 12.5 H44 M28 19.5 H44', 'M1 12.5h4v2.5H1z M1 17h4v2.5H1z'],
+      Cruiser: ['M5 10 L13 7 H44 L62 16 L44 25 H13 L5 22 Z', 'M13 7 V25 M22 11 H40 M22 21 H40 M46 16 H54', 'M1 11h4v3H1z M1 18h4v3H1z'],
+      Dreadnought: ['M3 9 L11 4 H48 L62 12 V20 L48 28 H11 L3 23 Z', 'M11 4 V28 M22 4 V28 M32 9 H50 M32 23 H50 M26 16 H56', 'M0 8.5h3v3.5H0z M0 14.2h3v3.6H0z M0 20h3v3.5H0z'],
+      Hauler: ['M7 9 H44 L56 12 V20 L44 23 H7 Z', 'M17 9 V23 M27 9 V23 M37 9 V23', 'M3 12h4v8H3z'],
+      Freighter: ['M5 6 H42 L50 10 L60 16 L50 22 L42 26 H5 Z', 'M5 16 H50 M15 6 V26 M29 6 V26', 'M1 8.5h4v4H1z M1 19.5h4v4H1z'],
+      'Scout Drone': ['M22 16 A10 6 0 1 0 42 16 A10 6 0 1 0 22 16 Z', 'M32 10 V4 M32 22 V28 M42 16 H56 M28 16 H36', 'M18 15h4v2h-4z'],
+      Salvager: ['M7 11 H38 L46 14 V18 L38 21 H7 Z', 'M46 16 L54 8 L60 10 M46 16 L54 24 L60 22 M18 11 V21', 'M3 13h4v6H3z']
+    };
+    const NAV = [['Overview', 'overview', 'CommandDeck.dc.html'], ['Build', 'build', 'Buildings.dc.html'], ['Research', 'research', 'Research.dc.html'], ['Shipyard', 'shipyard', 'Shipyard.dc.html'], ['Fleet', 'fleet', '#'], ['Galaxy', 'galaxy', '#'], ['Alliance', 'alliance', '#']];
+    const nav = NAV.map(([label, k, href]) => { const on = label === 'Shipyard'; return { label, href, p: ICON[k][0], f: ICON[k][1], bg: on ? 'rgba(95,227,192,0.10)' : 'transparent', fg: on ? accent : '#6f8196', cur: on ? 'page' : 'false' }; });
+    const res = [
+      ['ALLOY', 'alloy', '1,248,390', '+42.1K', 72, '#c3cfdc'], ['CRYSTAL', 'crystal', '612,044', '+21.9K', 54, '#7fb8ff'],
+      ['DEUTERIUM', 'deut', '208,715', '+9.3K', 31, accent], ['ENERGY', 'energy', '1,420', '/ 1,860', 76, '#ffc36b']
+    ].map(([n, k, v, d, pc, c]) => ({ n, v, d, pc, c, p: ICON[k][0], f: ICON[k][1] }));
+    const roles = { Interceptor: 'Light fighter', Corvette: 'Escort', Cruiser: 'Line ship', Dreadnought: 'Capital ship', Hauler: 'Small cargo', Freighter: 'Large cargo', 'Scout Drone': 'Espionage', Salvager: 'Debris recovery' };
+    const qty = { Interceptor: 240, Corvette: 60, Cruiser: 32, Dreadnought: 6, Hauler: 85, Freighter: 24, 'Scout Drone': 40, Salvager: 12 };
+    const ships = Object.keys(SHIP).map(n => {
+      const on = n === 'Cruiser';
+      return { n, role: roles[n], q: String(qty[n]), hull: SHIP[n][0], det: SHIP[n][1], glow: SHIP[n][2], bg: on ? 'rgba(95,227,192,0.07)' : '#0b1119', bd: on ? accent : '#16202c' };
+    });
+    const mk = n => ({ hull: SHIP[n][0], det: SHIP[n][1], glow: SHIP[n][2] });
+    return {
+      accent, nav, res, ships,
+      q1: mk('Interceptor'), q2: mk('Hauler'),
+      ic: { alloy: ICON.alloy[0], crystal: ICON.crystal[0], deut: ICON.deut[0] },
+      stats: [
+        { n: 'ATTACK', v: '400' }, { n: 'SHIELDS', v: '50' }, { n: 'HULL', v: '27,000' },
+        { n: 'SPEED', v: '15,000' }, { n: 'CARGO', v: '800' }, { n: 'FUEL / JUMP', v: '300' }
+      ]
+    };
+  }
+}
+</script>

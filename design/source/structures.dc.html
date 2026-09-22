@@ -1,0 +1,221 @@
+<!-- D · Structures — original design-tool component, extracted verbatim (fonts moved to ../fonts/fonts.css).
+     Template syntax: {{path}} interpolation, <sc-for list as>, <sc-if value>, sc-camel-* = camelCase SVG attrs.
+     The <script type="text/x-dc"> class computes every {{value}} the template reads. -->
+<style>
+body{margin:0;background:#06090e}
+a{color:#5fe3c0;text-decoration:none}a:hover{color:#b8fff0}
+</style>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #06090e; color: #d8e1ea; font-family: Barlow, system-ui, sans-serif;">
+
+  <!-- left rail -->
+  <nav aria-label="Main" style="position: absolute; left: 0; top: 0; bottom: 0; width: 88px; box-sizing: border-box; padding: 20px 0; background: rgba(8,12,18,0.9); border-right: 1px solid #16202c; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+    <div style="width: 40px; height: 40px; margin-bottom: 18px; border: 1.5px solid {{accent}}; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;"><div style="width: 12px; height: 12px; background: {{accent}};"></div></div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+      <a href="{{n.href}}" aria-current="{{n.cur}}" style="width: 72px; height: 62px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: {{n.bg}}; color: {{n.fg}}; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.06em;">
+        <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.p}}"></path><path d="{{n.f}}" fill="currentColor" stroke="none"></path></svg>
+        {{n.label}}
+      </a>
+    </sc-for>
+  </nav>
+
+  <!-- top bar -->
+  <header style="position: absolute; left: 88px; right: 0; top: 0; height: 72px; box-sizing: border-box; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #16202c;">
+    <button style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #1f2b3a; background: #0b1119; color: #d8e1ea; display: flex; align-items: center; gap: 12px; cursor: pointer; font-family: Barlow, sans-serif;">
+      <span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f1f6ff, #6c8aa8 70%);"></span>
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 600;">Kepler Verge</span>
+      <span style="font-size: 13px; color: #6f8196;">[4:212:8]</span>
+      <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; gap: 12px;">
+      <sc-for list="{{res}}" as="r" hint-placeholder-count="4">
+        <div style="width: 168px; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c; display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{r.c}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="{{r.p}}"></path><path d="{{r.f}}" fill="{{r.c}}" stroke="none"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.08em; color: #6f8196;"><span>{{r.n}}</span><span style="color: {{r.c}};">{{r.d}}</span></div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 500;">{{r.v}}</div>
+            <div style="height: 3px; border-radius: 3px; background: #16202c;"><div style="height: 3px; border-radius: 3px; width: {{r.pc}}%; background: {{r.c}};"></div></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </header>
+
+  <!-- heading -->
+  <div style="position: absolute; left: 112px; top: 96px; width: 948px; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 28px; letter-spacing: 0.02em;">Structures</h1>
+      <span style="font-size: 14px; color: #6f8196;">163 of 188 fields developed · 1 of 2 build slots in use</span>
+    </div>
+    <div style="display: flex; gap: 6px; padding: 4px; border-radius: 10px; background: #0b1119; border: 1px solid #16202c;">
+      <button aria-pressed="true" style="height: 36px; padding: 0 14px; border-radius: 7px; border: 0; background: #16202c; color: #d8e1ea; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">All · 9</button>
+      <button aria-pressed="false" style="height: 36px; padding: 0 14px; border-radius: 7px; border: 0; background: transparent; color: #6f8196; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Resources</button>
+      <button aria-pressed="false" style="height: 36px; padding: 0 14px; border-radius: 7px; border: 0; background: transparent; color: #6f8196; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Facilities</button>
+      <button aria-pressed="false" style="height: 36px; padding: 0 14px; border-radius: 7px; border: 0; background: transparent; color: #6f8196; font-family: Barlow, sans-serif; font-size: 14px; cursor: pointer;">Storage</button>
+    </div>
+  </div>
+
+  <!-- grid -->
+  <div style="position: absolute; left: 112px; top: 176px; width: 948px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+    <sc-for list="{{buildings}}" as="b" hint-placeholder-count="9">
+      <div style="position: relative; overflow: hidden; box-sizing: border-box; height: 224px; border-radius: 12px; background: #0b1119; border: 1px solid {{b.border}}; opacity: {{b.op}};">
+        <svg sc-camel-view-box="0 0 300 224" sc-camel-preserve-aspect-ratio="xMidYMax slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+          <defs><filter id="bglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur sc-camel-std-deviation="5"></feGaussianBlur></filter></defs>
+          <path d="{{b.art.sky}}" fill="none" stroke="#4a5f78" stroke-width="1.3" stroke-linecap="round"></path>
+          <path d="{{b.art.far}}" fill="#0f1823" stroke="#1f2d3c" stroke-width="1"></path>
+          <path d="{{b.art.main}}" fill="#142030" stroke="#566b83" stroke-width="1" stroke-linejoin="round"></path>
+          <path d="{{b.art.det}}" fill="none" stroke="#40546b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="{{b.art.glow}}" fill="{{accent}}" filter="url(#bglow)" opacity="0.8"></path>
+          <path d="{{b.art.glow}}" fill="{{accent}}"></path>
+        </svg>
+        <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,17,25,0.94) 0%, rgba(11,17,25,0.62) 42%, rgba(11,17,25,0.04) 100%);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(0deg, rgba(11,17,25,0.97) 20%, rgba(11,17,25,0));"></div>
+      <div style="position: relative; box-sizing: border-box; height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 52px; height: 52px; flex-shrink: 0; border-radius: 10px; background: #111925; border: 1px solid #1a2533; display: flex; align-items: center; justify-content: center; color: #cfdbe7;">
+            <svg width="28" height="28" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.p}}"></path><path d="{{b.f}}" fill="{{accent}}" stroke="none"></path></svg>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 16px; font-weight: 600;">{{b.n}}</span>
+            <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.1em; color: #6f8196;">{{b.cat}}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <span style="font-family: 'Chakra Petch', sans-serif; font-size: 28px; font-weight: 500; line-height: 1; color: {{b.lc}};">{{b.l}}</span>
+            <span style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; letter-spacing: 0.12em; color: #6f8196;">LEVEL</span>
+          </div>
+        </div>
+        <div style="font-size: 14px; color: #9fb0c2; flex-grow: 1;">{{b.eff}} <span style="color: {{accent}};">{{b.next}}</span></div>
+
+        <sc-if value="{{b.idle}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid #16202c;">
+            <div style="display: flex; flex-direction: column; gap: 6px; font-family: 'Chakra Petch', sans-serif; font-size: 13px;">
+              <div style="display: flex; gap: 12px;">
+                <span style="display: flex; align-items: center; gap: 5px;"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="#c3cfdc" stroke-width="1.8" stroke-linejoin="round"><path d="{{ic.alloy}}"></path></svg>{{b.ca}}</span>
+                <span style="display: flex; align-items: center; gap: 5px;"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="#7fb8ff" stroke-width="1.8" stroke-linejoin="round"><path d="{{ic.crystal}}"></path></svg>{{b.cc}}</span>
+              </div>
+              <span style="font-size: 12px; color: #6f8196;">{{b.t}}</span>
+            </div>
+            <button aria-label="Upgrade {{b.n}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid {{b.btnBd}}; background: {{b.btnBg}}; color: {{b.btnFg}}; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.06em; cursor: pointer;">UPGRADE</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{b.busy}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid #16202c;">
+            <div style="display: flex; justify-content: space-between; font-family: 'Chakra Petch', sans-serif; font-size: 13px;"><span style="color: {{accent}};">Building level 16</span><span>00:42:18</span></div>
+            <div style="height: 4px; border-radius: 4px; background: #16202c;"><div style="width: 62%; height: 4px; border-radius: 4px; background: {{accent}};"></div></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{b.locked}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px dashed #243244; font-size: 13px; color: #8a9bb0;">
+            <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>
+            Requires Robotics Works 10 · Computation 10
+          </div>
+        </sc-if>
+      </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- detail panel -->
+  <aside style="position: absolute; right: 24px; top: 96px; width: 340px; height: 780px; box-sizing: border-box; padding: 20px; border-radius: 12px; background: #0b1119; border: 1px solid #16202c; display: flex; flex-direction: column; gap: 18px;">
+    <div style="position: relative; overflow: hidden; height: 170px; flex-shrink: 0; border-radius: 10px; border: 1px solid #1a2533; background: #0b1119;">
+        <svg sc-camel-view-box="0 0 300 224" sc-camel-preserve-aspect-ratio="xMidYMax slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+          <defs><filter id="bglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur sc-camel-std-deviation="5"></feGaussianBlur></filter></defs>
+          <path d="{{sel.art.sky}}" fill="none" stroke="#4a5f78" stroke-width="1.6" stroke-linecap="round"></path>
+          <path d="{{sel.art.far}}" fill="#0f1823" stroke="#1f2d3c" stroke-width="1"></path>
+          <path d="{{sel.art.main}}" fill="#142030" stroke="#566b83" stroke-width="1" stroke-linejoin="round"></path>
+          <path d="{{sel.art.det}}" fill="none" stroke="#40546b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="{{sel.art.glow}}" fill="{{accent}}" filter="url(#bglow)" opacity="0.8"></path>
+          <path d="{{sel.art.glow}}" fill="{{accent}}"></path>
+        </svg>
+      <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 50px; background: linear-gradient(0deg, rgba(11,17,25,0.85), rgba(11,17,25,0));"></div>
+      <div style="position: absolute; left: 12px; top: 12px; width: 40px; height: 40px; border-radius: 9px; background: rgba(11,17,25,0.85); border: 1px solid #1a2533; display: flex; align-items: center; justify-content: center; color: #cfdbe7;">
+        <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{sel.p}}"></path><path d="{{sel.f}}" fill="{{accent}}" stroke="none"></path></svg>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">RESOURCES · LEVEL 12 → 13</span>
+      <h2 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 22px;">Deuterium Synthesizer</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #9fb0c2;">Filters heavy hydrogen from the planet's cold seas. Output falls on warmer worlds.</p>
+    </div>
+    <div style="display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #16202c; font-size: 14px;"><span style="color: #8a9bb0;">Production</span><span style="font-family: 'Chakra Petch', sans-serif;">9,340 → <span style="color: {{accent}};">10,720 /h</span></span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #16202c; font-size: 14px;"><span style="color: #8a9bb0;">Energy use</span><span style="font-family: 'Chakra Petch', sans-serif;">412 → <span style="color: #ffc36b;">468</span></span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #16202c; font-size: 14px;"><span style="color: #8a9bb0;">Build time</span><span style="font-family: 'Chakra Petch', sans-serif;">48m 20s</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #16202c; border-bottom: 1px solid #16202c; font-size: 14px;"><span style="color: #8a9bb0;">Fields</span><span style="font-family: 'Chakra Petch', sans-serif;">+1</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: 0.12em; color: #6f8196;">COST</span>
+      <div style="display: flex; align-items: center; gap: 10px; font-family: 'Chakra Petch', sans-serif; font-size: 15px;">
+        <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#c3cfdc" stroke-width="1.6" stroke-linejoin="round"><path d="{{ic.alloy}}"></path></svg>
+        <span style="flex-grow: 1;">30,240 Alloy</span><span style="font-size: 12px; color: {{accent}};">Available</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; font-family: 'Chakra Petch', sans-serif; font-size: 15px;">
+        <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#7fb8ff" stroke-width="1.6" stroke-linejoin="round"><path d="{{ic.crystal}}"></path></svg>
+        <span style="flex-grow: 1;">10,080 Crystal</span><span style="font-size: 12px; color: {{accent}};">Available</span>
+      </div>
+    </div>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+      <button style="height: 50px; border-radius: 10px; border: 0; background: {{accent}}; color: #04120d; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.08em; cursor: pointer;">UPGRADE TO LEVEL 13</button>
+      <span style="text-align: center; font-size: 12px; color: #6f8196;">Starts now in build slot 2 of 2</span>
+    </div>
+  </aside>
+</div>
+<script type="text/x-dc">
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#5fe3c0';
+    const ICON = {
+      overview: ['M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2', 'M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z'],
+      build: ['M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3', 'M10.8 2h2.4v2.4h-2.4z'],
+      research: ['M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7', 'M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z'],
+      shipyard: ['M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z', 'M5 11h2.2v2H5z'],
+      fleet: ['M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z', 'M12 3l3.6 7.2H8.4z'],
+      galaxy: ['M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5', 'M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z'],
+      alliance: ['M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8', 'M7.5 9.5h2v2h-2z'],
+      alloy: ['M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5', 'M10.5 13.5h3v1.5h-3z'],
+      crystal: ['M12 2.5l5 7-5 12-5-12z M7 9.5h10', 'M12 2.5l2.4 3.4H9.6z'],
+      deut: ['M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z', 'M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z'],
+      energy: ['M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z', 'M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z'],
+      extractor: ['M3 21h18 M7.5 21l2.5-13h4l2.5 13 M8.7 14.5h6.6 M12 8V3 M9 4.5h6', 'M11 17h2v4h-2z'],
+      refinery: ['M3 21h18 M5.5 21l-1.5-6 2.5-4.5L9 15l-1.5 6 M13 21l-2-8.5 4-7 4 7-2 8.5', 'M15 5.5l1.3 2.3h-2.6z'],
+      synth: ['M6 5h7v16H6z M13 9h4.5v9.5 M17.5 18.5H21 M6 10.5h7', 'M7.3 15h4.4v4.7H7.3z'],
+      solar: ['M2.5 15l5-8.5h14l-5 8.5z M5 10.8h14 M11.5 6.5l-2.6 8.5 M16.5 6.5l-2.6 8.5 M12 15v6 M8 21h8', 'M3 2.5h2.5V5H3z'],
+      fusion: ['M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M12 3a9 9 0 0 1 9 9 M12 21a9 9 0 0 1-9-9 M5.6 5.6l2.3 2.3 M18.4 18.4l-2.3-2.3', 'M11 11h2v2h-2z'],
+      robotics: ['M3 21h8 M7 21v-4 M7 17l5.5-6.5 M12.5 10.5l5.5 2 M18 12.5l2 3.5 M18 12.5l3-1.5', 'M11.5 9.5h2.2v2.2h-2.2z'],
+      nanite: ['M4 8l4-4h8l4 4v8l-4 4H8l-4-4z M9 9h6v6H9z', 'M11.2 11.2h1.6v1.6h-1.6z']
+    };
+    const NAV = [['Overview', 'overview', 'CommandDeck.dc.html'], ['Build', 'build', 'Buildings.dc.html'], ['Research', 'research', 'Research.dc.html'], ['Shipyard', 'shipyard', 'Shipyard.dc.html'], ['Fleet', 'fleet', '#'], ['Galaxy', 'galaxy', '#'], ['Alliance', 'alliance', '#']];
+    const nav = NAV.map(([label, k, href]) => { const on = label === 'Build'; return { label, href, p: ICON[k][0], f: ICON[k][1], bg: on ? 'rgba(95,227,192,0.10)' : 'transparent', fg: on ? accent : '#6f8196', cur: on ? 'page' : 'false' }; });
+    const res = [
+      ['ALLOY', 'alloy', '1,248,390', '+42.1K', 72, '#c3cfdc'], ['CRYSTAL', 'crystal', '612,044', '+21.9K', 54, '#7fb8ff'],
+      ['DEUTERIUM', 'deut', '208,715', '+9.3K', 31, accent], ['ENERGY', 'energy', '1,420', '/ 1,860', 76, '#ffc36b']
+    ].map(([n, k, v, d, pc, c]) => ({ n, v, d, pc, c, p: ICON[k][0], f: ICON[k][1] }));
+    const raw = [
+      { n: 'Alloy Extractor', k: 'extractor', cat: 'RESOURCES', l: 18, eff: '+42.1k Alloy/h', next: '→ +46.9k', ca: '60.1k', cc: '15.0k', t: '1h 12m' },
+      { n: 'Crystal Refinery', k: 'refinery', cat: 'RESOURCES', l: 15, eff: '+21.9k Crystal/h', next: '→ +24.6k', busy: true },
+      { n: 'Deuterium Synthesizer', k: 'synth', cat: 'RESOURCES', l: 12, eff: '+9.3k Deuterium/h', next: '→ +10.7k', ca: '30.2k', cc: '10.1k', t: '48m 20s', sel: true },
+      { n: 'Solar Array', k: 'solar', cat: 'ENERGY', l: 20, eff: '+1,860 Energy', next: '→ +2,090', ca: '44.0k', cc: '17.6k', t: '1h 04m' },
+      { n: 'Fusion Reactor', k: 'fusion', cat: 'ENERGY', l: 4, eff: '+320 Energy, burns 1.1k Deut/h', next: '', ca: '14.2k', cc: '5.7k', t: '26m 10s' },
+      { n: 'Robotics Works', k: 'robotics', cat: 'FACILITIES', l: 8, eff: 'Build time −53%', next: '→ −56%', ca: '102k', cc: '30.7k', t: '3h 40m' },
+      { n: 'Orbital Shipyard', k: 'shipyard', cat: 'FACILITIES', l: 10, eff: 'Dreadnought unlocks at 12', next: '', ca: '409k', cc: '204k', t: '9h 15m' },
+      { n: 'Research Lab', k: 'research', cat: 'FACILITIES', l: 9, eff: 'Research speed ×1.9', next: '→ ×2.0', ca: '102k', cc: '205k', t: '7h 02m' },
+      { n: 'Nanite Foundry', k: 'nanite', cat: 'FACILITIES', l: '—', eff: 'Halves build time per level', next: '', locked: true }
+    ];
+    const ART = { "extractor": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M236 96a38 38 0 0 1 64 -26", "far": "M0 172 L36 154 L78 164 L118 142 L160 160 L204 146 L244 162 L300 150 V224 H0 Z", "main": "M0 178 H300 V224 H0 Z M188 178 L206 68 H218 L236 178 Z M120 178 V152 H160 L170 178 Z", "det": "M196 132 H228 M201 104 H223 M212 68 V38 M203 46 H221 M160 158 L199 118 M56 198 a14 4 0 1 0 28 0 a14 4 0 1 0 -28 0 M246 206 a10 3 0 1 0 20 0 a10 3 0 1 0 -20 0 M212 178 V194", "glow": "M210 32 h4 v4 h-4 Z M128 160 h6 v3 h-6 Z M140 160 h6 v3 h-6 Z M209 190 h6 v6 h-6 Z" }, "refinery": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M0 70 Q150 24 300 76 M0 82 Q150 40 300 88", "far": "M0 172 L60 160 L110 168 L170 152 L230 164 L300 156 V224 H0 Z", "main": "M0 180 H300 V224 H0 Z M210 180 L222 100 L234 56 L246 104 L256 180 Z M180 180 L188 130 L198 114 L206 136 L210 180 Z M252 180 L262 146 L270 130 L280 150 L286 180 Z M96 180 a36 32 0 0 1 72 0 Z", "det": "M234 56 L239 180 M198 114 L199 180 M270 130 L271 180 M110 180 a22 20 0 0 1 44 0 M132 148 V132 M124 132 h16", "glow": "M236 108 l3 6 -3 6 -3 -6 Z M129 164 h6 v4 h-6 Z M142 168 h5 v4 h-5 Z M197 144 l2 4 -2 4 -2 -4 Z" }, "synth": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M56 50 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0", "far": "M0 166 H300 V224 H0 Z", "main": "M140 148 H284 V160 H140 Z M158 148 V98 H190 V148 Z M200 148 V114 H226 V148 Z M236 148 V86 a12 6 0 0 1 24 0 V148 Z", "det": "M150 160 V204 M190 160 V204 M230 160 V204 M270 160 V204 M0 184 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M30 204 q10 -4 20 0 t20 0 t20 0 t20 0 M170 214 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 M190 122 H200 M226 128 H236 M248 86 V68 H272", "glow": "M164 106 h20 v3 h-20 Z M164 116 h20 v3 h-20 Z M164 126 h20 v3 h-20 Z M270 64 h4 v4 h-4 Z M156 196 h120 v1.5 h-120 Z" }, "solar": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M200 158 a34 34 0 0 1 68 0 M188 158 a46 46 0 0 1 92 0", "far": "M0 158 H300 V224 H0 Z", "main": "M16 190 L58 170 H110 L68 190 Z M88 190 L130 170 H182 L140 190 Z M160 190 L202 170 H254 L212 190 Z M232 190 L274 170 H300 V190 Z M54 216 L92 196 H140 L102 216 Z M138 216 L176 196 H224 L186 216 Z M222 216 L260 196 H300 L270 216 Z", "det": "M38 180 H88 M110 180 H160 M182 180 H232 M74 206 H120 M158 206 H204 M242 206 H290 M84 170 L42 190 M156 170 L114 190 M228 170 L186 190 M116 196 L78 216 M200 196 L162 216", "glow": "M214 158 a20 20 0 0 1 40 0 Z" }, "fusion": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5", "far": "M0 186 H300 V224 H0 Z", "main": "M130 128 a80 30 0 1 0 160 0 a80 30 0 1 0 -160 0 Z M170 128 a40 12 0 1 1 80 0 a40 12 0 1 1 -80 0 Z M156 186 L174 150 H184 L170 186 Z M264 186 L246 150 H236 L250 186 Z", "det": "M140 128 a70 24 0 0 0 140 0 M150 116 a60 18 0 0 1 120 0 M210 98 V58 M200 58 H220 M178 106 V150 M242 106 V150 M40 186 V150 H96 V186 M52 162 H84", "glow": "M180 128 a30 8 0 1 0 60 0 a30 8 0 1 0 -60 0 Z M185 128 a25 5 0 1 1 50 0 a25 5 0 1 1 -50 0 Z M208 54 h4 v4 h-4 Z" }, "robotics": { "sky": "M20 56 H64 V96 H20 Z M84 56 H128 V96 H84 Z M148 56 H192 V96 H148 Z M212 56 H256 V96 H212 Z", "far": "M0 176 H300 V224 H0 Z", "main": "M100 176 H300 V186 H100 Z M150 176 V160 H176 V176 Z M160 160 L146 112 L155 109 L169 157 Z M146 112 L194 92 L198 100 L151 120 Z M246 176 V162 H270 V176 Z M255 162 L268 118 L277 121 L264 165 Z M268 118 L230 102 L227 110 L266 127 Z M196 176 V156 H222 V176 Z", "det": "M112 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M142 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M172 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M202 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M232 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M262 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M196 96 L204 106 M196 96 L208 92 M228 106 L220 114 M228 106 L220 100 M196 166 H222", "glow": "M204 108 h5 v5 h-5 Z M216 114 h5 v5 h-5 Z M22 58 h40 v2 h-40 Z M86 58 h40 v2 h-40 Z M150 58 h40 v2 h-40 Z M214 58 h40 v2 h-40 Z" }, "shipyard": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M30 100h0.5 M100 120h0.5 M60 140h0.5", "far": "M-20 224 Q150 160 320 224 Z", "main": "M118 58 H292 V64 H118 Z M118 140 H292 V146 H118 Z M128 64 V140 H134 V64 Z M276 64 V140 H282 V64 Z M150 102 L176 87 H250 L278 102 L250 117 H176 Z", "det": "M134 64 L150 92 M134 140 L150 112 M282 64 L268 92 M282 140 L268 112 M176 87 V117 M190 95 H244 M190 109 H244 M160 58 V40 M250 58 V40 M150 40 H260", "glow": "M140 97 h9 v10 h-9 Z M156 54 h3 v3 h-3 Z M204 54 h3 v3 h-3 Z M252 54 h3 v3 h-3 Z M254 98 h8 v8 h-8 Z" }, "research": { "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5", "far": "M0 176 L80 160 L160 172 L240 156 L300 166 V224 H0 Z", "main": "M0 182 H300 V224 H0 Z M170 182 V140 H282 V182 Z M176 140 a50 44 0 0 1 100 0 Z M222 112 L262 72 L271 80 L231 120 Z", "det": "M226 140 V100 M196 160 h12 v10 h-12 Z M240 160 h12 v10 h-12 Z M126 182 V124 M116 132 a10 10 0 0 1 20 0 M126 124 L138 112", "glow": "M266 76 L300 42 L300 47 L270 81 Z M198 162 h8 v6 h-8 Z M242 162 h8 v6 h-8 Z M137 110 h3 v3 h-3 Z" }, "nanite": { "sky": "M150 60h0.5 M166 50h0.5 M182 64h0.5 M198 48h0.5 M214 58h0.5 M230 44h0.5 M246 62h0.5 M206 76h0.5 M174 80h0.5 M240 80h0.5 M158 74h0.5 M224 70h0.5 M190 36h0.5 M262 50h0.5", "far": "M0 180 H300 V224 H0 Z", "main": "M146 180 V120 L178 98 H262 L294 120 V180 Z", "det": "M178 98 V180 M262 98 V180 M190 130 l10 -6 10 6 v12 l-10 6 -10 -6 Z M210 142 l10 -6 10 6 v12 l-10 6 -10 -6 Z M230 130 l10 -6 10 6 v12 l-10 6 -10 -6 Z M146 150 H178 M262 150 H294", "glow": "M198 136 h4 v4 h-4 Z M218 148 h4 v4 h-4 Z M238 136 h4 v4 h-4 Z M168 84 h3 v3 h-3 Z M212 88 h3 v3 h-3 Z M250 86 h3 v3 h-3 Z" } };
+    const buildings = raw.map(b => ({
+      ...b, p: ICON[b.k][0], f: ICON[b.k][1], art: ART[b.k],
+      idle: !b.busy && !b.locked, busy: !!b.busy, locked: !!b.locked,
+      border: b.sel ? accent : (b.busy ? 'rgba(95,227,192,0.35)' : '#16202c'),
+      op: b.locked ? 0.55 : 1,
+      lc: b.busy ? accent : '#d8e1ea',
+      btnBg: b.sel ? accent : 'transparent', btnFg: b.sel ? '#04120d' : '#d8e1ea', btnBd: b.sel ? accent : '#243244'
+    }));
+    return {
+      accent, nav, res, buildings,
+      ic: { alloy: ICON.alloy[0], crystal: ICON.crystal[0] },
+      sel: { p: ICON.synth[0], f: ICON.synth[1], art: ART.synth }
+    };
+  }
+}
+</script>

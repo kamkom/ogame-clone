@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="224" viewBox="0 0 300 224" fill="none">
+  <defs><filter id="bglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+  <rect width="300" height="224" fill="#0b1119"/>
+  <path d="M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M30 100h0.5 M100 120h0.5 M60 140h0.5" stroke="#4a5f78" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M-20 224 Q150 160 320 224 Z" fill="#0f1823" stroke="#1f2d3c" stroke-width="1"/>
+  <path d="M118 58 H292 V64 H118 Z M118 140 H292 V146 H118 Z M128 64 V140 H134 V64 Z M276 64 V140 H282 V64 Z M150 102 L176 87 H250 L278 102 L250 117 H176 Z" fill="#142030" stroke="#566b83" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M134 64 L150 92 M134 140 L150 112 M282 64 L268 92 M282 140 L268 112 M176 87 V117 M190 95 H244 M190 109 H244 M160 58 V40 M250 58 V40 M150 40 H260" stroke="#40546b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140 97 h9 v10 h-9 Z M156 54 h3 v3 h-3 Z M204 54 h3 v3 h-3 Z M252 54 h3 v3 h-3 Z M254 98 h8 v8 h-8 Z" fill="#5fe3c0" filter="url(#bglow)" opacity="0.8"/>
+  <path d="M140 97 h9 v10 h-9 Z M156 54 h3 v3 h-3 Z M204 54 h3 v3 h-3 Z M252 54 h3 v3 h-3 Z M254 98 h8 v8 h-8 Z" fill="#5fe3c0"/>
+</svg>

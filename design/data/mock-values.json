@@ -1,0 +1,1210 @@
+{
+  "command-deck": {
+    "accent": "#5fe3c0",
+    "accentLine": "rgba(95,227,192,0.35)",
+    "planet": "#a9c1dc",
+    "stars": "[100 generated stars]",
+    "nav": [
+      {
+        "label": "Overview",
+        "href": "CommandDeck.dc.html",
+        "p": "M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2",
+        "f": "M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z",
+        "bg": "rgba(95,227,192,0.10)",
+        "fg": "#5fe3c0",
+        "cur": "page"
+      },
+      {
+        "label": "Build",
+        "href": "Buildings.dc.html",
+        "p": "M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3",
+        "f": "M10.8 2h2.4v2.4h-2.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Research",
+        "href": "Research.dc.html",
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Shipyard",
+        "href": "Shipyard.dc.html",
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Fleet",
+        "href": "#",
+        "p": "M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z",
+        "f": "M12 3l3.6 7.2H8.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Galaxy",
+        "href": "#",
+        "p": "M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5",
+        "f": "M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Alliance",
+        "href": "#",
+        "p": "M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8",
+        "f": "M7.5 9.5h2v2h-2z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      }
+    ],
+    "buildings": [
+      {
+        "n": "Alloy Extractor",
+        "l": 18,
+        "p": "M3 21h18 M7.5 21l2.5-13h4l2.5 13 M8.7 14.5h6.6 M12 8V3 M9 4.5h6",
+        "f": "M11 17h2v4h-2z",
+        "fg": "#d8e1ea"
+      },
+      {
+        "n": "Crystal Refinery",
+        "l": 15,
+        "p": "M3 21h18 M5.5 21l-1.5-6 2.5-4.5L9 15l-1.5 6 M13 21l-2-8.5 4-7 4 7-2 8.5",
+        "f": "M15 5.5l1.3 2.3h-2.6z",
+        "fg": "#5fe3c0"
+      },
+      {
+        "n": "Deuterium Synthesizer",
+        "l": 12,
+        "p": "M6 5h7v16H6z M13 9h4.5v9.5 M17.5 18.5H21 M6 10.5h7",
+        "f": "M7.3 15h4.4v4.7H7.3z",
+        "fg": "#d8e1ea"
+      },
+      {
+        "n": "Solar Array",
+        "l": 20,
+        "p": "M2.5 15l5-8.5h14l-5 8.5z M5 10.8h14 M11.5 6.5l-2.6 8.5 M16.5 6.5l-2.6 8.5 M12 15v6 M8 21h8",
+        "f": "M3 2.5h2.5V5H3z",
+        "fg": "#d8e1ea"
+      },
+      {
+        "n": "Robotics Works",
+        "l": 8,
+        "p": "M3 21h8 M7 21v-4 M7 17l5.5-6.5 M12.5 10.5l5.5 2 M18 12.5l2 3.5 M18 12.5l3-1.5",
+        "f": "M11.5 9.5h2.2v2.2h-2.2z",
+        "fg": "#d8e1ea"
+      },
+      {
+        "n": "Orbital Shipyard",
+        "l": 10,
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "fg": "#d8e1ea"
+      },
+      {
+        "n": "Research Lab",
+        "l": 9,
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "fg": "#d8e1ea"
+      }
+    ],
+    "fleet": [
+      {
+        "n": "Interceptor",
+        "q": "240",
+        "hull": "M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19",
+        "det": "M44 16 H52 M28 16 H38",
+        "glow": "M3 14.5h5v3H3z"
+      },
+      {
+        "n": "Corvette",
+        "q": "60",
+        "hull": "M5 12 H14 L20 9 H42 L60 16 L42 23 H20 L14 20 H5 Z",
+        "det": "M20 9 V23 M28 12.5 H44 M28 19.5 H44",
+        "glow": "M1 12.5h4v2.5H1z M1 17h4v2.5H1z"
+      },
+      {
+        "n": "Cruiser",
+        "q": "32",
+        "hull": "M5 10 L13 7 H44 L62 16 L44 25 H13 L5 22 Z",
+        "det": "M13 7 V25 M22 11 H40 M22 21 H40 M46 16 H54",
+        "glow": "M1 11h4v3H1z M1 18h4v3H1z"
+      },
+      {
+        "n": "Dreadnought",
+        "q": "6",
+        "hull": "M3 9 L11 4 H48 L62 12 V20 L48 28 H11 L3 23 Z",
+        "det": "M11 4 V28 M22 4 V28 M32 9 H50 M32 23 H50 M26 16 H56",
+        "glow": "M0 8.5h3v3.5H0z M0 14.2h3v3.6H0z M0 20h3v3.5H0z"
+      },
+      {
+        "n": "Hauler",
+        "q": "85",
+        "hull": "M7 9 H44 L56 12 V20 L44 23 H7 Z",
+        "det": "M17 9 V23 M27 9 V23 M37 9 V23",
+        "glow": "M3 12h4v8H3z"
+      },
+      {
+        "n": "Freighter",
+        "q": "24",
+        "hull": "M5 6 H42 L50 10 L60 16 L50 22 L42 26 H5 Z",
+        "det": "M5 16 H50 M15 6 V26 M29 6 V26",
+        "glow": "M1 8.5h4v4H1z M1 19.5h4v4H1z"
+      },
+      {
+        "n": "Scout Drone",
+        "q": "40",
+        "hull": "M22 16 A10 6 0 1 0 42 16 A10 6 0 1 0 22 16 Z",
+        "det": "M32 10 V4 M32 22 V28 M42 16 H56 M28 16 H36",
+        "glow": "M18 15h4v2h-4z"
+      },
+      {
+        "n": "Salvager",
+        "q": "12",
+        "hull": "M7 11 H38 L46 14 V18 L38 21 H7 Z",
+        "det": "M46 16 L54 8 L60 10 M46 16 L54 24 L60 22 M18 11 V21",
+        "glow": "M3 13h4v6H3z"
+      }
+    ],
+    "res": [
+      {
+        "n": "ALLOY",
+        "v": "1,248,390",
+        "d": "+42.1K",
+        "p": 72,
+        "c": "#c3cfdc",
+        "ip": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+        "fi": "M10.5 13.5h3v1.5h-3z"
+      },
+      {
+        "n": "CRYSTAL",
+        "v": "612,044",
+        "d": "+21.9K",
+        "p": 54,
+        "c": "#7fb8ff",
+        "ip": "M12 2.5l5 7-5 12-5-12z M7 9.5h10",
+        "fi": "M12 2.5l2.4 3.4H9.6z"
+      },
+      {
+        "n": "DEUTERIUM",
+        "v": "208,715",
+        "d": "+9.3K",
+        "p": 31,
+        "c": "#5fe3c0",
+        "ip": "M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z",
+        "fi": "M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z"
+      },
+      {
+        "n": "ENERGY",
+        "v": "1,420",
+        "d": "/ 1,860",
+        "p": 76,
+        "c": "#ffc36b",
+        "ip": "M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z",
+        "fi": "M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z"
+      }
+    ]
+  },
+  "structures": {
+    "accent": "#5fe3c0",
+    "nav": [
+      {
+        "label": "Overview",
+        "href": "CommandDeck.dc.html",
+        "p": "M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2",
+        "f": "M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Build",
+        "href": "Buildings.dc.html",
+        "p": "M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3",
+        "f": "M10.8 2h2.4v2.4h-2.4z",
+        "bg": "rgba(95,227,192,0.10)",
+        "fg": "#5fe3c0",
+        "cur": "page"
+      },
+      {
+        "label": "Research",
+        "href": "Research.dc.html",
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Shipyard",
+        "href": "Shipyard.dc.html",
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Fleet",
+        "href": "#",
+        "p": "M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z",
+        "f": "M12 3l3.6 7.2H8.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Galaxy",
+        "href": "#",
+        "p": "M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5",
+        "f": "M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Alliance",
+        "href": "#",
+        "p": "M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8",
+        "f": "M7.5 9.5h2v2h-2z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      }
+    ],
+    "res": [
+      {
+        "n": "ALLOY",
+        "v": "1,248,390",
+        "d": "+42.1K",
+        "pc": 72,
+        "c": "#c3cfdc",
+        "p": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+        "f": "M10.5 13.5h3v1.5h-3z"
+      },
+      {
+        "n": "CRYSTAL",
+        "v": "612,044",
+        "d": "+21.9K",
+        "pc": 54,
+        "c": "#7fb8ff",
+        "p": "M12 2.5l5 7-5 12-5-12z M7 9.5h10",
+        "f": "M12 2.5l2.4 3.4H9.6z"
+      },
+      {
+        "n": "DEUTERIUM",
+        "v": "208,715",
+        "d": "+9.3K",
+        "pc": 31,
+        "c": "#5fe3c0",
+        "p": "M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z",
+        "f": "M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z"
+      },
+      {
+        "n": "ENERGY",
+        "v": "1,420",
+        "d": "/ 1,860",
+        "pc": 76,
+        "c": "#ffc36b",
+        "p": "M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z",
+        "f": "M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z"
+      }
+    ],
+    "buildings": [
+      {
+        "n": "Alloy Extractor",
+        "k": "extractor",
+        "cat": "RESOURCES",
+        "l": 18,
+        "eff": "+42.1k Alloy/h",
+        "next": "→ +46.9k",
+        "ca": "60.1k",
+        "cc": "15.0k",
+        "t": "1h 12m",
+        "p": "M3 21h18 M7.5 21l2.5-13h4l2.5 13 M8.7 14.5h6.6 M12 8V3 M9 4.5h6",
+        "f": "M11 17h2v4h-2z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M236 96a38 38 0 0 1 64 -26",
+          "far": "M0 172 L36 154 L78 164 L118 142 L160 160 L204 146 L244 162 L300 150 V224 H0 Z",
+          "main": "M0 178 H300 V224 H0 Z M188 178 L206 68 H218 L236 178 Z M120 178 V152 H160 L170 178 Z",
+          "det": "M196 132 H228 M201 104 H223 M212 68 V38 M203 46 H221 M160 158 L199 118 M56 198 a14 4 0 1 0 28 0 a14 4 0 1 0 -28 0 M246 206 a10 3 0 1 0 20 0 a10 3 0 1 0 -20 0 M212 178 V194",
+          "glow": "M210 32 h4 v4 h-4 Z M128 160 h6 v3 h-6 Z M140 160 h6 v3 h-6 Z M209 190 h6 v6 h-6 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Crystal Refinery",
+        "k": "refinery",
+        "cat": "RESOURCES",
+        "l": 15,
+        "eff": "+21.9k Crystal/h",
+        "next": "→ +24.6k",
+        "busy": true,
+        "p": "M3 21h18 M5.5 21l-1.5-6 2.5-4.5L9 15l-1.5 6 M13 21l-2-8.5 4-7 4 7-2 8.5",
+        "f": "M15 5.5l1.3 2.3h-2.6z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M0 70 Q150 24 300 76 M0 82 Q150 40 300 88",
+          "far": "M0 172 L60 160 L110 168 L170 152 L230 164 L300 156 V224 H0 Z",
+          "main": "M0 180 H300 V224 H0 Z M210 180 L222 100 L234 56 L246 104 L256 180 Z M180 180 L188 130 L198 114 L206 136 L210 180 Z M252 180 L262 146 L270 130 L280 150 L286 180 Z M96 180 a36 32 0 0 1 72 0 Z",
+          "det": "M234 56 L239 180 M198 114 L199 180 M270 130 L271 180 M110 180 a22 20 0 0 1 44 0 M132 148 V132 M124 132 h16",
+          "glow": "M236 108 l3 6 -3 6 -3 -6 Z M129 164 h6 v4 h-6 Z M142 168 h5 v4 h-5 Z M197 144 l2 4 -2 4 -2 -4 Z"
+        },
+        "idle": false,
+        "locked": false,
+        "border": "rgba(95,227,192,0.35)",
+        "op": 1,
+        "lc": "#5fe3c0",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Deuterium Synthesizer",
+        "k": "synth",
+        "cat": "RESOURCES",
+        "l": 12,
+        "eff": "+9.3k Deuterium/h",
+        "next": "→ +10.7k",
+        "ca": "30.2k",
+        "cc": "10.1k",
+        "t": "48m 20s",
+        "sel": true,
+        "p": "M6 5h7v16H6z M13 9h4.5v9.5 M17.5 18.5H21 M6 10.5h7",
+        "f": "M7.3 15h4.4v4.7H7.3z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M56 50 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0",
+          "far": "M0 166 H300 V224 H0 Z",
+          "main": "M140 148 H284 V160 H140 Z M158 148 V98 H190 V148 Z M200 148 V114 H226 V148 Z M236 148 V86 a12 6 0 0 1 24 0 V148 Z",
+          "det": "M150 160 V204 M190 160 V204 M230 160 V204 M270 160 V204 M0 184 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M30 204 q10 -4 20 0 t20 0 t20 0 t20 0 M170 214 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 M190 122 H200 M226 128 H236 M248 86 V68 H272",
+          "glow": "M164 106 h20 v3 h-20 Z M164 116 h20 v3 h-20 Z M164 126 h20 v3 h-20 Z M270 64 h4 v4 h-4 Z M156 196 h120 v1.5 h-120 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#5fe3c0",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "#5fe3c0",
+        "btnFg": "#04120d",
+        "btnBd": "#5fe3c0"
+      },
+      {
+        "n": "Solar Array",
+        "k": "solar",
+        "cat": "ENERGY",
+        "l": 20,
+        "eff": "+1,860 Energy",
+        "next": "→ +2,090",
+        "ca": "44.0k",
+        "cc": "17.6k",
+        "t": "1h 04m",
+        "p": "M2.5 15l5-8.5h14l-5 8.5z M5 10.8h14 M11.5 6.5l-2.6 8.5 M16.5 6.5l-2.6 8.5 M12 15v6 M8 21h8",
+        "f": "M3 2.5h2.5V5H3z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M200 158 a34 34 0 0 1 68 0 M188 158 a46 46 0 0 1 92 0",
+          "far": "M0 158 H300 V224 H0 Z",
+          "main": "M16 190 L58 170 H110 L68 190 Z M88 190 L130 170 H182 L140 190 Z M160 190 L202 170 H254 L212 190 Z M232 190 L274 170 H300 V190 Z M54 216 L92 196 H140 L102 216 Z M138 216 L176 196 H224 L186 216 Z M222 216 L260 196 H300 L270 216 Z",
+          "det": "M38 180 H88 M110 180 H160 M182 180 H232 M74 206 H120 M158 206 H204 M242 206 H290 M84 170 L42 190 M156 170 L114 190 M228 170 L186 190 M116 196 L78 216 M200 196 L162 216",
+          "glow": "M214 158 a20 20 0 0 1 40 0 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Fusion Reactor",
+        "k": "fusion",
+        "cat": "ENERGY",
+        "l": 4,
+        "eff": "+320 Energy, burns 1.1k Deut/h",
+        "next": "",
+        "ca": "14.2k",
+        "cc": "5.7k",
+        "t": "26m 10s",
+        "p": "M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M12 3a9 9 0 0 1 9 9 M12 21a9 9 0 0 1-9-9 M5.6 5.6l2.3 2.3 M18.4 18.4l-2.3-2.3",
+        "f": "M11 11h2v2h-2z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5",
+          "far": "M0 186 H300 V224 H0 Z",
+          "main": "M130 128 a80 30 0 1 0 160 0 a80 30 0 1 0 -160 0 Z M170 128 a40 12 0 1 1 80 0 a40 12 0 1 1 -80 0 Z M156 186 L174 150 H184 L170 186 Z M264 186 L246 150 H236 L250 186 Z",
+          "det": "M140 128 a70 24 0 0 0 140 0 M150 116 a60 18 0 0 1 120 0 M210 98 V58 M200 58 H220 M178 106 V150 M242 106 V150 M40 186 V150 H96 V186 M52 162 H84",
+          "glow": "M180 128 a30 8 0 1 0 60 0 a30 8 0 1 0 -60 0 Z M185 128 a25 5 0 1 1 50 0 a25 5 0 1 1 -50 0 Z M208 54 h4 v4 h-4 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Robotics Works",
+        "k": "robotics",
+        "cat": "FACILITIES",
+        "l": 8,
+        "eff": "Build time −53%",
+        "next": "→ −56%",
+        "ca": "102k",
+        "cc": "30.7k",
+        "t": "3h 40m",
+        "p": "M3 21h8 M7 21v-4 M7 17l5.5-6.5 M12.5 10.5l5.5 2 M18 12.5l2 3.5 M18 12.5l3-1.5",
+        "f": "M11.5 9.5h2.2v2.2h-2.2z",
+        "art": {
+          "sky": "M20 56 H64 V96 H20 Z M84 56 H128 V96 H84 Z M148 56 H192 V96 H148 Z M212 56 H256 V96 H212 Z",
+          "far": "M0 176 H300 V224 H0 Z",
+          "main": "M100 176 H300 V186 H100 Z M150 176 V160 H176 V176 Z M160 160 L146 112 L155 109 L169 157 Z M146 112 L194 92 L198 100 L151 120 Z M246 176 V162 H270 V176 Z M255 162 L268 118 L277 121 L264 165 Z M268 118 L230 102 L227 110 L266 127 Z M196 176 V156 H222 V176 Z",
+          "det": "M112 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M142 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M172 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M202 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M232 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M262 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M196 96 L204 106 M196 96 L208 92 M228 106 L220 114 M228 106 L220 100 M196 166 H222",
+          "glow": "M204 108 h5 v5 h-5 Z M216 114 h5 v5 h-5 Z M22 58 h40 v2 h-40 Z M86 58 h40 v2 h-40 Z M150 58 h40 v2 h-40 Z M214 58 h40 v2 h-40 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Orbital Shipyard",
+        "k": "shipyard",
+        "cat": "FACILITIES",
+        "l": 10,
+        "eff": "Dreadnought unlocks at 12",
+        "next": "",
+        "ca": "409k",
+        "cc": "204k",
+        "t": "9h 15m",
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M30 100h0.5 M100 120h0.5 M60 140h0.5",
+          "far": "M-20 224 Q150 160 320 224 Z",
+          "main": "M118 58 H292 V64 H118 Z M118 140 H292 V146 H118 Z M128 64 V140 H134 V64 Z M276 64 V140 H282 V64 Z M150 102 L176 87 H250 L278 102 L250 117 H176 Z",
+          "det": "M134 64 L150 92 M134 140 L150 112 M282 64 L268 92 M282 140 L268 112 M176 87 V117 M190 95 H244 M190 109 H244 M160 58 V40 M250 58 V40 M150 40 H260",
+          "glow": "M140 97 h9 v10 h-9 Z M156 54 h3 v3 h-3 Z M204 54 h3 v3 h-3 Z M252 54 h3 v3 h-3 Z M254 98 h8 v8 h-8 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Research Lab",
+        "k": "research",
+        "cat": "FACILITIES",
+        "l": 9,
+        "eff": "Research speed ×1.9",
+        "next": "→ ×2.0",
+        "ca": "102k",
+        "cc": "205k",
+        "t": "7h 02m",
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "art": {
+          "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5",
+          "far": "M0 176 L80 160 L160 172 L240 156 L300 166 V224 H0 Z",
+          "main": "M0 182 H300 V224 H0 Z M170 182 V140 H282 V182 Z M176 140 a50 44 0 0 1 100 0 Z M222 112 L262 72 L271 80 L231 120 Z",
+          "det": "M226 140 V100 M196 160 h12 v10 h-12 Z M240 160 h12 v10 h-12 Z M126 182 V124 M116 132 a10 10 0 0 1 20 0 M126 124 L138 112",
+          "glow": "M266 76 L300 42 L300 47 L270 81 Z M198 162 h8 v6 h-8 Z M242 162 h8 v6 h-8 Z M137 110 h3 v3 h-3 Z"
+        },
+        "idle": true,
+        "busy": false,
+        "locked": false,
+        "border": "#16202c",
+        "op": 1,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      },
+      {
+        "n": "Nanite Foundry",
+        "k": "nanite",
+        "cat": "FACILITIES",
+        "l": "—",
+        "eff": "Halves build time per level",
+        "next": "",
+        "locked": true,
+        "p": "M4 8l4-4h8l4 4v8l-4 4H8l-4-4z M9 9h6v6H9z",
+        "f": "M11.2 11.2h1.6v1.6h-1.6z",
+        "art": {
+          "sky": "M150 60h0.5 M166 50h0.5 M182 64h0.5 M198 48h0.5 M214 58h0.5 M230 44h0.5 M246 62h0.5 M206 76h0.5 M174 80h0.5 M240 80h0.5 M158 74h0.5 M224 70h0.5 M190 36h0.5 M262 50h0.5",
+          "far": "M0 180 H300 V224 H0 Z",
+          "main": "M146 180 V120 L178 98 H262 L294 120 V180 Z",
+          "det": "M178 98 V180 M262 98 V180 M190 130 l10 -6 10 6 v12 l-10 6 -10 -6 Z M210 142 l10 -6 10 6 v12 l-10 6 -10 -6 Z M230 130 l10 -6 10 6 v12 l-10 6 -10 -6 Z M146 150 H178 M262 150 H294",
+          "glow": "M198 136 h4 v4 h-4 Z M218 148 h4 v4 h-4 Z M238 136 h4 v4 h-4 Z M168 84 h3 v3 h-3 Z M212 88 h3 v3 h-3 Z M250 86 h3 v3 h-3 Z"
+        },
+        "idle": false,
+        "busy": false,
+        "border": "#16202c",
+        "op": 0.55,
+        "lc": "#d8e1ea",
+        "btnBg": "transparent",
+        "btnFg": "#d8e1ea",
+        "btnBd": "#243244"
+      }
+    ],
+    "ic": {
+      "alloy": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+      "crystal": "M12 2.5l5 7-5 12-5-12z M7 9.5h10"
+    },
+    "sel": {
+      "p": "M6 5h7v16H6z M13 9h4.5v9.5 M17.5 18.5H21 M6 10.5h7",
+      "f": "M7.3 15h4.4v4.7H7.3z",
+      "art": {
+        "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M56 50 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0",
+        "far": "M0 166 H300 V224 H0 Z",
+        "main": "M140 148 H284 V160 H140 Z M158 148 V98 H190 V148 Z M200 148 V114 H226 V148 Z M236 148 V86 a12 6 0 0 1 24 0 V148 Z",
+        "det": "M150 160 V204 M190 160 V204 M230 160 V204 M270 160 V204 M0 184 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M30 204 q10 -4 20 0 t20 0 t20 0 t20 0 M170 214 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 M190 122 H200 M226 128 H236 M248 86 V68 H272",
+        "glow": "M164 106 h20 v3 h-20 Z M164 116 h20 v3 h-20 Z M164 126 h20 v3 h-20 Z M270 64 h4 v4 h-4 Z M156 196 h120 v1.5 h-120 Z"
+      }
+    }
+  },
+  "research": {
+    "accent": "#5fe3c0",
+    "nav": [
+      {
+        "label": "Overview",
+        "href": "CommandDeck.dc.html",
+        "p": "M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2",
+        "f": "M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Build",
+        "href": "Buildings.dc.html",
+        "p": "M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3",
+        "f": "M10.8 2h2.4v2.4h-2.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Research",
+        "href": "Research.dc.html",
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "bg": "rgba(95,227,192,0.10)",
+        "fg": "#5fe3c0",
+        "cur": "page"
+      },
+      {
+        "label": "Shipyard",
+        "href": "Shipyard.dc.html",
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Fleet",
+        "href": "#",
+        "p": "M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z",
+        "f": "M12 3l3.6 7.2H8.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Galaxy",
+        "href": "#",
+        "p": "M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5",
+        "f": "M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Alliance",
+        "href": "#",
+        "p": "M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8",
+        "f": "M7.5 9.5h2v2h-2z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      }
+    ],
+    "res": [
+      {
+        "n": "ALLOY",
+        "v": "1,248,390",
+        "d": "+42.1K",
+        "pc": 72,
+        "c": "#c3cfdc",
+        "p": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+        "f": "M10.5 13.5h3v1.5h-3z"
+      },
+      {
+        "n": "CRYSTAL",
+        "v": "612,044",
+        "d": "+21.9K",
+        "pc": 54,
+        "c": "#7fb8ff",
+        "p": "M12 2.5l5 7-5 12-5-12z M7 9.5h10",
+        "f": "M12 2.5l2.4 3.4H9.6z"
+      },
+      {
+        "n": "DEUTERIUM",
+        "v": "208,715",
+        "d": "+9.3K",
+        "pc": 31,
+        "c": "#5fe3c0",
+        "p": "M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z",
+        "f": "M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z"
+      },
+      {
+        "n": "ENERGY",
+        "v": "1,420",
+        "d": "/ 1,860",
+        "pc": 76,
+        "c": "#ffc36b",
+        "p": "M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z",
+        "f": "M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z"
+      }
+    ],
+    "lanes": [
+      {
+        "title": "ENERGY & PHYSICS",
+        "nodes": [
+          {
+            "n": "Energy Theory",
+            "p": "M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z",
+            "f": "M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z",
+            "hasPrev": false,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 12",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Photon Lasers",
+            "p": "M3 12h10 M13 8.5l7 3.5-7 3.5z M3 8h4 M3 16h4",
+            "f": "M19.5 11h2v2h-2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Researching → 9",
+            "sc": "#5fe3c0",
+            "bd": "rgba(95,227,192,0.35)",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Ion Lattice",
+            "p": "M5 5h14v14H5z M5 12h14 M12 5v14",
+            "f": "M11 11h2v2h-2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 5",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Plasma Containment",
+            "p": "M20 12a8 8 0 1 1-16 0a8 8 0 1 1 16 0z M4 12c4-3.2 12-3.2 16 0 M4 12c4 3.2 12 3.2 16 0",
+            "f": "M10.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 2",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          }
+        ]
+      },
+      {
+        "title": "PROPULSION",
+        "nodes": [
+          {
+            "n": "Combustion Drive",
+            "p": "M9 8h8v8H9z M17 10l4-2v8l-4-2 M3 10h6 M5 14h4",
+            "f": "M1.5 11.2h2.2v1.6H1.5z",
+            "hasPrev": false,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 10",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Impulse Drive",
+            "p": "M4 12h6 M10 7l8 5-8 5z M3 8l3 4-3 4",
+            "f": "M19 11h2v2h-2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 7",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Warp Drive",
+            "p": "M4 6l6 6-6 6 M10 6l6 6-6 6",
+            "f": "M17.5 10.5l1.5 1.5-1.5 1.5-1.5-1.5z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 3",
+            "sc": "#8a9bb0",
+            "bd": "#5fe3c0",
+            "bdStyle": "solid",
+            "bg": "rgba(95,227,192,0.07)",
+            "op": 1
+          },
+          {
+            "n": "Fold Drive",
+            "p": "M4 12h5 M15 12h5 M9 7v10 M15 7v10 M9 7l6 10",
+            "f": "M11.3 11.3h1.4v1.4h-1.4z",
+            "hasPrev": true,
+            "lineStyle": "dashed",
+            "lineColor": "#2a3a4d",
+            "status": "Locked",
+            "sc": "#6f8196",
+            "bd": "#243244",
+            "bdStyle": "dashed",
+            "bg": "transparent",
+            "op": 0.6
+          }
+        ]
+      },
+      {
+        "title": "MILITARY",
+        "nodes": [
+          {
+            "n": "Weapons Systems",
+            "p": "M12 3v4 M12 17v4 M3 12h4 M17 12h4 M7 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0",
+            "f": "M11 11h2v2h-2z",
+            "hasPrev": false,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 11",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Shield Harmonics",
+            "p": "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M8 11.5c2.5-2 5.5-2 8 0",
+            "f": "M11 14h2v2h-2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 9",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Armor Plating",
+            "p": "M4 7l8-4 8 4 M4 12l8-4 8 4 M4 17l8-4 8 4",
+            "f": "M11 19.5h2V21h-2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 10",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Graviton Lance",
+            "p": "M12 3v18 M6 7l6-4 6 4 M6 17l6 4 6-4",
+            "f": "M10.5 10.5h3v3h-3z",
+            "hasPrev": true,
+            "lineStyle": "dashed",
+            "lineColor": "#2a3a4d",
+            "status": "Locked",
+            "sc": "#6f8196",
+            "bd": "#243244",
+            "bdStyle": "dashed",
+            "bg": "transparent",
+            "op": 0.6
+          }
+        ]
+      },
+      {
+        "title": "SCIENCE & EXPANSION",
+        "nodes": [
+          {
+            "n": "Signal Intelligence",
+            "p": "M12 21V11 M8 21h8 M8.2 7.2a5.4 5.4 0 0 1 7.6 0 M5.5 4.5a9.2 9.2 0 0 1 13 0",
+            "f": "M11 9.8h2v2h-2z",
+            "hasPrev": false,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 8",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Computation",
+            "p": "M7 7h10v10H7z M10 3v4 M14 3v4 M10 17v4 M14 17v4 M3 10h4 M3 14h4 M17 10h4 M17 14h4",
+            "f": "M10 10h4v4h-4z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 10",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Astrophysics",
+            "p": "M4 18l9-7.5 M13 10.5l3-3 3.5 3.5-3 3z M9 14.5l2 6 M7 16l-2.5 5",
+            "f": "M19 2.5l.8 1.6 1.7.2-1.3 1.2.3 1.7-1.5-.8-1.5.8.3-1.7-1.3-1.2 1.7-.2z",
+            "hasPrev": true,
+            "lineStyle": "solid",
+            "lineColor": "#3b4d63",
+            "status": "Level 6",
+            "sc": "#8a9bb0",
+            "bd": "#16202c",
+            "bdStyle": "solid",
+            "bg": "#0b1119",
+            "op": 1
+          },
+          {
+            "n": "Stellar Network",
+            "p": "M6 6l6 6 M18 6l-6 6 M12 12v6 M3.5 3.5h5v5h-5z M15.5 3.5h5v5h-5z M9.5 17.5h5v5h-5z",
+            "f": "M11 11h2v2h-2z",
+            "hasPrev": true,
+            "lineStyle": "dashed",
+            "lineColor": "#2a3a4d",
+            "status": "Locked",
+            "sc": "#6f8196",
+            "bd": "#243244",
+            "bdStyle": "dashed",
+            "bg": "transparent",
+            "op": 0.6
+          }
+        ]
+      }
+    ],
+    "sel": {
+      "p": "M4 6l6 6-6 6 M10 6l6 6-6 6",
+      "f": "M17.5 10.5l1.5 1.5-1.5 1.5-1.5-1.5z"
+    },
+    "reqs": [
+      {
+        "n": "Research Lab",
+        "v": "9 / 7",
+        "c": "#5fe3c0",
+        "d": "M5 12.5l4.5 4.5L19 7.5"
+      },
+      {
+        "n": "Energy Theory",
+        "v": "12 / 5",
+        "c": "#5fe3c0",
+        "d": "M5 12.5l4.5 4.5L19 7.5"
+      },
+      {
+        "n": "Shield Harmonics",
+        "v": "9 / 5",
+        "c": "#5fe3c0",
+        "d": "M5 12.5l4.5 4.5L19 7.5"
+      },
+      {
+        "n": "Ion Lattice (for Fold Drive)",
+        "v": "5 / 7",
+        "c": "#ff8a8a",
+        "d": "M7 7l10 10 M17 7L7 17"
+      }
+    ]
+  },
+  "shipyard": {
+    "accent": "#5fe3c0",
+    "nav": [
+      {
+        "label": "Overview",
+        "href": "CommandDeck.dc.html",
+        "p": "M17.5 12a5.5 5.5 0 1 1-11 0a5.5 5.5 0 1 1 11 0z M3.6 15.8c-1.4-1.9 2.6-5 8.2-6.8s10-1.8 8.6.2",
+        "f": "M17.4 4.6a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Build",
+        "href": "Buildings.dc.html",
+        "p": "M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3",
+        "f": "M10.8 2h2.4v2.4h-2.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Research",
+        "href": "Research.dc.html",
+        "p": "M12 4.5l7.5 13h-15z M1.5 12.5h6.3 M15.6 11.2l6.9-2.7 M16.2 12.8l6.3.9 M16.6 14.4l5.6 3.7",
+        "f": "M12 10.8l1.3 1.9-1.3 1.9-1.3-1.9z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Shipyard",
+        "href": "Shipyard.dc.html",
+        "p": "M3 7.5V4h3.5 M21 7.5V4h-3.5 M3 16.5V20h3.5 M21 16.5V20h-3.5 M7.5 12l3.5-3h5l2.5 3-2.5 3h-5z",
+        "f": "M5 11h2.2v2H5z",
+        "bg": "rgba(95,227,192,0.10)",
+        "fg": "#5fe3c0",
+        "cur": "page"
+      },
+      {
+        "label": "Fleet",
+        "href": "#",
+        "p": "M5.5 13.5l2.8 6H2.7z M18.5 13.5l2.8 6h-5.6z",
+        "f": "M12 3l3.6 7.2H8.4z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Galaxy",
+        "href": "#",
+        "p": "M12 12c0-3.2 3.1-5.4 6.5-4.3 M12 12c0 3.2-3.1 5.4-6.5 4.3 M12 12c3.2 0 5.4 3.1 4.3 6.5 M12 12c-3.2 0-5.4-3.1-4.3-6.5",
+        "f": "M12 10.3l1.7 1.7-1.7 1.7-1.7-1.7z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      },
+      {
+        "label": "Alliance",
+        "href": "#",
+        "p": "M8.5 3.5l5.5 2.2V11c0 4.3-2.6 7-5.5 8.6C5.6 18 3 15.3 3 11V5.7z M16 7.2l5 2V13c0 3.3-2 5.4-4.6 6.8",
+        "f": "M7.5 9.5h2v2h-2z",
+        "bg": "transparent",
+        "fg": "#6f8196",
+        "cur": "false"
+      }
+    ],
+    "res": [
+      {
+        "n": "ALLOY",
+        "v": "1,248,390",
+        "d": "+42.1K",
+        "pc": 72,
+        "c": "#c3cfdc",
+        "p": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+        "f": "M10.5 13.5h3v1.5h-3z"
+      },
+      {
+        "n": "CRYSTAL",
+        "v": "612,044",
+        "d": "+21.9K",
+        "pc": 54,
+        "c": "#7fb8ff",
+        "p": "M12 2.5l5 7-5 12-5-12z M7 9.5h10",
+        "f": "M12 2.5l2.4 3.4H9.6z"
+      },
+      {
+        "n": "DEUTERIUM",
+        "v": "208,715",
+        "d": "+9.3K",
+        "pc": 31,
+        "c": "#5fe3c0",
+        "p": "M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z",
+        "f": "M10.2 14a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0z"
+      },
+      {
+        "n": "ENERGY",
+        "v": "1,420",
+        "d": "/ 1,860",
+        "pc": 76,
+        "c": "#ffc36b",
+        "p": "M12 2.5l8.3 4.8v9.4L12 21.5l-8.3-4.8V7.3z",
+        "f": "M13 6.5l-4 6.5h3l-1 4.5 4-6.5h-3z"
+      }
+    ],
+    "ships": [
+      {
+        "n": "Interceptor",
+        "role": "Light fighter",
+        "q": "240",
+        "hull": "M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19",
+        "det": "M44 16 H52 M28 16 H38",
+        "glow": "M3 14.5h5v3H3z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Corvette",
+        "role": "Escort",
+        "q": "60",
+        "hull": "M5 12 H14 L20 9 H42 L60 16 L42 23 H20 L14 20 H5 Z",
+        "det": "M20 9 V23 M28 12.5 H44 M28 19.5 H44",
+        "glow": "M1 12.5h4v2.5H1z M1 17h4v2.5H1z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Cruiser",
+        "role": "Line ship",
+        "q": "32",
+        "hull": "M5 10 L13 7 H44 L62 16 L44 25 H13 L5 22 Z",
+        "det": "M13 7 V25 M22 11 H40 M22 21 H40 M46 16 H54",
+        "glow": "M1 11h4v3H1z M1 18h4v3H1z",
+        "bg": "rgba(95,227,192,0.07)",
+        "bd": "#5fe3c0"
+      },
+      {
+        "n": "Dreadnought",
+        "role": "Capital ship",
+        "q": "6",
+        "hull": "M3 9 L11 4 H48 L62 12 V20 L48 28 H11 L3 23 Z",
+        "det": "M11 4 V28 M22 4 V28 M32 9 H50 M32 23 H50 M26 16 H56",
+        "glow": "M0 8.5h3v3.5H0z M0 14.2h3v3.6H0z M0 20h3v3.5H0z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Hauler",
+        "role": "Small cargo",
+        "q": "85",
+        "hull": "M7 9 H44 L56 12 V20 L44 23 H7 Z",
+        "det": "M17 9 V23 M27 9 V23 M37 9 V23",
+        "glow": "M3 12h4v8H3z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Freighter",
+        "role": "Large cargo",
+        "q": "24",
+        "hull": "M5 6 H42 L50 10 L60 16 L50 22 L42 26 H5 Z",
+        "det": "M5 16 H50 M15 6 V26 M29 6 V26",
+        "glow": "M1 8.5h4v4H1z M1 19.5h4v4H1z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Scout Drone",
+        "role": "Espionage",
+        "q": "40",
+        "hull": "M22 16 A10 6 0 1 0 42 16 A10 6 0 1 0 22 16 Z",
+        "det": "M32 10 V4 M32 22 V28 M42 16 H56 M28 16 H36",
+        "glow": "M18 15h4v2h-4z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      },
+      {
+        "n": "Salvager",
+        "role": "Debris recovery",
+        "q": "12",
+        "hull": "M7 11 H38 L46 14 V18 L38 21 H7 Z",
+        "det": "M46 16 L54 8 L60 10 M46 16 L54 24 L60 22 M18 11 V21",
+        "glow": "M3 13h4v6H3z",
+        "bg": "#0b1119",
+        "bd": "#16202c"
+      }
+    ],
+    "q1": {
+      "hull": "M8 16 L22 12.5 L40 13.5 L58 16 L40 18.5 L22 19.5 Z M22 12.5 L17 4 H25 L33 13 M22 19.5 L17 28 H25 L33 19",
+      "det": "M44 16 H52 M28 16 H38",
+      "glow": "M3 14.5h5v3H3z"
+    },
+    "q2": {
+      "hull": "M7 9 H44 L56 12 V20 L44 23 H7 Z",
+      "det": "M17 9 V23 M27 9 V23 M37 9 V23",
+      "glow": "M3 12h4v8H3z"
+    },
+    "ic": {
+      "alloy": "M3.5 17l3-5.5h11l3 5.5z M7.5 11.5l2-4.5h5l2 4.5",
+      "crystal": "M12 2.5l5 7-5 12-5-12z M7 9.5h10",
+      "deut": "M12 3c3.5 4.4 5.5 7.4 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 10.4 8.5 7.4 12 3z"
+    },
+    "stats": [
+      {
+        "n": "ATTACK",
+        "v": "400"
+      },
+      {
+        "n": "SHIELDS",
+        "v": "50"
+      },
+      {
+        "n": "HULL",
+        "v": "27,000"
+      },
+      {
+        "n": "SPEED",
+        "v": "15,000"
+      },
+      {
+        "n": "CARGO",
+        "v": "800"
+      },
+      {
+        "n": "FUEL / JUMP",
+        "v": "300"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="224" viewBox="0 0 300 224" fill="none">
+  <defs><filter id="bglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+  <rect width="300" height="224" fill="#0b1119"/>
+  <path d="M20 56 H64 V96 H20 Z M84 56 H128 V96 H84 Z M148 56 H192 V96 H148 Z M212 56 H256 V96 H212 Z" stroke="#4a5f78" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M0 176 H300 V224 H0 Z" fill="#0f1823" stroke="#1f2d3c" stroke-width="1"/>
+  <path d="M100 176 H300 V186 H100 Z M150 176 V160 H176 V176 Z M160 160 L146 112 L155 109 L169 157 Z M146 112 L194 92 L198 100 L151 120 Z M246 176 V162 H270 V176 Z M255 162 L268 118 L277 121 L264 165 Z M268 118 L230 102 L227 110 L266 127 Z M196 176 V156 H222 V176 Z" fill="#142030" stroke="#566b83" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M112 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M142 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M172 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M202 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M232 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M262 196 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M196 96 L204 106 M196 96 L208 92 M228 106 L220 114 M228 106 L220 100 M196 166 H222" stroke="#40546b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M204 108 h5 v5 h-5 Z M216 114 h5 v5 h-5 Z M22 58 h40 v2 h-40 Z M86 58 h40 v2 h-40 Z M150 58 h40 v2 h-40 Z M214 58 h40 v2 h-40 Z" fill="#5fe3c0" filter="url(#bglow)" opacity="0.8"/>
+  <path d="M204 108 h5 v5 h-5 Z M216 114 h5 v5 h-5 Z M22 58 h40 v2 h-40 Z M86 58 h40 v2 h-40 Z M150 58 h40 v2 h-40 Z M214 58 h40 v2 h-40 Z" fill="#5fe3c0"/>
+</svg>
