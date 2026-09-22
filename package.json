@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@ai-hero/sandcastle": "^0.12.0",
+    "zod": "^4.6.5"
+  },
+  "scripts": {
+    "sandcastle": "npx tsx .sandcastle/main.ts"
+  }
+}
