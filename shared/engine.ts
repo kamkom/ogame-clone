@@ -152,8 +152,7 @@ function deuteriumAvailable(state: EconomyState): boolean {
 
 /**
  * Advance `state` to `now` in closed form. Returns a new state; the input is not mutated.
- * `now` before `lastUpdatedAt` is a no-op that just moves the timestamp forward is avoided —
- * time only ever moves forward here.
+ * A `now` at or before `lastUpdatedAt` is a no-op — time only ever moves forward here.
  */
 export function advance(
   state: EconomyState,
