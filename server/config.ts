@@ -1,21 +1,21 @@
 import { z } from 'zod';
 
-// A boolean parsed from an env string: "true"/"1"/"yes" are true, "false"/"0"/"no" false.
+// A boolean parsed from an env string: "true"/"1"/"yes"/"on" are true, "false"/"0"/"no"/"off" false.
+const TRUE_VALUES = ['true', '1', 'yes', 'on'];
+const FALSE_VALUES = ['false', '0', 'no', 'off'];
+
 const envBool = (defaultValue: boolean) =>
   z
     .string()
     .optional()
-    .transform((v) => (v === undefined ? defaultValue : v))
-    .pipe(
-      z.union([z.boolean(), z.string()]).transform((v, ctx) => {
-        if (typeof v === 'boolean') return v;
-        const s = v.trim().toLowerCase();
-        if (['true', '1', 'yes', 'on'].includes(s)) return true;
-        if (['false', '0', 'no', 'off'].includes(s)) return false;
-        ctx.addIssue({ code: 'custom', message: `expected a boolean, got "${v}"` });
-        return z.NEVER;
-      }),
-    );
+    .transform((v, ctx) => {
+      if (v === undefined) return defaultValue;
+      const s = v.trim().toLowerCase();
+      if (TRUE_VALUES.includes(s)) return true;
+      if (FALSE_VALUES.includes(s)) return false;
+      ctx.addIssue({ code: 'custom', message: `expected a boolean, got "${v}"` });
+      return z.NEVER;
+    });
 
 // An integer env var with a default and a minimum.
 const envInt = (defaultValue: number, min: number) =>

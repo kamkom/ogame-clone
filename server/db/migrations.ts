@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
+import { tx } from './tx.ts';
 
 const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 
@@ -55,16 +56,11 @@ export function migrate(db: DatabaseSync, migrations: Migration[] = loadMigratio
   for (const migration of migrations) {
     if (migration.version <= version) continue;
 
-    db.exec('BEGIN IMMEDIATE');
-    try {
+    tx(db, () => {
       db.exec(migration.sql);
       // user_version does not accept bound parameters; the value is a validated integer.
       db.exec(`PRAGMA user_version = ${migration.version}`);
-      db.exec('COMMIT');
-    } catch (err) {
-      db.exec('ROLLBACK');
-      throw err;
-    }
+    });
     version = migration.version;
     applied += 1;
   }
