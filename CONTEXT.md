@@ -19,12 +19,16 @@ A configured multiplier that scales production and construction speed across the
 _Avoid_: Game speed, tick rate
 
 **Planet**:
-A Player's home world. It holds Resources, Building levels, ships and queues, and has Coordinates, a name, Fields and a temperature range.
+A Player's home world. It holds Resources, Structure levels, ships and queues, and has Coordinates, a name, Fields and a temperature range.
 _Avoid_: Colony, base
 
 **Coordinates**:
 A Planet's address in the form `[galaxy:system:position]`, e.g. `[4:212:8]`. It is drawn at random at registration, is unique to one Planet, and never changes. The position (1–15) sets the Planet's temperature range and any production bonus.
 _Avoid_: Location; "position" for the whole address (it means only the third number)
+
+**Fields**:
+A Planet's buildable slots. Each Structure level occupies one Field, so a Planet's total Structure levels cannot exceed its Fields. A home Planet starts with 163 Fields, plus the bonus added by its Terraformer. A Structure upgrade may start only while `used + inProgress < max`, where `used` counts finished levels, `inProgress` counts upgrades running in a Build Slot, and `max` is the Field count.
+_Avoid_: Slots (reserved for Build Slot), space, size
 
 ### Resources
 
