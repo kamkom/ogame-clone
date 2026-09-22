@@ -6,6 +6,11 @@ node_modules/
 !.yarn/plugins
 !.yarn/releases
 
+# Runtime data (SQLite database + WAL/SHM)
+data/
+*.sqlite
+*.sqlite-*
+
 # Build output
 dist/
 build/

@@ -1,0 +1,12 @@
+dist
+node_modules
+coverage
+design
+.sandcastle
+package-lock.json
+*.html
+
+# Docs are authored by hand; don't reflow them.
+*.md
+docs
+CONTEXT.md

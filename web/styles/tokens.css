@@ -1,0 +1,85 @@
+/* Design tokens pulled from the four "D" screens. The design hard-codes every value
+   inline; the names below are ours, the values are the design's. Usage counts come
+   from design/source/*.dc.html. */
+:root {
+  /* Surfaces, darkest to lightest */
+  --bg: #06090e; /* page background, number input */
+  --rail: rgba(8, 12, 18, 0.9); /* left nav rail */
+  --panel: #0b1119; /* cards, panels, top-bar chips */
+  --panel-raised: #0e1520; /* fleet-dock ship tiles */
+  --panel-art: #0d141e; /* research detail blueprint box */
+  --icon-well: #111925; /* square behind a card's icon */
+  --dock: rgba(11, 17, 25, 0.92); /* Fleet Dock overlay */
+
+  /* Lines */
+  --line: #16202c; /* default 1px border, dividers, progress track */
+  --line-soft: #141d28; /* rows inside the Structures list */
+  --line-icon: #1a2533; /* icon-well and art-box border */
+  --line-control: #1f2b3a; /* planet picker, small buttons */
+  --line-strong: #243244; /* outline buttons, dashed "locked" borders */
+
+  /* Text */
+  --text: #d8e1ea; /* primary */
+  --text-body: #9fb0c2; /* descriptions, secondary values */
+  --text-label: #8a9bb0; /* key column in stat rows */
+  --text-muted: #6f8196; /* captions, uppercase labels, inactive nav */
+  --text-icon: #cfdbe7; /* icon strokes on cards */
+  --on-accent: #04120d; /* text on filled accent buttons */
+
+  /* Accent — the design exposes it as a prop with 4 options */
+  --accent: #5fe3c0; /* default; alternatives #ffb35c, #7fb8ff, #ff7a8a */
+  --accent-hover: #b8fff0; /* link hover */
+  --accent-line: rgba(95, 227, 192, 0.35); /* border of busy / active cards */
+  --accent-wash: rgba(95, 227, 192, 0.1); /* active nav item */
+  --accent-select: rgba(95, 227, 192, 0.07); /* selected card / list row */
+  --accent-grid: rgba(95, 227, 192, 0.06); /* blueprint grid lines (0.05 on Shipyard) */
+
+  /* Resources */
+  --alloy: #c3cfdc;
+  --crystal: #7fb8ff;
+  --deuterium: var(--accent); /* the design reuses the accent for Deuterium */
+  --energy: #ffc36b;
+  --danger: #ff8a8a; /* unmet requirement */
+
+  /* Art strokes (ships, structure illustrations, planet HUD) */
+  --art-hull: #a9bacd;
+  --art-hull-fill: rgba(159, 177, 197, 0.12);
+  --art-detail: #5d6f84;
+  --art-blueprint: #b7c6d6;
+  --art-blueprint-detail: #4d5f74;
+  --art-sky: #4a5f78;
+  --art-far: #0f1823;
+  --art-far-line: #1f2d3c;
+  --art-main: #142030;
+  --art-main-line: #566b83;
+  --art-det: #40546b;
+  --hud-ring: #2a3a4d;
+  --hud-corner: #3b4d63;
+  --planet: #a9c1dc; /* planet tint; a prop in the design */
+  --star: #e6f0ff;
+
+  /* Type */
+  --font-body: Barlow, system-ui, sans-serif; /* 400 / 500 / 600 */
+  --font-display: 'Chakra Petch', sans-serif; /* numbers, labels, headings, buttons */
+  /* sizes in use: 10 11 12 13 14 15 16 17 18 20 22 26 28 30 px; 14 is body */
+  /* uppercase labels: 11px Chakra Petch, letter-spacing 0.12em, --text-muted */
+  /* buttons / section titles: letter-spacing 0.06–0.08em */
+
+  /* Radii */
+  --r-bar: 3px; /* resource bars */
+  --r-progress: 4px;
+  --r-segment: 7px; /* segmented-control buttons */
+  --r-button: 8px;
+  --r-icon: 9px;
+  --r-card: 10px;
+  --r-panel: 12px;
+  --r-dock: 14px;
+
+  /* Layout: fixed 1440×900 canvas */
+  --rail-w: 88px;
+  --topbar-h: 72px;
+  --content-left: 112px; /* rail + 24 */
+  --content-top: 96px; /* top bar + 24 */
+  --content-w: 948px; /* main column on Structures / Research */
+  --aside-w: 340px; /* right panel, 24px from the edge */
+}
