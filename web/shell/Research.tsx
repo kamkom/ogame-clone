@@ -239,11 +239,15 @@ function QueueDropdown({
     <div style={dropdownStyle} role="list" aria-label="Research Queue">
       {queue.map((e, i) => {
         const name = catalogName(e.technology);
-        let timing = formatDuration(entryDurationSec(e, planet, speed));
-        let color = 'var(--text-body)';
+        // The head shows its live countdown; waiting entries show how long they will take.
+        let timing: string;
+        let color: string;
         if (i === 0) {
           timing = head.text;
           color = head.waiting ? 'var(--warn)' : 'var(--accent)';
+        } else {
+          timing = formatDuration(entryDurationSec(e, planet, speed));
+          color = 'var(--text-body)';
         }
         return (
           <div
@@ -514,8 +518,9 @@ function footNote(kind: QueueActionKind, view: TechView, planet: PlanetSnapshot)
     return `${formatResource(planet.energy.produced)} Energy produced · needs ${formatResource(view.energyRequired)}`;
   }
   if (kind === 'short') {
-    if (view.affordableInSec === null)
+    if (view.affordableInSec === null) {
       return 'Not reachable at current production or Storage Capacity';
+    }
     const rates = view.checks
       .filter((c) => !c.met)
       .map((c) => `${c.label} +${formatCompact(planet.ratesPerHour[c.resource])}/h`)

@@ -153,12 +153,14 @@ export function cancelResearch(
   };
   const cancelled = cancelCascade(queue, entryId, levels);
 
+  const refund = db.prepare(
+    `UPDATE planets SET alloy = alloy + ?, crystal = crystal + ?, deuterium = deuterium + ? WHERE id = ?`,
+  );
+  const remove = db.prepare(`DELETE FROM research_queue WHERE id = ?`);
   for (const r of rows) {
     if (!cancelled.has(r.id)) continue;
-    db.prepare(
-      `UPDATE planets SET alloy = alloy + ?, crystal = crystal + ?, deuterium = deuterium + ? WHERE id = ?`,
-    ).run(r.cost_alloy, r.cost_crystal, r.cost_deuterium, planet.id);
-    db.prepare(`DELETE FROM research_queue WHERE id = ?`).run(r.id);
+    refund.run(r.cost_alloy, r.cost_crystal, r.cost_deuterium, planet.id);
+    remove.run(r.id);
   }
   startWaitingHead(db, planet, now, speed);
   return { ok: true };
