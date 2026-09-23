@@ -9,6 +9,9 @@ import {
 } from './economy.ts';
 import {
   advance,
+  deuteriumDepletion,
+  type EventSource,
+  V1_SOURCES,
   type BuildSlot,
   type EconomyState,
   liveProfile,
@@ -597,5 +600,37 @@ describe('advance — determinism property', () => {
       }),
       { numRuns: 500 },
     );
+  });
+});
+
+describe('advance — pluggable event sources', () => {
+  // A stand-in for a later source (e.g. a fleet arriving): 1,000 Alloy land 30 minutes in.
+  const DROP_AT = HOUR / 2;
+  const alloyDrop: EventSource = {
+    next: (_state, _profile, from) => (from < DROP_AT ? DROP_AT : null),
+    settle: (s, t) =>
+      t >= DROP_AT && s.lastUpdatedAt < DROP_AT
+        ? { ...s, resources: { ...s.resources, alloy: s.resources.alloy + 1000 } }
+        : s,
+  };
+
+  it('takes its boundaries and their effects from the sources it is given', () => {
+    const next = advance(state(), HOUR, 1, [...V1_SOURCES, alloyDrop]);
+    expect(next.resources.alloy).toBe(1530);
+    expect(nextEventAt(state(), 1, 0, [...V1_SOURCES, alloyDrop])).toBe(DROP_AT);
+  });
+
+  it('runs the three v1 sources (Build Slots, Research, Shipyard) plus depletion by default', () => {
+    const slot: BuildSlot = {
+      slot: 1,
+      structureKey: 'alloy-extractor',
+      field: 'alloyMine',
+      targetLevel: 1,
+      endsAt: HOUR,
+    };
+    const s = state({ buildSlots: [slot] });
+    expect(advance(s, 2 * HOUR, 1).structures.alloyMine).toBe(1);
+    // Without the Build Slot source nothing finishes the upgrade.
+    expect(advance(s, 2 * HOUR, 1, [deuteriumDepletion]).structures.alloyMine).toBe(0);
   });
 });

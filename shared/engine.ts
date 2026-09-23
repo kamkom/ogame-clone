@@ -1,6 +1,7 @@
 // The catch-up engine (ADR 0001). `advance(state, now, speed)` is pure over an in-memory Player
-// state: it walks event boundaries in time order and integrates each Resource in closed form
-// between them, capped at Storage Capacity. It never reads the wall clock.
+// state: it walks the boundaries its event sources report (Build Slots, Research, Shipyard, Deuterium
+// depletion) in time order and integrates each Resource in closed form between them, capped at
+// Storage Capacity. It never reads the wall clock.
 
 import {
   alloyMineEnergyUse,
@@ -194,25 +195,6 @@ export function computeProfile(
   };
 }
 
-/**
- * A source of catch-up boundaries. The only built-in source is Deuterium depletion; fleet
- * arrivals and the like can be added later without changing the integrator (ADR 0001).
- */
-export interface EventSource {
-  /** The next boundary strictly after `from` (epoch ms), given the live profile, or null. */
-  next(state: EconomyState, profile: ProductionProfile, from: number): number | null;
-}
-
-/** The moment the Deuterium stock would reach 0 while it is draining. */
-export const deuteriumDepletion: EventSource = {
-  next(state, profile, from) {
-    const rate = profile.rates.deuterium;
-    const stock = state.resources.deuterium;
-    if (rate >= 0 || stock <= 0) return null;
-    return from + (stock / -rate) * MS_PER_HOUR;
-  },
-};
-
 /** Accrue one Resource over `dtHours` at `rate`, honouring the Storage Capacity rule (§6.4). */
 function accrue(stock: number, rate: number, dtHours: number, cap: number): number {
   if (rate < 0) return Math.max(0, stock + rate * dtHours);
@@ -231,21 +213,86 @@ export function labUpgrading(buildSlots: BuildSlot[] | undefined): boolean {
 }
 
 /**
- * Start the head of `queue` at `at` if it is waiting, fixing its duration from `lab` — unless the
- * Research Lab is upgrading, in which case it keeps waiting for the Lab's boundary (Lab lock).
+ * A source of catch-up boundaries (ADR 0001). `advance` knows nothing about Build Slots, Research
+ * or the Shipyard: it asks every source for its next boundary, integrates up to the soonest one,
+ * then lets every source settle. A later source (fleet arrivals, say) plugs in the same way.
  */
-function startHead(
-  queue: ResearchEntry[],
-  buildSlots: BuildSlot[],
-  at: number,
-  lab: number,
-  speed: number,
-): void {
-  const head = queue[0];
-  if (!head || head.startedAt !== null || labUpgrading(buildSlots)) return;
-  const durationMs = researchDurationSec(head.cost.alloy, head.cost.crystal, lab, speed) * 1000;
-  queue[0] = { ...head, startedAt: at, endsAt: at + durationMs };
+export interface EventSource {
+  /** The next integration boundary strictly after `from` (epoch ms), given the live profile, or null. */
+  next(state: EconomyState, profile: ProductionProfile, from: number): number | null;
+  /**
+   * Apply what this source finished in `(state.lastUpdatedAt, t]` and start whatever now waits,
+   * returning a new state. Also called once at the start of `advance` with `t = lastUpdatedAt`.
+   */
+  settle?(state: EconomyState, t: number, speed: number): EconomyState;
+  /**
+   * When the client should refetch for this source, if not at every `next` boundary (the Shipyard
+   * reports every unit so docked counts rise one by one, though only some units split the integral).
+   */
+  refetchAt?(state: EconomyState, from: number): number | null;
 }
+
+/** The moment the Deuterium stock would reach 0 while it is draining. */
+export const deuteriumDepletion: EventSource = {
+  next(state, profile, from) {
+    const rate = profile.rates.deuterium;
+    const stock = state.resources.deuterium;
+    if (rate >= 0 || stock <= 0) return null;
+    return from + (stock / -rate) * MS_PER_HOUR;
+  },
+};
+
+/** Build Slots: a finished upgrade raises its level, so production is recomputed from its endsAt. */
+export const buildSlotSource: EventSource = {
+  next(state, _profile, from) {
+    let soonest: number | null = null;
+    for (const bs of state.buildSlots ?? []) {
+      if (bs.endsAt > from && (soonest === null || bs.endsAt < soonest)) soonest = bs.endsAt;
+    }
+    return soonest;
+  },
+  settle(state, t) {
+    let structures = state.structures;
+    const remaining: BuildSlot[] = [];
+    for (const bs of state.buildSlots ?? []) {
+      if (bs.endsAt <= t + EPSILON) {
+        if (bs.field !== null) structures = { ...structures, [bs.field]: bs.targetLevel };
+      } else {
+        remaining.push(bs);
+      }
+    }
+    return { ...state, structures, buildSlots: remaining };
+  },
+};
+
+/**
+ * The Research Queue: the head's end is a boundary (a production Technology changes the rates from
+ * then on). Settling finishes the head, then starts the next one with the Lab level as it now
+ * stands, so it must run after the Build Slots (a Lab finishing at `t` already counts). While the
+ * Lab upgrades the head keeps waiting and starts at the Lab's boundary (queue rule 14).
+ */
+export const researchSource: EventSource = {
+  next(state, _profile, from) {
+    const headEnd = state.researchQueue?.[0]?.endsAt ?? null;
+    return headEnd !== null && headEnd > from ? headEnd : null;
+  },
+  settle(state, t, speed) {
+    const queue = [...(state.researchQueue ?? [])];
+    const techs = { energyTech: state.energyTech, plasmaTech: state.plasmaTech };
+    const head = queue[0];
+    if (head && head.endsAt !== null && head.endsAt <= t + EPSILON) {
+      if (head.field !== null) techs[head.field] = head.targetLevel;
+      queue.shift();
+    }
+    const next = queue[0];
+    if (next && next.startedAt === null && !labUpgrading(state.buildSlots)) {
+      const lab = state.structures.researchLab;
+      const durationMs = researchDurationSec(next.cost.alloy, next.cost.crystal, lab, speed) * 1000;
+      queue[0] = { ...next, startedAt: t, endsAt: t + durationMs };
+    }
+    return { ...state, ...techs, researchQueue: queue };
+  },
+};
 
 /** Start the head Order at `at` if it is waiting, fixing its unit time from the current levels. */
 function startOrder(
@@ -267,44 +314,60 @@ function startOrder(
 }
 
 /**
- * The Shipyard's next integration boundary. Each Solar Satellite unit changes Energy, so each is
- * a boundary; other ships don't affect production, so their units are counted exactly at whatever
- * boundary comes next and only the Order's end (where the next Order starts) splits the integral.
+ * The Shipyard. Each Solar Satellite unit changes Energy, so each is a boundary; other ships don't
+ * affect production, so their units are counted exactly at whatever boundary comes next and only
+ * the Order's end (where the next Order starts) splits the integral. The client still refetches at
+ * every unit.
  */
-function shipyardBoundary(orders: ShipyardOrder[]): number | null {
-  const head = orders[0];
-  if (!head) return null;
-  return head.solarSatellite ? orderNextUnitAt(head) : orderEndsAt(head);
-}
+export const shipyardSource: EventSource = {
+  next(state) {
+    const head = state.shipyardOrders?.[0];
+    if (!head) return null;
+    return head.solarSatellite ? orderNextUnitAt(head) : orderEndsAt(head);
+  },
+  refetchAt(state) {
+    const head = state.shipyardOrders?.[0];
+    return head ? orderNextUnitAt(head) : null;
+  },
+  // Count the head's units finished by `t`; when it is done, start the next Order at the moment
+  // its last unit finished. A Solar Satellite adds Energy from its own boundary on.
+  settle(state, t, speed) {
+    const orders = [...(state.shipyardOrders ?? [])];
+    startOrder(orders, t, state.structures, speed);
+    let satellites = 0;
+    for (let head = orders[0]; head?.startedAt != null && head.unitDurationMs != null;) {
+      const done = Math.min(
+        head.quantity,
+        Math.floor((t - head.startedAt + EPSILON) / head.unitDurationMs),
+      );
+      if (head.solarSatellite) satellites += done - head.completed;
+      if (done < head.quantity) {
+        orders[0] = { ...head, completed: done };
+        break;
+      }
+      const endsAt = orderEndsAt(head)!;
+      orders.shift();
+      startOrder(orders, endsAt, state.structures, speed);
+      head = orders[0];
+    }
+    return {
+      ...state,
+      shipyardOrders: orders,
+      solarSatellites: state.solarSatellites + satellites,
+    };
+  },
+};
 
 /**
- * Count the head's units finished by `t`, and when it is done, start the next Order at the moment
- * its last unit finished. Returns how many Solar Satellites rolled out.
+ * The v1 sources, in settle order: Build Slots before Research (the Lab level at a boundary counts
+ * for the next head) and before the Shipyard (so do the Shipyard levels for the next Order).
  */
-function settleOrders(
-  orders: ShipyardOrder[],
-  t: number,
-  structures: Structures,
-  speed: number,
-): number {
-  let satellites = 0;
-  for (let head = orders[0]; head?.startedAt != null && head.unitDurationMs != null;) {
-    const done = Math.min(
-      head.quantity,
-      Math.floor((t - head.startedAt + EPSILON) / head.unitDurationMs),
-    );
-    if (head.solarSatellite) satellites += done - head.completed;
-    if (done < head.quantity) {
-      orders[0] = { ...head, completed: done };
-      break;
-    }
-    const endsAt = orderEndsAt(head)!;
-    orders.shift();
-    startOrder(orders, endsAt, structures, speed);
-    head = orders[0];
-  }
-  return satellites;
-}
+export const V1_SOURCES: readonly EventSource[] = [
+  buildSlotSource,
+  researchSource,
+  shipyardSource,
+  deuteriumDepletion,
+];
 
 /**
  * Advance `state` to `now` in closed form. Returns a new state; the input is not mutated.
@@ -314,28 +377,12 @@ export function advance(
   state: EconomyState,
   now: number,
   speed: number,
-  sources: EventSource[] = [deuteriumDepletion],
+  sources: readonly EventSource[] = V1_SOURCES,
 ): EconomyState {
-  const resources = { ...state.resources };
-  let structures = { ...state.structures };
-  let buildSlots = (state.buildSlots ?? []).map((s) => ({ ...s }));
-  const researchQueue = (state.researchQueue ?? []).map((e) => ({ ...e }));
-  const shipyardOrders = (state.shipyardOrders ?? []).map((o) => ({ ...o }));
-  const techs = { energyTech: state.energyTech, plasmaTech: state.plasmaTech };
-  let solarSatellites = state.solarSatellites;
   let t = state.lastUpdatedAt;
-  startHead(researchQueue, buildSlots, t, structures.researchLab, speed);
-  startOrder(shipyardOrders, t, structures, speed);
+  let cursor = settleAll(state, sources, t, speed);
 
   while (t < now - EPSILON) {
-    const cursor: EconomyState = {
-      ...state,
-      ...techs,
-      resources,
-      structures,
-      buildSlots,
-      solarSatellites,
-    };
     const profile = computeProfile(cursor, speed, deuteriumAvailable(cursor));
 
     let segEnd = now;
@@ -343,70 +390,33 @@ export function advance(
       const boundary = source.next(cursor, profile, t);
       if (boundary !== null && boundary > t && boundary < segEnd) segEnd = boundary;
     }
-    // A finished upgrade is a boundary: production is recomputed from its endsAt on (§Build Slots).
-    for (const bs of buildSlots) {
-      if (bs.endsAt > t && bs.endsAt < segEnd) segEnd = bs.endsAt;
-    }
-    // So is the running Research: a production Technology changes the rates from its endsAt on.
-    const headEnd = researchQueue[0]?.endsAt ?? null;
-    if (headEnd !== null && headEnd > t && headEnd < segEnd) segEnd = headEnd;
-    // And so is the Shipyard: each Solar Satellite unit, and the end of the head Order.
-    const unitAt = shipyardBoundary(shipyardOrders);
-    if (unitAt !== null && unitAt > t && unitAt < segEnd) segEnd = unitAt;
     if (segEnd <= t) segEnd = now; // guard against a degenerate zero-length segment
 
     const dtHours = (segEnd - t) / MS_PER_HOUR;
-    resources.alloy = accrue(resources.alloy, profile.rates.alloy, dtHours, profile.storage.alloy);
-    resources.crystal = accrue(
-      resources.crystal,
-      profile.rates.crystal,
-      dtHours,
-      profile.storage.crystal,
-    );
-    resources.deuterium = accrue(
-      resources.deuterium,
-      profile.rates.deuterium,
-      dtHours,
-      profile.storage.deuterium,
-    );
+    const { rates, storage } = profile;
+    const r = cursor.resources;
+    const resources = {
+      alloy: accrue(r.alloy, rates.alloy, dtHours, storage.alloy),
+      crystal: accrue(r.crystal, rates.crystal, dtHours, storage.crystal),
+      deuterium: accrue(r.deuterium, rates.deuterium, dtHours, storage.deuterium),
+    };
+    cursor = settleAll({ ...cursor, resources }, sources, segEnd, speed);
     t = segEnd;
-
-    // Apply any upgrades that finish exactly at `t`: raise the level and free the slot.
-    const remaining: BuildSlot[] = [];
-    for (const bs of buildSlots) {
-      if (bs.endsAt <= t + EPSILON) {
-        if (bs.field !== null) structures = { ...structures, [bs.field]: bs.targetLevel };
-      } else {
-        remaining.push(bs);
-      }
-    }
-    buildSlots = remaining;
-
-    // Then finish the Research head if it ends at `t`, and start the next one at this boundary
-    // with the Lab level as it now stands (a Lab finishing at `t` already counts).
-    const head = researchQueue[0];
-    if (head && head.endsAt !== null && head.endsAt <= t + EPSILON) {
-      if (head.field !== null) techs[head.field] = head.targetLevel;
-      researchQueue.shift();
-    }
-    // A head waiting on the Lab starts here too, once the Lab upgrade has finished at `t`.
-    startHead(researchQueue, buildSlots, t, structures.researchLab, speed);
-
-    // Then count the ships finished by `t`; a Solar Satellite adds Energy from its own boundary on.
-    solarSatellites += settleOrders(shipyardOrders, t, structures, speed);
   }
 
-  return {
-    ...state,
-    ...techs,
-    resources,
-    structures,
-    buildSlots,
-    researchQueue,
-    shipyardOrders,
-    solarSatellites,
-    lastUpdatedAt: Math.max(now, state.lastUpdatedAt),
-  };
+  return { ...cursor, lastUpdatedAt: Math.max(now, state.lastUpdatedAt) };
+}
+
+/** Let every source settle at boundary `t`, in order; the state then stands at `t`. */
+function settleAll(
+  state: EconomyState,
+  sources: readonly EventSource[],
+  t: number,
+  speed: number,
+): EconomyState {
+  let settled = state;
+  for (const source of sources) settled = source.settle?.(settled, t, speed) ?? settled;
+  return { ...settled, lastUpdatedAt: t };
 }
 
 /** The live profile at the current stock, for building a snapshot. */
@@ -414,31 +424,22 @@ export function liveProfile(state: EconomyState, speed: number): ProductionProfi
   return computeProfile(state, speed, deuteriumAvailable(state));
 }
 
-/** The next boundary (epoch ms) at or after `from`, or null when nothing is scheduled. */
+/** When the client should next refetch (epoch ms, after `from`), or null when nothing is scheduled. */
 export function nextEventAt(
   state: EconomyState,
   speed: number,
   from: number,
-  sources: EventSource[] = [deuteriumDepletion],
+  sources: readonly EventSource[] = V1_SOURCES,
 ): number | null {
   const profile = liveProfile(state, speed);
   let soonest: number | null = null;
   for (const source of sources) {
-    const boundary = source.next(state, profile, from);
-    if (boundary !== null && (soonest === null || boundary < soonest)) soonest = boundary;
+    const boundary = source.refetchAt
+      ? source.refetchAt(state, from)
+      : source.next(state, profile, from);
+    if (boundary !== null && boundary > from && (soonest === null || boundary < soonest)) {
+      soonest = boundary;
+    }
   }
-  // A finishing upgrade is a boundary too, so the client refetches when a Build Slot frees.
-  for (const bs of state.buildSlots ?? []) {
-    if (bs.endsAt > from && (soonest === null || bs.endsAt < soonest)) soonest = bs.endsAt;
-  }
-  // And so is the running Research, so the client refetches when it finishes.
-  const headEnd = state.researchQueue?.[0]?.endsAt ?? null;
-  if (headEnd !== null && headEnd > from && (soonest === null || headEnd < soonest)) {
-    soonest = headEnd;
-  }
-  // And every Shipyard unit, so docked counts rise one by one on the client.
-  const head = state.shipyardOrders?.[0];
-  const unitAt = head ? orderNextUnitAt(head) : null;
-  if (unitAt !== null && unitAt > from && (soonest === null || unitAt < soonest)) soonest = unitAt;
   return soonest;
 }
