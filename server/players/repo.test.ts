@@ -14,6 +14,7 @@ import {
   tminFor,
 } from './repo.ts';
 import { buildPlanetSnapshot } from './snapshot.ts';
+import { loadPlayerState } from './state.ts';
 
 /** rng that replays a fixed list, cycling so it never runs dry. */
 function cycle(values: number[]) {
@@ -106,7 +107,7 @@ describe('registerPlayer', () => {
       systems: 499,
       tokenHash: hashToken('t'),
     });
-    const snap = buildPlanetSnapshot(db, getPlanetByPlayer(db, playerId)!, {
+    const snap = buildPlanetSnapshot(loadPlayerState(db, playerId)!, {
       serverNow: 1,
       speed: 1,
     });

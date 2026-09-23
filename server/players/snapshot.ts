@@ -1,22 +1,15 @@
-import type { DatabaseSync } from 'node:sqlite';
+import { SHIPS, STRUCTURES, TECHNOLOGIES } from '#shared/catalog.ts';
 import { formatCoordinates } from '#shared/coords.ts';
-import { liveProfile, nextEventAt, orderEndsAt, orderNextUnitAt } from '#shared/engine.ts';
-import type {
-  BuildSlotSnapshot,
-  PlanetSnapshot,
-  ResearchEntrySnapshot,
-  ShipyardOrderSnapshot,
-} from '#shared/snapshot.ts';
-import { readEconomyState, readShipyardOrders } from './economy.ts';
+import { nextEventAt, orderEndsAt, orderNextUnitAt } from '#shared/engine.ts';
 import {
-  HOME_DIAMETER_KM,
-  type PlanetRow,
-  shipCounts,
-  structureLevels,
-  technologyLevels,
-  tminFor,
-} from './repo.ts';
-import { planetFields } from './structures.ts';
+  allLevels,
+  economyOf,
+  planetFields,
+  playerProfile,
+  type PlayerState,
+} from '#shared/player.ts';
+import type { BuildSlotSnapshot, PlanetSnapshot } from '#shared/snapshot.ts';
+import { HOME_DIAMETER_KM, tminFor } from './repo.ts';
 
 export type { PlanetSnapshot } from '#shared/snapshot.ts';
 
@@ -25,117 +18,31 @@ export interface SnapshotContext {
   speed: number;
 }
 
-/** The Player's Research Queue in order, head first. */
-function researchQueue(db: DatabaseSync, playerId: number): ResearchEntrySnapshot[] {
-  const rows = db
-    .prepare(
-      `SELECT id, technology_key, target_level, cost_alloy, cost_crystal, cost_deuterium, started_at, ends_at
-         FROM research_queue WHERE player_id = ? ORDER BY seq`,
-    )
-    .all(playerId) as {
-    id: number;
-    technology_key: string;
-    target_level: number;
-    cost_alloy: number;
-    cost_crystal: number;
-    cost_deuterium: number;
-    started_at: number | null;
-    ends_at: number | null;
-  }[];
-  // Only a Lab upgrade holds the head back, so a head that hasn't started is waiting on the Lab.
-  return rows.map((r, i) => ({
-    id: r.id,
-    technology: r.technology_key,
-    targetLevel: r.target_level,
-    cost: { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
-    startedAt: r.started_at,
-    endsAt: r.ends_at,
-    waitingOnLab: i === 0 && r.started_at === null,
-  }));
-}
+/**
+ * Build the spec-shaped snapshot from a saved Player state (every queue entry has its id) that has
+ * already been advanced to `ctx.serverNow`.
+ */
+export function buildPlanetSnapshot(state: PlayerState, ctx: SnapshotContext): PlanetSnapshot {
+  const { planet } = state;
+  const coordinates = { galaxy: planet.galaxy, system: planet.system, position: planet.position };
+  const economy = economyOf(state);
+  const profile = playerProfile(state, ctx.speed);
 
-/** The Planet's Shipyard Orders in order, head first, with the paid totals and unit times. */
-function shipyardOrders(db: DatabaseSync, planetId: number): ShipyardOrderSnapshot[] {
-  const paid = db
-    .prepare(
-      `SELECT id, cost_alloy, cost_crystal, cost_deuterium FROM shipyard_orders WHERE planet_id = ?`,
-    )
-    .all(planetId) as {
-    id: number;
-    cost_alloy: number;
-    cost_crystal: number;
-    cost_deuterium: number;
-  }[];
-  const costById = new Map(
-    paid.map((r) => [
-      r.id,
-      { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
-    ]),
-  );
-  return readShipyardOrders(db, planetId).map((o) => ({
-    id: o.id,
-    ship: o.shipKey,
-    quantity: o.quantity,
-    completed: o.completed,
-    cost: costById.get(o.id)!,
-    unitDurationMs: o.unitDurationMs,
-    startedAt: o.startedAt,
-    nextUnitAt: orderNextUnitAt(o),
-    endsAt: orderEndsAt(o),
-  }));
-}
-
-/** The two Build Slots, index 0 = slot 1, index 1 = slot 2; null where the slot is free. */
-function buildSlots(db: DatabaseSync, planetId: number): (BuildSlotSnapshot | null)[] {
-  const rows = db
-    .prepare(
-      `SELECT slot, structure_key, target_level, cost_alloy, cost_crystal, cost_deuterium, started_at, ends_at
-         FROM build_slots WHERE planet_id = ?`,
-    )
-    .all(planetId) as {
-    slot: number;
-    structure_key: string;
-    target_level: number;
-    cost_alloy: number;
-    cost_crystal: number;
-    cost_deuterium: number;
-    started_at: number;
-    ends_at: number;
-  }[];
-  const slots: (BuildSlotSnapshot | null)[] = [null, null];
-  for (const r of rows) {
-    slots[r.slot - 1] = {
-      slot: r.slot,
-      structure: r.structure_key,
-      targetLevel: r.target_level,
-      cost: { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
-      startedAt: r.started_at,
-      endsAt: r.ends_at,
+  const buildSlots: (BuildSlotSnapshot | null)[] = [null, null];
+  for (const bs of state.buildSlots) {
+    buildSlots[bs.slot - 1] = {
+      slot: bs.slot,
+      structure: bs.structure,
+      targetLevel: bs.targetLevel,
+      cost: bs.cost,
+      startedAt: bs.startedAt,
+      endsAt: bs.endsAt,
     };
   }
-  return slots;
-}
 
-/**
- * Build the spec-shaped snapshot for a Planet row that has already been advanced to
- * `ctx.serverNow` (so `resources_updated_at === serverNow`).
- */
-export function buildPlanetSnapshot(
-  db: DatabaseSync,
-  planet: PlanetRow,
-  ctx: SnapshotContext,
-): PlanetSnapshot {
-  const coordinates = {
-    galaxy: planet.galaxy,
-    system: planet.system,
-    position: planet.position,
-  };
-  const economy = readEconomyState(db, planet);
-  const profile = liveProfile(economy, ctx.speed);
-  const slots = buildSlots(db, planet.id);
   return {
     serverNow: ctx.serverNow,
-    lastUpdatedAt: planet.resources_updated_at,
+    lastUpdatedAt: state.lastUpdatedAt,
     universeSpeed: ctx.speed,
     planet: {
       id: planet.id,
@@ -144,23 +51,41 @@ export function buildPlanetSnapshot(
       coordinatesLabel: formatCoordinates(coordinates),
       tmin: tminFor(planet.tmax),
       tmax: planet.tmax,
-      fields: planetFields(db, planet.id),
+      fields: planetFields(state),
       diameterKm: HOME_DIAMETER_KM,
     },
-    resources: {
-      alloy: planet.alloy,
-      crystal: planet.crystal,
-      deuterium: planet.deuterium,
-    },
+    resources: { ...state.resources },
     ratesPerHour: profile.rates,
     storageCapacity: profile.storage,
     energy: profile.energy,
-    structures: structureLevels(db, planet.id),
-    buildSlots: slots,
-    technologies: technologyLevels(db, planet.player_id),
-    researchQueue: researchQueue(db, planet.player_id),
-    ships: shipCounts(db, planet.id),
-    shipyardOrders: shipyardOrders(db, planet.id),
+    structures: allLevels(state.structures, STRUCTURES),
+    buildSlots,
+    technologies: allLevels(state.technologies, TECHNOLOGIES),
+    // Only a Lab upgrade holds the head back, so a head that hasn't started is waiting on the Lab.
+    researchQueue: state.researchQueue.map((e, i) => ({
+      id: e.id!,
+      technology: e.technology,
+      targetLevel: e.targetLevel,
+      cost: e.cost,
+      startedAt: e.startedAt,
+      endsAt: e.endsAt,
+      waitingOnLab: i === 0 && e.startedAt === null,
+    })),
+    ships: allLevels(state.ships, SHIPS),
+    shipyardOrders: state.shipyardOrders.map((o, i) => {
+      const engine = economy.shipyardOrders![i]!;
+      return {
+        id: o.id!,
+        ship: o.ship,
+        quantity: o.quantity,
+        completed: o.completed,
+        cost: o.cost,
+        unitDurationMs: o.unitDurationMs,
+        startedAt: o.startedAt,
+        nextUnitAt: orderNextUnitAt(engine),
+        endsAt: orderEndsAt(engine),
+      };
+    }),
     nextEventAt: nextEventAt(economy, ctx.speed, ctx.serverNow),
   };
 }

@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { validatePlanetName } from '#shared/planetName.ts';
-import { loadAdvancedPlanet } from '../players/economy.ts';
-import { renamePlanet } from '../players/repo.ts';
+import { renamePlanet } from '#shared/commands.ts';
 import { buildPlanetSnapshot } from '../players/snapshot.ts';
+import { loadAdvancedPlayer } from '../players/state.ts';
 import { requireSession } from './guards.ts';
 import { gamePost, runCommand } from './game.ts';
 
@@ -18,9 +18,9 @@ export function registerPlanetRoutes(app: FastifyInstance): void {
     (request: FastifyRequest, reply: FastifyReply) => {
       const now = app.clock.now();
       const speed = app.config.UNIVERSE_SPEED;
-      const planet = loadAdvancedPlanet(app.db, request.playerId, now, speed);
-      if (!planet) return reply.code(404).send({ error: 'no_planet' });
-      return reply.send(buildPlanetSnapshot(app.db, planet, { serverNow: now, speed }));
+      const state = loadAdvancedPlayer(app.db, request.playerId, now, speed);
+      if (!state) return reply.code(404).send({ error: 'no_planet' });
+      return reply.send(buildPlanetSnapshot(state, { serverNow: now, speed }));
     },
   );
 
@@ -31,10 +31,7 @@ export function registerPlanetRoutes(app: FastifyInstance): void {
       const result = validatePlanetName((request.body as { name: string }).name);
       if (result.error) return reply.code(400).send({ error: 'validation', code: result.error });
 
-      return runCommand(request, reply, (db, planet) => {
-        renamePlanet(db, planet.player_id, result.name);
-        return { ok: true };
-      });
+      return runCommand(request, reply, (state) => renamePlanet(state, result.name));
     },
   );
 }

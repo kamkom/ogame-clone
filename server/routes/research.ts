@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { cancelResearch, enqueueResearch } from '../players/research.ts';
+import { cancelResearch, enqueueResearch } from '#shared/commands.ts';
 import { EMPTY_BODY, ID_PARAM, gamePost, runCommand } from './game.ts';
 
 const enqueueSchema = {
@@ -22,8 +22,8 @@ export function registerResearchRoutes(app: FastifyInstance): void {
     (request: FastifyRequest, reply: FastifyReply) => {
       // An unknown catalog key is a 409 not_found, like every other rejection.
       const { technology } = request.body as { technology: string };
-      return runCommand(request, reply, (db, planet, now, speed) =>
-        enqueueResearch(db, planet, technology, now, speed),
+      return runCommand(request, reply, (state, now, speed) =>
+        enqueueResearch(state, technology, now, speed),
       );
     },
   );
@@ -34,8 +34,8 @@ export function registerResearchRoutes(app: FastifyInstance): void {
     (request: FastifyRequest, reply: FastifyReply) => {
       // A missing entry is a 409 not_found: it may have just finished.
       const entryId = Number((request.params as { entryId: string }).entryId);
-      return runCommand(request, reply, (db, planet, now, speed) =>
-        cancelResearch(db, planet, entryId, now, speed),
+      return runCommand(request, reply, (state, now, speed) =>
+        cancelResearch(state, entryId, now, speed),
       );
     },
   );

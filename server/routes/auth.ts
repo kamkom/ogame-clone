@@ -4,8 +4,8 @@ import { generateToken, hashToken } from '../auth/tokens.ts';
 import { createSession, deleteSession } from '../auth/sessions.ts';
 import { validateRegistration } from '../auth/validation.ts';
 import { findPlayerByUsernameLower, getPlayer, registerPlayer } from '../players/repo.ts';
-import { loadAdvancedPlanet } from '../players/economy.ts';
 import { buildPlanetSnapshot } from '../players/snapshot.ts';
+import { loadAdvancedPlayer } from '../players/state.ts';
 import { SESSION_COOKIE, csrf, requireSession, sessionCookieOptions } from './guards.ts';
 
 interface Credentials {
@@ -56,10 +56,10 @@ export function registerAuthRoutes(app: FastifyInstance): void {
       reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions());
       const now = app.clock.now();
       const speed = app.config.UNIVERSE_SPEED;
-      const planet = loadAdvancedPlanet(app.db, playerId, now, speed)!;
+      const state = loadAdvancedPlayer(app.db, playerId, now, speed)!;
       return reply.code(201).send({
         player: getPlayer(app.db, playerId),
-        snapshot: buildPlanetSnapshot(app.db, planet, { serverNow: now, speed }),
+        snapshot: buildPlanetSnapshot(state, { serverNow: now, speed }),
       });
     },
   );

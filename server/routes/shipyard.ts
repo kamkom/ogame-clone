@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { placeShipyardOrder } from '../players/shipyard.ts';
+import { placeShipyardOrder } from '#shared/commands.ts';
 import { gamePost, runCommand } from './game.ts';
 
 // The quantity is only typed here; its 1–99,999 range is a game rule (409 invalid_quantity).
@@ -21,8 +21,8 @@ export function registerShipyardRoutes(app: FastifyInstance): void {
     (request: FastifyRequest, reply: FastifyReply) => {
       // Catching up first frees room from finished Orders and makes the stock current.
       const { ship, quantity } = request.body as { ship: string; quantity: number };
-      return runCommand(request, reply, (db, planet, now, speed) =>
-        placeShipyardOrder(db, planet, ship, quantity, now, speed),
+      return runCommand(request, reply, (state, now, speed) =>
+        placeShipyardOrder(state, ship, quantity, now, speed),
       );
     },
   );
