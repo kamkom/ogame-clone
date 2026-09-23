@@ -27,7 +27,7 @@ import {
   LockIcon,
   reasonListStyle,
 } from './stateControls.tsx';
-import { TECH_ICONS } from './techIcons.ts';
+import { ArtIcon } from './art.tsx';
 
 interface ResearchProps {
   planet: PlanetSnapshot;
@@ -73,7 +73,7 @@ export function Research({
           <Heading lab={lab} />
         </div>
         <div style={blockingStyle}>
-          <TechGlyph icon="energy" size={56} />
+          <ArtIcon art="energy" size={56} />
           <h2 style={blockingTitleStyle}>No Research Lab yet</h2>
           <p style={blockingTextStyle}>
             Build a Research Lab on the Structures screen to start researching Technologies.
@@ -256,7 +256,7 @@ function QueueDropdown({
             style={{ ...dropdownRowStyle, borderTop: i > 0 ? '1px solid var(--line)' : undefined }}
           >
             <span style={dropdownIndexStyle}>{i + 1}</span>
-            <TechGlyph icon={technologyDef(e.technology)?.icon ?? 'energy'} size={22} />
+            <ArtIcon art={technologyDef(e.technology)?.icon ?? 'energy'} size={22} />
             <span style={{ flexGrow: 1 }}>
               {name} <span style={{ color: 'var(--text-muted)' }}>→ {e.targetLevel}</span>
             </span>
@@ -352,7 +352,7 @@ function TechNode({
       }}
     >
       <span style={nodeIconWellStyle}>
-        <TechGlyph icon={view.def.icon} size={26} />
+        <ArtIcon art={view.def.icon} size={26} />
       </span>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>{view.def.name}</span>
@@ -403,7 +403,7 @@ function DetailPanel({
   return (
     <aside style={panelStyle}>
       <div style={panelArtStyle}>
-        <TechGlyph icon={def.icon} size={90} strokeWidth={0.8} />
+        <ArtIcon art={def.icon} size={90} strokeWidth={0.8} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={kickerStyle}>
@@ -541,35 +541,6 @@ function StatRow({ label, value, last }: { label: string; value: ReactNode; last
       <span style={{ color: 'var(--text-label)' }}>{label}</span>
       <span style={{ fontFamily: 'var(--font-display)' }}>{value}</span>
     </div>
-  );
-}
-
-/** A Technology icon: the stroke in the icon colour, the small fill in the accent. */
-function TechGlyph({
-  icon,
-  size,
-  strokeWidth = 1.4,
-}: {
-  icon: string;
-  size: number;
-  strokeWidth?: number;
-}) {
-  const glyph = TECH_ICONS[icon] ?? TECH_ICONS.energy!;
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--text-icon)"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={glyph.path} />
-      <path d={glyph.fill} fill="var(--accent)" stroke="none" />
-    </svg>
   );
 }
 

@@ -12,9 +12,9 @@ import {
 import { formatCountdown } from '../lib/duration.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
 import { catalogName } from '#shared/catalog.ts';
+import { ArtIcon } from './art.tsx';
 import { ShipSilhouette } from './shipArt.tsx';
 import { CancelX, ClockIcon, LockIcon } from './stateControls.tsx';
-import { structureIcon } from './structureIcons.ts';
 
 interface CommandDeckProps {
   planet: PlanetSnapshot;
@@ -332,26 +332,11 @@ function StructureRow({
   onUpgrade: () => void;
 }) {
   const { def, level, slot, action } = row;
-  const icon = structureIcon(def.art);
   const tone = slot ? 'var(--accent)' : 'var(--text)';
   const verb = level === 0 ? 'Build' : 'Upgrade';
   return (
     <div style={structureRowStyle}>
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--text-body)"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ flexShrink: 0 }}
-        aria-hidden="true"
-      >
-        <path d={icon.path} />
-        <path d={icon.fill} fill="var(--accent)" stroke="none" />
-      </svg>
+      <ArtIcon art={def.art} size={22} color="var(--text-body)" />
       <span style={structureNameStyle}>{def.name}</span>
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: tone }}>

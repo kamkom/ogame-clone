@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M33 31 H189 L239 41 V69 L189 79 H33 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M75 31 V79 M117 31 V79 M159 31 V79 M189 31 V79" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M199 47 H222 L228 55 L222 63 H199 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M42 40 h24 v30 h-24 z M84 40 h24 v30 h-24 z M126 40 h24 v30 h-24 z" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M22 43 h11 v24 H22 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M33 100 H239 M33 97 V103 M239 97 V103" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="136" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">96 M</text>
+  <path d="M138 40 L160 14 H198" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="162" y="11" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">CARGO PODS</text>
+</svg>

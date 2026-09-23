@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M96 55 A42 21 0 1 0 180 55 A42 21 0 1 0 96 55 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M110 55 A28 13 0 1 0 166 55 A28 13 0 1 0 110 55 M122 55 H154 M180 55 H232 M138 34 V17 M138 76 V93" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 49 H244 L250 55 L244 61 H232 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M135 14 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M135 96 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M82 51 h14 v8 H82 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M96 106 H250 M96 103 V109 M250 103 V109" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="173" y="104" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">12 M</text>
+  <path d="M244 49 L252 24 H276" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="252" y="21" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">SENSOR</text>
+</svg>

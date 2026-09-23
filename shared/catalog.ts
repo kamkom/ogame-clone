@@ -47,8 +47,8 @@ export interface StructureDef {
   baseCost: StructureCost;
   factor: number;
   requires: Requirement[];
-  /** Art key into design/data/structure-art.json, or null when the art ticket hasn't drawn it. */
-  art: string | null;
+  /** Art key into design/data/icons.json and structure-art.json. */
+  art: string;
   /** One-sentence description for the detail panel. */
   description: string;
   /** The Nanite Foundry skips the early-level build-time divisor (rules reference §5). */
@@ -66,7 +66,8 @@ export const STRUCTURES: StructureDef[] = [
     factor: 1.5,
     requires: [],
     art: 'extractor',
-    description: "Strip-mines raw alloy from the planet's crust.",
+    description:
+      "Strip-mines raw alloy from the planet's crust; each level digs more Alloy per hour.",
   },
   {
     key: 'crystal-refinery',
@@ -78,7 +79,8 @@ export const STRUCTURES: StructureDef[] = [
     factor: 1.6,
     requires: [],
     art: 'refinery',
-    description: 'Cuts and grows crystal lattices from deep seams.',
+    description:
+      'Cuts and grows crystal lattices from deep seams; each level refines more Crystal per hour.',
   },
   {
     key: 'deuterium-synthesizer',
@@ -91,7 +93,7 @@ export const STRUCTURES: StructureDef[] = [
     requires: [],
     art: 'synth',
     description:
-      "Filters heavy hydrogen from the planet's cold seas; output falls on warmer worlds.",
+      "Filters heavy hydrogen from the planet's cold seas. Output falls on warmer worlds.",
   },
   {
     key: 'solar-array',
@@ -103,7 +105,7 @@ export const STRUCTURES: StructureDef[] = [
     factor: 1.5,
     requires: [],
     art: 'solar',
-    description: 'Fans of panels turn starlight into Energy for the mines.',
+    description: 'Fans of panels turn starlight into power; each level adds Energy for the mines.',
   },
   {
     key: 'fusion-reactor',
@@ -118,7 +120,8 @@ export const STRUCTURES: StructureDef[] = [
       { key: 'energy-theory', level: 3 },
     ],
     art: 'fusion',
-    description: 'Fuses Deuterium into a steady, powerful supply of Energy.',
+    description:
+      'Fuses Deuterium into steady Energy; it burns Deuterium, and Energy Theory raises its output.',
   },
   {
     key: 'robotics-works',
@@ -130,7 +133,8 @@ export const STRUCTURES: StructureDef[] = [
     factor: 2,
     requires: [],
     art: 'robotics',
-    description: 'Automated crews shorten every Structure upgrade.',
+    description:
+      'Automated crews work around the clock; each level shortens every Structure upgrade.',
   },
   {
     key: 'orbital-shipyard',
@@ -142,7 +146,7 @@ export const STRUCTURES: StructureDef[] = [
     factor: 2,
     requires: [{ key: 'robotics-works', level: 2 }],
     art: 'shipyard',
-    description: 'Docks and gantries where ships are assembled.',
+    description: 'Docks and gantries where hulls are welded; each level builds every ship faster.',
   },
   {
     key: 'research-lab',
@@ -154,7 +158,8 @@ export const STRUCTURES: StructureDef[] = [
     factor: 2,
     requires: [],
     art: 'research',
-    description: "Laboratories that drive the Planet's Research.",
+    description:
+      "Laboratories that drive the Planet's Research; each level shortens every Research.",
   },
   {
     key: 'nanite-foundry',
@@ -169,7 +174,8 @@ export const STRUCTURES: StructureDef[] = [
       { key: 'computation', level: 10 },
     ],
     art: 'nanite',
-    description: 'Self-replicating nanites halve build times with every level.',
+    description:
+      'Self-replicating nanites swarm the works; each level halves Structure and ship build times.',
     isNaniteFoundry: true,
   },
   {
@@ -184,8 +190,9 @@ export const STRUCTURES: StructureDef[] = [
       { key: 'nanite-foundry', level: 1 },
       { key: 'energy-theory', level: 12 },
     ],
-    art: null,
-    description: 'Reshapes the surface to open new Fields.',
+    art: 'terraformer',
+    description:
+      'Reshapes the crust into usable ground; each level opens 5 more Fields, and 1 more every 2.',
   },
   {
     key: 'alloy-depot',
@@ -196,8 +203,9 @@ export const STRUCTURES: StructureDef[] = [
     baseCost: { alloy: 1000, crystal: 0, deuterium: 0 },
     factor: 2,
     requires: [],
-    art: null,
-    description: 'Reinforced silos that raise Alloy Storage Capacity.',
+    art: 'depot',
+    description:
+      'Reinforced silos hold what the extractors dig; each level raises Alloy Storage Capacity.',
   },
   {
     key: 'crystal-vault',
@@ -208,8 +216,9 @@ export const STRUCTURES: StructureDef[] = [
     baseCost: { alloy: 1000, crystal: 500, deuterium: 0 },
     factor: 2,
     requires: [],
-    art: null,
-    description: 'Sealed vaults that raise Crystal Storage Capacity.',
+    art: 'vault',
+    description:
+      'Sealed, shock-damped vaults for cut crystal; each level raises Crystal Storage Capacity.',
   },
   {
     key: 'deuterium-tank',
@@ -220,8 +229,9 @@ export const STRUCTURES: StructureDef[] = [
     baseCost: { alloy: 1000, crystal: 1000, deuterium: 0 },
     factor: 2,
     requires: [],
-    art: null,
-    description: 'Cryogenic tanks that raise Deuterium Storage Capacity.',
+    art: 'tank',
+    description:
+      'Cryogenic tanks keep heavy hydrogen cold; each level raises Deuterium Storage Capacity.',
   },
 ];
 
@@ -294,7 +304,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'research-lab', level: 1 }],
     icon: 'energy',
-    description: 'Tames high-density power flows; each level boosts Fusion Reactor output.',
+    description:
+      "Tames high-density power flows; each level raises the Fusion Reactor's Energy output.",
   },
   {
     key: 'photon-lasers',
@@ -305,7 +316,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'energy-theory', level: 2 }],
     icon: 'laser',
-    description: 'Focused light at weapon strength, the root of later beam and ion work.',
+    description:
+      'Focuses light to weapon strength; no effect of its own, but ion and plasma work need it.',
   },
   {
     key: 'ion-lattice',
@@ -320,7 +332,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
       { key: 'photon-lasers', level: 5 },
     ],
     icon: 'ion',
-    description: 'Charged-particle lattices that lead the way to plasma containment.',
+    description:
+      'Holds charged particles in a stable lattice; no effect of its own, but Cruisers need it.',
   },
   {
     key: 'plasma-containment',
@@ -335,7 +348,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
       { key: 'ion-lattice', level: 5 },
     ],
     icon: 'plasma',
-    description: 'Bottled plasma drives the mines harder: +1% Alloy, +0.66% Crystal per level.',
+    description:
+      'Bottled plasma drives the mines harder: +1% Alloy, +0.66% Crystal, +0.33% Deuterium.',
   },
   {
     key: 'combustion-drive',
@@ -387,7 +401,7 @@ export const TECHNOLOGIES: TechnologyDef[] = [
       { key: 'shield-harmonics', level: 5 },
     ],
     icon: 'fold',
-    description: 'The theory of folded space behind the Warp Drive; +5% cargo room per level.',
+    description: 'The theory of folded space behind the Warp Drive; each level adds 5% cargo room.',
   },
   {
     key: 'weapons-systems',
@@ -398,7 +412,7 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'research-lab', level: 4 }],
     icon: 'weapons',
-    description: 'Sharper targeting and hotter guns: +10% weapon strength per level.',
+    description: "Sharper targeting and hotter guns; each level adds 10% to every ship's weapons.",
   },
   {
     key: 'shield-harmonics',
@@ -412,7 +426,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
       { key: 'energy-theory', level: 3 },
     ],
     icon: 'shield',
-    description: 'Tuned deflector fields: +10% shield strength per level.',
+    description:
+      "Deflector fields tuned to a single pitch; each level adds 10% to every ship's shields.",
   },
   {
     key: 'armor-plating',
@@ -423,7 +438,7 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'research-lab', level: 2 }],
     icon: 'armor',
-    description: 'Layered alloys harden every hull: +10% structural integrity per level.',
+    description: "Layered alloys harden every hull; each level adds 10% to every ship's structure.",
   },
   {
     key: 'graviton-lance',
@@ -435,7 +450,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     energyRequired: 300_000,
     requires: [{ key: 'research-lab', level: 12 }],
     icon: 'graviton',
-    description: 'Bends gravity itself; needs 300,000 Energy capacity and has no effect in v1 yet.',
+    description:
+      'Bends gravity into a weapon; needs 300,000 Energy capacity and has no effect in v1 yet.',
   },
   {
     key: 'signal-intelligence',
@@ -446,7 +462,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'research-lab', level: 3 }],
     icon: 'signal',
-    description: 'Listening posts and decoders; espionage is not in v1, so no effect yet.',
+    description:
+      'Listening posts and codebreakers; espionage is not in v1 yet, so it has no effect.',
   },
   {
     key: 'computation',
@@ -457,7 +474,8 @@ export const TECHNOLOGIES: TechnologyDef[] = [
     factor: 2,
     requires: [{ key: 'research-lab', level: 1 }],
     icon: 'compute',
-    description: 'Faster fleet and factory computers; level 10 unlocks the Nanite Foundry.',
+    description:
+      'Sharper onboard computers; each level adds a fleet slot, which waits for fleets to fly.',
   },
   {
     key: 'astrophysics',
@@ -487,7 +505,7 @@ export const TECHNOLOGIES: TechnologyDef[] = [
       { key: 'fold-drive', level: 8 },
     ],
     icon: 'network',
-    description: 'Links Research Labs across Planets; no effect with one Planet.',
+    description: 'Links Research Labs across Planets into one grid; no effect with one Planet.',
   },
 ];
 
@@ -541,8 +559,8 @@ export interface ShipDef {
   stats: ShipStats;
   /** Direct requirements (rules reference §10.1, [AG] + [WIKI]). */
   requires: Requirement[];
-  /** Silhouette key into design/data/ships.json, or null when the art ticket hasn't drawn it. */
-  art: string | null;
+  /** Art key into design/data/ships.json and blueprints.json. */
+  art: string;
 }
 
 // The design's list order, then the Solar Satellite last (spec story 66).
@@ -672,7 +690,7 @@ export const SHIPS: ShipDef[] = [
     cost: { alloy: 0, crystal: 2000, deuterium: 500 },
     stats: { attack: 1, shields: 1, hull: 2000, speed: 0, cargo: 0, fuel: 0 },
     requires: [{ key: 'orbital-shipyard', level: 1 }],
-    art: null,
+    art: 'Solar Satellite',
   },
 ];
 

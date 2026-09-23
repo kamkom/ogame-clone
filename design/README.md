@@ -29,7 +29,10 @@ Neither the runtime nor React is needed for the port, so neither was extracted.
 | `svg/ships/` | 8 ship silhouettes, 64×32 (hull, detail, accent glow) |
 | `svg/structures/` | 9 Structure illustrations, 300×224 (sky, far, main, detail, glow + blur filter), with a panel background added so each file stands alone |
 | `svg/planet-hud.svg`, `svg/cruiser-blueprint.svg`, `svg/logo.svg` | The one-off art |
-| `data/*.json` | The same path strings as JSON (`icons`, `ships`, `structure-art`), plus `mock-values.json` with every value each screen renders |
+| `svg/blueprints/` | 9 ship blueprints, 280×110, in the layers of the Cruiser's (hull, detail, accent module, fixtures, barrels, engine glow, dimension, callout) |
+| `data/*.json` | The same path strings as JSON (`icons`, `ships`, `structure-art`, `blueprints`), plus `mock-values.json` with every value each screen renders |
+| `drawn-art.json` | Art the bundle doesn't draw ([#31](https://github.com/kamkom/ogame-clone/issues/31)): icons and illustrations for Alloy Depot, Crystal Vault, Deuterium Tank and Terraformer; the Solar Satellite's icon, silhouette and blueprint; the other 7 ships' blueprints. `extract.mjs` merges it in next to the originals. The Cruiser blueprint is transcribed here from the bundle so all 9 share one shape |
+| `contact-sheet.svg` | Every icon, silhouette, illustration and blueprint side by side, new ones marked NEW. Rebuild with `node design/contact-sheet.mjs [accent]` |
 | `tokens.css` | The palette, type, radii and layout constants as named custom properties |
 
 ## Reusable as-is
@@ -56,10 +59,10 @@ Neither the runtime nor React is needed for the port, so neither was extracted.
 - No **Planet rename** UI. The planet picker is a button with a chevron and nothing behind it.
 
 **Content missing for catalog items (see [Map design catalog names to OGame entities](https://github.com/kamkom/ogame-clone/issues/3)).**
-- **Art exists only for the design's own items:** 9 Structures, 16 Technologies (icons only) and 8 ships. Nothing exists for Metal/Crystal Storage + Deuterium Tank (the "Storage" filter has no cards), Terraformer, Solar Satellite, Crawler, or the other OGame ships (Battlecruiser, Bomber, Destroyer, Deathstar, …). Any of those that land in scope need a new icon, a silhouette and, for Structures, an illustration in the same style.
-- **Only the Cruiser has a large blueprint.** The Shipyard detail needs one per ship, or a scaled-up silhouette.
+- *(Now drawn in `drawn-art.json`, see above.)* **Art exists only for the design's own items:** 9 Structures, 16 Technologies (icons only) and 8 ships. Nothing exists for Metal/Crystal Storage + Deuterium Tank (the "Storage" filter has no cards), Terraformer, Solar Satellite, Crawler, or the other OGame ships (Battlecruiser, Bomber, Destroyer, Deathstar, …). Any of those that land in scope need a new icon, a silhouette and, for Structures, an illustration in the same style.
+- *(Now drawn.)* **Only the Cruiser has a large blueprint.** The Shipyard detail needs one per ship, or a scaled-up silhouette.
 - **Research has no per-Technology art.** Its detail box scales the 24px icon to 90px with a thinner stroke. That works for every Technology as-is.
-- **Only two description texts are written:** Deuterium Synthesizer and Warp Drive.
+- *(The rest now live in `shared/catalog.ts`.)* **Only two description texts are written:** Deuterium Synthesizer and Warp Drive.
 - **Cost rows are Alloy + Crystal only** on Structures. Deuterium (and Energy for Graviton) need a row. The Shipyard already shows the Deuterium cost pattern, so reuse it.
 
 **Layout limits of the fixed 1440×900 canvas.**
