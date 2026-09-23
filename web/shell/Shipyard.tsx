@@ -105,6 +105,7 @@ export function Shipyard({
             title="Defenses — SOON"
             style={{ ...tabStyle(false), cursor: 'not-allowed', opacity: 0.6 }}
           >
+            <LockIcon />
             Defenses <span style={soonChipStyle}>SOON</span>
           </button>
         </div>
@@ -699,6 +700,7 @@ function FleetStrengthPanel({ ships }: { ships: Record<string, number> }) {
         title="Fleet Dispatch — SOON"
         style={dispatchStyle}
       >
+        <LockIcon />
         OPEN FLEET DISPATCH <span style={soonChipStyle}>SOON</span>
       </button>
     </div>

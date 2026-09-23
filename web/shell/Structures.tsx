@@ -1,28 +1,21 @@
 import { type KeyboardEvent, type ReactNode, useMemo, useState } from 'react';
-import {
-  catalogName,
-  type RequirementStatus,
-  requirementStatus,
-  STRUCTURES,
-  type StructureDef,
-  type StructureTab,
-} from '#shared/catalog.ts';
-import { levelCost, secondsUntilAffordable, structureDurationSec } from '#shared/economy.ts';
-import { SHIPYARD_LOCK_STRUCTURES } from '#shared/shipyard.ts';
+import { catalogName, STRUCTURES, type StructureDef, type StructureTab } from '#shared/catalog.ts';
 import type { BuildSlotView, PlanetSnapshot } from '../lib/api.ts';
 import {
   affordableInLabel,
   type CostCheck,
-  costChecks,
   formatCompact,
   formatCostCompact,
-  shortLabel,
 } from '../lib/affordability.ts';
 import { formatResource } from '../lib/format.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { liveResources } from '../lib/liveResources.ts';
-import { labLockEndsAt } from '../lib/research.ts';
-import { ordersEndAt } from '../lib/shipyard.ts';
+import {
+  firstFreeSlot,
+  structureAction,
+  structureViews,
+  type StructureView,
+} from '../lib/structures.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
 import {
   CancelX,
@@ -51,114 +44,6 @@ const TABS: { key: TabKey; label: string; count: (d: StructureDef) => boolean }[
   { key: 'storage', label: 'Storage', count: (d) => d.tab === 'storage' },
 ];
 
-/**
- * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
- * picks): already building, requirements not met (B), the Research Lab while Research runs (C),
- * the Orbital Shipyard and Nanite Foundry while Shipyard Orders exist (C),
- * both Build Slots busy (C), no free Field, can't afford (B+C), or ready. Computed from the
- * snapshot; 409s only catch races.
- */
-type UpgradeState =
-  | 'building'
-  | 'locked'
-  | 'research_active'
-  | 'shipyard_busy'
-  | 'slots_full'
-  | 'fields_full'
-  | 'short'
-  | 'ready';
-
-interface StructureView {
-  def: StructureDef;
-  level: number;
-  targetLevel: number;
-  cost: { alloy: number; crystal: number; deuterium: number };
-  durationSec: number;
-  slot: BuildSlotView | null;
-  requirements: RequirementStatus[];
-  checks: CostCheck[];
-  /** Seconds until the cost is covered at current production; null when it never will be. */
-  affordableInSec: number | null;
-  state: UpgradeState;
-  /** For a Structure under the Research or Shipyard lock: when the lock lifts. */
-  lockEndsAt: number | null;
-}
-
-interface PlanetContext {
-  planet: PlanetSnapshot;
-  speed: number;
-  live: { alloy: number; crystal: number; deuterium: number };
-  slotsFull: boolean;
-  fieldsFull: boolean;
-  /** When running Research stops locking the Research Lab; null when none runs. */
-  labLockEndsAt: number | null;
-  /** When the Shipyard Orders finish and stop locking the Shipyard and Nanite Foundry. */
-  ordersEndAt: number | null;
-}
-
-function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
-  const { planet, speed, live } = ctx;
-  const level = planet.structures[def.key] ?? 0;
-  const targetLevel = level + 1;
-  const cost = {
-    alloy: levelCost(def.baseCost.alloy, def.factor, targetLevel),
-    crystal: levelCost(def.baseCost.crystal, def.factor, targetLevel),
-    deuterium: levelCost(def.baseCost.deuterium, def.factor, targetLevel),
-  };
-  const robotics = planet.structures['robotics-works'] ?? 0;
-  const nanite = planet.structures['nanite-foundry'] ?? 0;
-  const durationSec = structureDurationSec(
-    cost.alloy,
-    cost.crystal,
-    targetLevel,
-    robotics,
-    nanite,
-    speed,
-    def.isNaniteFoundry ?? false,
-  );
-  const slot = planet.buildSlots.find((s) => s?.structure === def.key) ?? null;
-  // Current (finished) levels only: a level still in a Build Slot doesn't count.
-  const requirements = requirementStatus(
-    def,
-    (k) => planet.structures[k] ?? planet.technologies[k] ?? 0,
-  );
-  const checks = costChecks(cost, live);
-  const affordableInSec = secondsUntilAffordable(
-    cost,
-    live,
-    planet.ratesPerHour,
-    planet.storageCapacity,
-  );
-
-  let state: UpgradeState = 'ready';
-  if (slot) state = 'building';
-  else if (requirements.some((r) => !r.met)) state = 'locked';
-  else if (def.key === 'research-lab' && ctx.labLockEndsAt !== null) state = 'research_active';
-  else if (SHIPYARD_LOCK_STRUCTURES.includes(def.key) && ctx.ordersEndAt !== null) {
-    state = 'shipyard_busy';
-  } else if (ctx.slotsFull) state = 'slots_full';
-  else if (ctx.fieldsFull) state = 'fields_full';
-  else if (checks.some((c) => !c.met)) state = 'short';
-
-  let lockEndsAt: number | null = null;
-  if (state === 'research_active') lockEndsAt = ctx.labLockEndsAt;
-  else if (state === 'shipyard_busy') lockEndsAt = ctx.ordersEndAt;
-
-  return {
-    def,
-    level,
-    targetLevel,
-    cost,
-    durationSec,
-    slot,
-    requirements,
-    checks,
-    affordableInSec,
-    state,
-    lockEndsAt,
-  };
-}
-
 /** The Structures screen: filter tabs, a scrolling 3-column card grid, and a detail panel. */
 export function Structures({
   planet,
@@ -173,35 +58,17 @@ export function Structures({
   const [selectedKey, setSelectedKey] = useState<string>(STRUCTURES[0]!.key);
 
   const slotsUsed = planet.buildSlots.filter((s) => s !== null).length;
-  const slotsFull = slotsUsed >= planet.buildSlots.length;
-  const { used, inProgress, max } = planet.fields;
-  const fieldsFull = used + inProgress >= max;
-  const labLock = labLockEndsAt(planet, universeSpeed);
-  const ordersEnd = ordersEndAt(planet, universeSpeed);
+  const { used, max } = planet.fields;
 
   const views = useMemo(
-    () =>
-      STRUCTURES.map((def) =>
-        viewFor(def, {
-          planet,
-          speed: universeSpeed,
-          live,
-          slotsFull,
-          fieldsFull,
-          labLockEndsAt: labLock,
-          ordersEndAt: ordersEnd,
-        }),
-      ),
-    [planet, universeSpeed, live, slotsFull, fieldsFull, labLock, ordersEnd],
+    () => structureViews(planet, universeSpeed, live),
+    [planet, universeSpeed, live],
   );
   const shown = views.filter((v) => TABS.find((t) => t.key === tab)!.count(v.def));
   const selected = views.find((v) => v.def.key === selectedKey) ?? views[0]!;
 
   // The slot that frees first, for the "SLOT FREES IN" countdowns.
-  const busy = planet.buildSlots.filter((s): s is BuildSlotView => s !== null);
-  const firstFree = slotsFull
-    ? busy.reduce((a, b) => (b.endsAt < a.endsAt ? b : a), busy[0]!)
-    : null;
+  const firstFree = firstFreeSlot(planet);
 
   return (
     <div style={contentStyle}>
@@ -409,7 +276,8 @@ function CardAction({
   pending: boolean;
   onUpgrade: () => void;
 }) {
-  if (view.state === 'ready') {
+  const action = structureAction(view, now, nextFreeAt);
+  if (action.enabled) {
     return (
       <button
         type="button"
@@ -421,25 +289,14 @@ function CardAction({
         }}
         style={cardButtonStyle(true)}
       >
-        {view.level === 0 ? 'BUILD' : 'UPGRADE'}
+        {action.label}
       </button>
     );
   }
-  let icon: ReactNode = <LockIcon />;
-  let label: string;
-  if (view.state === 'locked') label = 'LOCKED';
-  else if (view.state === 'research_active' || view.state === 'shipyard_busy') {
-    icon = <ClockIcon />;
-    label = formatCountdown((view.lockEndsAt ?? now) - now);
-  } else if (view.state === 'slots_full') {
-    icon = <ClockIcon />;
-    label = nextFreeAt === null ? 'SLOTS FULL' : formatCountdown(nextFreeAt - now);
-  } else if (view.state === 'fields_full') label = 'NO FIELDS';
-  else label = shortLabel(view.checks);
   return (
     <button type="button" disabled style={cardButtonStyle(false)}>
-      {icon}
-      {label}
+      {action.icon === 'clock' ? <ClockIcon /> : <LockIcon />}
+      {action.label}
     </button>
   );
 }

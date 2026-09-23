@@ -1,5 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import {
+  alloyMineEnergyUse,
+  crystalMineEnergyUse,
+  deuteriumSynthEnergyUse,
+  fusionReactorEnergy,
+  maxFields,
+  productionFactor,
+  solarPlantEnergy,
+  solarSatelliteEnergy,
+} from '#shared/economy.ts';
 import { buildApp } from '../app.ts';
 import { ManualClock } from '../clock.ts';
 import { loadConfig } from '../config.ts';
@@ -49,6 +59,57 @@ describe('GET /api/planet', () => {
     expect(body.storageCapacity).toEqual({ alloy: 10000, crystal: 10000, deuterium: 10000 });
     expect(body.energy).toEqual({ produced: 0, consumed: 0, productionFactor: 1 });
     expect(body.nextEventAt).toBeNull();
+  });
+
+  it('reports Fields, temperature and Energy by the shared formulas (Fusion Reactor + Solar Satellites)', async () => {
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'Vega', password: 'password1' },
+    });
+    const cookie = `session=${reg.cookies.find((c) => c.name === 'session')!.value}`;
+    // Test setup only: built levels, docked satellites and a Deuterium stock to fuel the Reactor.
+    const { id, player_id, tmax } = app.db
+      .prepare(`SELECT id, player_id, tmax FROM planets`)
+      .get() as { id: number; player_id: number; tmax: number };
+    app.db.prepare(`UPDATE planets SET deuterium = 100000`).run();
+    const levels = {
+      'alloy-extractor': 12,
+      'crystal-refinery': 10,
+      'deuterium-synthesizer': 8,
+      'solar-array': 10,
+      'fusion-reactor': 3,
+      terraformer: 3,
+    };
+    for (const [key, level] of Object.entries(levels)) {
+      app.db
+        .prepare(`INSERT INTO planet_structures (planet_id, structure_key, level) VALUES (?, ?, ?)`)
+        .run(id, key, level);
+    }
+    app.db
+      .prepare(
+        `INSERT INTO player_technologies (player_id, technology_key, level) VALUES (?, ?, ?)`,
+      )
+      .run(player_id, 'energy-theory', 4);
+    app.db
+      .prepare(`INSERT INTO planet_ships (planet_id, ship_key, count) VALUES (?, ?, ?)`)
+      .run(id, 'solar-satellite', 7);
+
+    const body = (
+      await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } })
+    ).json();
+
+    expect(body.fields).toEqual({ used: 46, inProgress: 0, max: maxFields(3) });
+    expect(body.temperature).toEqual({ min: tmax - 40, max: tmax });
+    expect(body.diameterKm).toBe(12_800);
+    const produced =
+      solarPlantEnergy(10) + fusionReactorEnergy(3, 4) + solarSatelliteEnergy(7, tmax - 20);
+    const consumed = alloyMineEnergyUse(12) + crystalMineEnergyUse(10) + deuteriumSynthEnergyUse(8);
+    expect(body.energy).toEqual({
+      produced,
+      consumed,
+      productionFactor: productionFactor(produced, consumed),
+    });
   });
 
   it('catches resources up by base income × Universe Speed and persists it', async () => {
