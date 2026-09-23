@@ -5,6 +5,8 @@
 import type { PlanetSnapshot } from './api.ts';
 
 const MS_PER_HOUR = 3_600_000;
+/** How long to wait before refetching when the snapshot's next event is already due. */
+const DUE_EVENT_RETRY_MS = 1000;
 
 /**
  * The stock of one Resource interpolated to wall-clock `now`, honouring the cap: it never grows
@@ -56,5 +58,3 @@ export function refetchDelay(snapshot: PlanetSnapshot, now: number): number | nu
   // back off rather than refetching in a tight loop.
   return delay > 0 ? delay : DUE_EVENT_RETRY_MS;
 }
-
-const DUE_EVENT_RETRY_MS = 1000;

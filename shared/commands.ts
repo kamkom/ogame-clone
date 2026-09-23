@@ -239,7 +239,7 @@ export function enqueueResearch(
     id: null,
     technology: key,
     targetLevel,
-    cost: { alloy: cost.alloy, crystal: cost.crystal, deuterium: cost.deuterium },
+    cost,
     startedAt: null,
     endsAt: null,
   };

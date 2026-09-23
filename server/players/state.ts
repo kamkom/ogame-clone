@@ -18,11 +18,13 @@ function costOf(r: CostRow) {
   return { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium };
 }
 
-/** Rows of `(key, value)` as a record; a missing key reads as 0 through `levelOf`. */
-function levels(rows: unknown[], key: string, value: string): Record<string, number> {
-  return Object.fromEntries(
-    (rows as Record<string, string | number>[]).map((r) => [r[key], Number(r[value])]),
-  );
+/**
+ * The `(key, value)` rows `sql` selects for `owner`, as a record; a missing key reads as 0 through
+ * `levelOf`.
+ */
+function levels(db: DatabaseSync, sql: string, owner: number): Record<string, number> {
+  const rows = db.prepare(sql).all(owner) as { key: string; value: number }[];
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
 }
 
 /** The Player's state as stored, not yet advanced. Null when the Player has no Planet. */
@@ -114,23 +116,19 @@ export function loadPlayerState(db: DatabaseSync, playerId: number): PlayerState
     resources: { alloy: planet.alloy, crystal: planet.crystal, deuterium: planet.deuterium },
     lastUpdatedAt: planet.resources_updated_at,
     structures: levels(
-      db
-        .prepare(`SELECT structure_key, level FROM planet_structures WHERE planet_id = ?`)
-        .all(planet.id),
-      'structure_key',
-      'level',
+      db,
+      `SELECT structure_key AS key, level AS value FROM planet_structures WHERE planet_id = ?`,
+      planet.id,
     ),
     technologies: levels(
-      db
-        .prepare(`SELECT technology_key, level FROM player_technologies WHERE player_id = ?`)
-        .all(playerId),
-      'technology_key',
-      'level',
+      db,
+      `SELECT technology_key AS key, level AS value FROM player_technologies WHERE player_id = ?`,
+      playerId,
     ),
     ships: levels(
-      db.prepare(`SELECT ship_key, count FROM planet_ships WHERE planet_id = ?`).all(planet.id),
-      'ship_key',
-      'count',
+      db,
+      `SELECT ship_key AS key, count AS value FROM planet_ships WHERE planet_id = ?`,
+      planet.id,
     ),
     buildSlots,
     researchQueue,

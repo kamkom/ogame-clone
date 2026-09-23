@@ -208,7 +208,7 @@ function deuteriumAvailable(state: EconomyState): boolean {
 }
 
 /** Whether a Research Lab upgrade is running in a Build Slot, which holds the Research head. */
-export function labUpgrading(buildSlots: BuildSlot[] | undefined): boolean {
+function labUpgrading(buildSlots: BuildSlot[] | undefined): boolean {
   return (buildSlots ?? []).some((bs) => bs.field === 'researchLab');
 }
 
