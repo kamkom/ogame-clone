@@ -1,9 +1,15 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { formatCoordinates } from '#shared/coords.ts';
 import { liveProfile, nextEventAt } from '#shared/engine.ts';
-import { STRUCTURES } from '#shared/catalog.ts';
 import { readEconomyState } from './economy.ts';
-import { HOME_DIAMETER_KM, HOME_FIELDS, type PlanetRow, tminFor } from './repo.ts';
+import {
+  HOME_DIAMETER_KM,
+  HOME_FIELDS,
+  type PlanetRow,
+  structureLevels,
+  technologyLevels,
+  tminFor,
+} from './repo.ts';
 
 /** One occupied Build Slot in the snapshot, or null for a free slot. */
 export interface BuildSlotSnapshot {
@@ -13,6 +19,18 @@ export interface BuildSlotSnapshot {
   cost: { alloy: number; crystal: number; deuterium: number };
   startedAt: number;
   endsAt: number;
+}
+
+/** One Research Queue entry in the snapshot; the times are null while it waits. */
+export interface ResearchEntrySnapshot {
+  id: number;
+  technology: string;
+  targetLevel: number;
+  cost: { alloy: number; crystal: number; deuterium: number };
+  startedAt: number | null;
+  endsAt: number | null;
+  /** True when the head waits for a Research Lab upgrade (the Lab lock lands in a later ticket). */
+  waitingOnLab: boolean;
 }
 
 // The /api/planet response shape. Resources are the exact stock at `lastUpdatedAt`; the client
@@ -35,6 +53,10 @@ export interface PlanetSnapshot {
   structures: Record<string, number>;
   /** The two Build Slots, index 0 = slot 1; null for a free slot. */
   buildSlots: (BuildSlotSnapshot | null)[];
+  /** Every catalog Technology's current level (0 when not researched). */
+  technologies: Record<string, number>;
+  /** The Research Queue in order, head first. */
+  researchQueue: ResearchEntrySnapshot[];
   nextEventAt: number | null;
 }
 
@@ -51,15 +73,32 @@ function usedFields(db: DatabaseSync, planetId: number): number {
   return Number(row.used);
 }
 
-/** Every catalog Structure's level (0 when it has no row yet). */
-function structureLevels(db: DatabaseSync, planetId: number): Record<string, number> {
+/** The Player's Research Queue in order, head first. */
+function researchQueue(db: DatabaseSync, playerId: number): ResearchEntrySnapshot[] {
   const rows = db
-    .prepare(`SELECT structure_key, level FROM planet_structures WHERE planet_id = ?`)
-    .all(planetId) as { structure_key: string; level: number }[];
-  const stored = new Map(rows.map((r) => [r.structure_key, r.level]));
-  const levels: Record<string, number> = {};
-  for (const def of STRUCTURES) levels[def.key] = stored.get(def.key) ?? 0;
-  return levels;
+    .prepare(
+      `SELECT id, technology_key, target_level, cost_alloy, cost_crystal, cost_deuterium, started_at, ends_at
+         FROM research_queue WHERE player_id = ? ORDER BY seq`,
+    )
+    .all(playerId) as {
+    id: number;
+    technology_key: string;
+    target_level: number;
+    cost_alloy: number;
+    cost_crystal: number;
+    cost_deuterium: number;
+    started_at: number | null;
+    ends_at: number | null;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    technology: r.technology_key,
+    targetLevel: r.target_level,
+    cost: { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
+    startedAt: r.started_at,
+    endsAt: r.ends_at,
+    waitingOnLab: false,
+  }));
 }
 
 /** The two Build Slots, index 0 = slot 1, index 1 = slot 2; null where the slot is free. */
@@ -134,6 +173,8 @@ export function buildPlanetSnapshot(
     energy: profile.energy,
     structures: structureLevels(db, planet.id),
     buildSlots: slots,
+    technologies: technologyLevels(db, planet.player_id),
+    researchQueue: researchQueue(db, planet.player_id),
     nextEventAt: nextEventAt(economy, ctx.speed, ctx.serverNow),
   };
 }

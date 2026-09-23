@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { STRUCTURES, TECHNOLOGIES } from '#shared/catalog.ts';
 import type { Coordinates } from '#shared/coords.ts';
 import { drawCoordinates, drawTmax, TMIN_OFFSET, type Rng } from '../coords.ts';
 import { tx } from '../db/tx.ts';
@@ -159,4 +160,22 @@ export function getPlayer(db: DatabaseSync, playerId: number): Player | null {
 /** Compute a Planet's derived minimum temperature. */
 export function tminFor(tmax: number): number {
   return tmax - TMIN_OFFSET;
+}
+
+/** Every catalog Structure's level on a Planet (0 when it has no row yet). */
+export function structureLevels(db: DatabaseSync, planetId: number): Record<string, number> {
+  const rows = db
+    .prepare(`SELECT structure_key, level FROM planet_structures WHERE planet_id = ?`)
+    .all(planetId) as { structure_key: string; level: number }[];
+  const stored = new Map(rows.map((r) => [r.structure_key, r.level]));
+  return Object.fromEntries(STRUCTURES.map((def) => [def.key, stored.get(def.key) ?? 0]));
+}
+
+/** Every catalog Technology's level for a Player (0 when it has no row yet). */
+export function technologyLevels(db: DatabaseSync, playerId: number): Record<string, number> {
+  const rows = db
+    .prepare(`SELECT technology_key, level FROM player_technologies WHERE player_id = ?`)
+    .all(playerId) as { technology_key: string; level: number }[];
+  const stored = new Map(rows.map((r) => [r.technology_key, r.level]));
+  return Object.fromEntries(TECHNOLOGIES.map((def) => [def.key, stored.get(def.key) ?? 0]));
 }

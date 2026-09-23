@@ -1,7 +1,14 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { alloyMineOutput } from './economy.ts';
-import { advance, type EconomyState, liveProfile, nextEventAt, type Structures } from './engine.ts';
+import { alloyMineOutput, researchDurationSec } from './economy.ts';
+import {
+  advance,
+  type EconomyState,
+  liveProfile,
+  nextEventAt,
+  type ResearchEntry,
+  type Structures,
+} from './engine.ts';
 
 const HOUR = 3_600_000;
 
@@ -14,6 +21,7 @@ const NO_STRUCTURES: Structures = {
   alloyStorage: 0,
   crystalStorage: 0,
   deuteriumStorage: 0,
+  researchLab: 0,
 };
 
 function state(overrides: Partial<EconomyState> = {}): EconomyState {
@@ -162,6 +170,125 @@ describe('advance — Build Slots', () => {
   });
 });
 
+describe('advance — Research Queue', () => {
+  // Energy Theory L1 costs 0 / 800: 1440 s at Lab 1; L2 (0 / 1600) is 2880 s at Lab 1.
+  const E1 = 1440_000;
+  const E2 = 2880_000;
+  const s = state({
+    structures: { ...NO_STRUCTURES, researchLab: 1 },
+    researchQueue: [
+      {
+        id: 1,
+        technologyKey: 'energy-theory',
+        field: 'energyTech',
+        targetLevel: 1,
+        cost: { alloy: 0, crystal: 800 },
+        startedAt: 0,
+        endsAt: E1,
+      },
+      {
+        id: 2,
+        technologyKey: 'energy-theory',
+        field: 'energyTech',
+        targetLevel: 2,
+        cost: { alloy: 0, crystal: 1600 },
+        startedAt: null,
+        endsAt: null,
+      },
+    ],
+  });
+
+  it('keeps the head running and the next entry waiting before the head ends', () => {
+    const before = advance(s, E1 - 1, 1);
+    expect(before.energyTech).toBe(0);
+    expect(before.researchQueue).toHaveLength(2);
+    expect(before.researchQueue![1]).toMatchObject({ startedAt: null, endsAt: null });
+  });
+
+  it('finishes the head and starts the next at the boundary time, its duration fixed then', () => {
+    const after = advance(s, E1 + 1000, 1);
+    expect(after.energyTech).toBe(1);
+    expect(after.researchQueue).toEqual([
+      expect.objectContaining({ id: 2, startedAt: E1, endsAt: E1 + E2 }),
+    ]);
+  });
+
+  it('runs the whole queue in order when the clock passes both', () => {
+    const after = advance(s, 10 * HOUR, 1);
+    expect(after.energyTech).toBe(2);
+    expect(after.researchQueue).toEqual([]);
+  });
+
+  it('fixes the next duration from the Lab level at the moment it starts', () => {
+    // A Lab upgrade to 3 finishes before the head does, so the second entry runs at Lab 3.
+    const withLab = {
+      ...s,
+      buildSlots: [
+        {
+          slot: 1,
+          structureKey: 'research-lab',
+          field: 'researchLab' as const,
+          targetLevel: 3,
+          endsAt: 1000,
+        },
+      ],
+    };
+    const after = advance(withLab, E1 + 1000, 1);
+    expect(after.structures.researchLab).toBe(3);
+    const lab3 = researchDurationSec(0, 1600, 3, 1) * 1000;
+    expect(after.researchQueue![0]).toMatchObject({ startedAt: E1, endsAt: E1 + lab3 });
+  });
+
+  it('schedules the head completion as the next boundary', () => {
+    expect(nextEventAt(s, 1, 0)).toBe(E1);
+  });
+
+  it('raises production from a Plasma Containment completion at its endsAt', () => {
+    const plasma = state({
+      resources: { alloy: 500, crystal: 500, deuterium: 0 },
+      structures: { ...NO_STRUCTURES, alloyMine: 10, solarPlant: 20, researchLab: 1 },
+      plasmaTech: 0,
+      researchQueue: [
+        {
+          id: 7,
+          technologyKey: 'plasma-containment',
+          field: 'plasmaTech',
+          targetLevel: 1,
+          cost: { alloy: 2000, crystal: 4000 },
+          startedAt: 0,
+          endsAt: HOUR,
+        },
+      ],
+    });
+    const after = advance(plasma, 2 * HOUR, 1);
+    expect(after.plasmaTech).toBe(1);
+    const before = alloyMineOutput(10, { position: 4 });
+    const boosted = alloyMineOutput(10, { position: 4, plasma: 1 });
+    expect(boosted).toBeGreaterThan(before);
+    expect(after.resources.alloy).toBe(500 + 30 + before + 30 + boosted);
+  });
+
+  it('does not change production for a Technology with no economy effect (field null)', () => {
+    const lasers = state({
+      structures: { ...NO_STRUCTURES, researchLab: 1 },
+      researchQueue: [
+        {
+          id: 3,
+          technologyKey: 'photon-lasers',
+          field: null,
+          targetLevel: 1,
+          cost: { alloy: 200, crystal: 100 },
+          startedAt: 0,
+          endsAt: HOUR,
+        },
+      ],
+    });
+    const after = advance(lasers, 2 * HOUR, 1);
+    expect(after.researchQueue).toEqual([]);
+    expect(after.resources.alloy).toBe(500 + 60);
+  });
+});
+
 describe('advance — determinism property', () => {
   it('advancing through an intermediate time equals advancing straight there', () => {
     const arbState = fc.record({
@@ -179,6 +306,7 @@ describe('advance — determinism property', () => {
         alloyStorage: fc.integer({ min: 0, max: 3 }),
         crystalStorage: fc.integer({ min: 0, max: 3 }),
         deuteriumStorage: fc.integer({ min: 0, max: 3 }),
+        researchLab: fc.integer({ min: 0, max: 12 }),
       }),
       solarSatellites: fc.integer({ min: 0, max: 50 }),
       energyTech: fc.integer({ min: 0, max: 20 }),
@@ -188,17 +316,48 @@ describe('advance — determinism property', () => {
       speed: fc.integer({ min: 1, max: 8 }),
       t2: fc.integer({ min: 1, max: 240 * HOUR }),
       split: fc.double({ min: 0, max: 1, noNaN: true }),
+      research: fc.boolean(),
     });
+
+    // A queue whose later entries start mid-interval, at boundaries the stepped run must reproduce.
+    const queue = (lab: number): ResearchEntry[] => [
+      {
+        id: 1,
+        technologyKey: 'energy-theory',
+        field: 'energyTech',
+        targetLevel: 1,
+        cost: { alloy: 0, crystal: 800 },
+        startedAt: 0,
+        endsAt: researchDurationSec(0, 800, lab, 1) * 1000,
+      },
+      ...[2, 3].map((id) => ({
+        id,
+        technologyKey: 'plasma-containment',
+        field: 'plasmaTech' as const,
+        targetLevel: id - 1,
+        cost: { alloy: 2000 * 2 ** (id - 2), crystal: 4000 * 2 ** (id - 2) },
+        startedAt: null,
+        endsAt: null,
+      })),
+    ];
 
     fc.assert(
       fc.property(arbState, (a) => {
-        const s: EconomyState = { ...a, lastUpdatedAt: 0 };
+        const { research, ...rest } = a;
+        const s: EconomyState = {
+          ...rest,
+          lastUpdatedAt: 0,
+          researchQueue: research ? queue(a.structures.researchLab) : [],
+        };
         const t1 = Math.floor(a.t2 * a.split);
         const direct = advance(s, a.t2, a.speed);
         const stepped = advance(advance(s, t1, a.speed), a.t2, a.speed);
         for (const key of ['alloy', 'crystal', 'deuterium'] as const) {
           expect(Math.abs(direct.resources[key] - stepped.resources[key])).toBeLessThan(1e-3);
         }
+        expect(stepped.plasmaTech).toBe(direct.plasmaTech);
+        expect(stepped.energyTech).toBe(direct.energyTech);
+        expect(stepped.researchQueue).toEqual(direct.researchQueue);
       }),
       { numRuns: 500 },
     );

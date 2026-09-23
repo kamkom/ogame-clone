@@ -142,3 +142,18 @@ export function structureDurationSec(
     (alloyCost + crystalCost) / (2500 * earlyDivisor * (1 + robotics) * 2 ** nanite * speed);
   return Math.max(1, Math.floor(hours * 3600));
 }
+
+/**
+ * Research time in seconds (§5): `(M+C) / (1000·(1+Lab)·S)` hours. The Research Lab level is the
+ * one at the moment the Research starts; Universe Speed divides it. `alloyCost`/`crystalCost` are
+ * the cost of the level being researched.
+ */
+export function researchDurationSec(
+  alloyCost: number,
+  crystalCost: number,
+  researchLab: number,
+  speed = 1,
+): number {
+  const hours = (alloyCost + crystalCost) / (1000 * (1 + researchLab) * speed);
+  return Math.max(1, Math.floor(hours * 3600));
+}

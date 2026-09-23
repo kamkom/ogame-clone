@@ -26,6 +26,8 @@ function snapshot(overrides: Partial<PlanetSnapshot> = {}): PlanetSnapshot {
     energy: { produced: 0, consumed: 0, productionFactor: 1 },
     structures: {},
     buildSlots: [null, null],
+    technologies: {},
+    researchQueue: [],
     nextEventAt: null,
     ...overrides,
   };

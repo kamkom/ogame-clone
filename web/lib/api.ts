@@ -16,6 +16,16 @@ export interface BuildSlotView {
   endsAt: number;
 }
 
+export interface ResearchEntryView {
+  id: number;
+  technology: string;
+  targetLevel: number;
+  cost: { alloy: number; crystal: number; deuterium: number };
+  startedAt: number | null;
+  endsAt: number | null;
+  waitingOnLab: boolean;
+}
+
 export interface PlanetSnapshot {
   id: number;
   name: string;
@@ -32,6 +42,8 @@ export interface PlanetSnapshot {
   energy: { produced: number; consumed: number; productionFactor: number };
   structures: Record<string, number>;
   buildSlots: (BuildSlotView | null)[];
+  technologies: Record<string, number>;
+  researchQueue: ResearchEntryView[];
   nextEventAt: number | null;
 }
 
@@ -109,4 +121,6 @@ export const api = {
     post<PlanetSnapshot>('/api/planet/rename', { name }, fetchImpl),
   upgradeStructure: (key: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>(`/api/structures/${key}/upgrade`, {}, fetchImpl),
+  enqueueResearch: (technology: string, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>('/api/research', { technology }, fetchImpl),
 };
