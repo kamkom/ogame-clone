@@ -13,6 +13,7 @@ import {
   fusionDeuteriumBurn,
   fusionReactorEnergy,
   productionFactor,
+  researchDurationSec,
   solarPlantEnergy,
   solarSatelliteEnergy,
   storageCapacity,
@@ -33,6 +34,8 @@ export interface Structures {
   alloyStorage: number;
   crystalStorage: number;
   deuteriumStorage: number;
+  /** Not a production Structure, but its level fixes each Research duration when it starts. */
+  researchLab: number;
 }
 
 /**
@@ -49,6 +52,25 @@ export interface BuildSlot {
   endsAt: number;
 }
 
+/** The Technologies that change production (rules reference §6.1); the rest have no economy effect. */
+export type TechField = 'energyTech' | 'plasmaTech';
+
+/**
+ * One Research Queue entry. Only the head runs: its `startedAt`/`endsAt` are fixed when it becomes
+ * head, from the Research Lab level at that moment; waiting entries carry nulls. `field` is the
+ * production Technology it raises, or null for one with no economy effect.
+ */
+export interface ResearchEntry {
+  id: number;
+  technologyKey: string;
+  field: TechField | null;
+  targetLevel: number;
+  /** The Alloy and Crystal paid at enqueue, which set the duration. */
+  cost: { alloy: number; crystal: number };
+  startedAt: number | null;
+  endsAt: number | null;
+}
+
 export interface EconomyState {
   /** Current Resource stock (fractional; only floored for display and spending). */
   resources: Resources;
@@ -63,6 +85,8 @@ export interface EconomyState {
   tavg: number;
   /** Upgrades running in the 2 Build Slots. Absent or empty when nothing is building. */
   buildSlots?: BuildSlot[];
+  /** The Player's Research Queue in order, head first. Absent or empty when nothing is queued. */
+  researchQueue?: ResearchEntry[];
 }
 
 /** The instantaneous production picture used to integrate one boundary-free segment. */
@@ -166,6 +190,14 @@ function deuteriumAvailable(state: EconomyState): boolean {
   return state.resources.deuterium > EPSILON;
 }
 
+/** Start the head of `queue` at `at` if it is waiting, fixing its duration from `lab`. */
+function startHead(queue: ResearchEntry[], at: number, lab: number, speed: number): void {
+  const head = queue[0];
+  if (!head || head.startedAt !== null) return;
+  const durationMs = researchDurationSec(head.cost.alloy, head.cost.crystal, lab, speed) * 1000;
+  queue[0] = { ...head, startedAt: at, endsAt: at + durationMs };
+}
+
 /**
  * Advance `state` to `now` in closed form. Returns a new state; the input is not mutated.
  * A `now` at or before `lastUpdatedAt` is a no-op — time only ever moves forward here.
@@ -179,10 +211,13 @@ export function advance(
   const resources = { ...state.resources };
   let structures = { ...state.structures };
   let buildSlots = (state.buildSlots ?? []).map((s) => ({ ...s }));
+  const researchQueue = (state.researchQueue ?? []).map((e) => ({ ...e }));
+  const techs = { energyTech: state.energyTech, plasmaTech: state.plasmaTech };
   let t = state.lastUpdatedAt;
+  startHead(researchQueue, t, structures.researchLab, speed);
 
   while (t < now - EPSILON) {
-    const cursor: EconomyState = { ...state, resources, structures, buildSlots };
+    const cursor: EconomyState = { ...state, ...techs, resources, structures, buildSlots };
     const profile = computeProfile(cursor, speed, deuteriumAvailable(cursor));
 
     let segEnd = now;
@@ -194,6 +229,9 @@ export function advance(
     for (const bs of buildSlots) {
       if (bs.endsAt > t && bs.endsAt < segEnd) segEnd = bs.endsAt;
     }
+    // So is the running Research: a production Technology changes the rates from its endsAt on.
+    const headEnd = researchQueue[0]?.endsAt ?? null;
+    if (headEnd !== null && headEnd > t && headEnd < segEnd) segEnd = headEnd;
     if (segEnd <= t) segEnd = now; // guard against a degenerate zero-length segment
 
     const dtHours = (segEnd - t) / MS_PER_HOUR;
@@ -222,13 +260,24 @@ export function advance(
       }
     }
     buildSlots = remaining;
+
+    // Then finish the Research head if it ends at `t`, and start the next one at this boundary
+    // with the Lab level as it now stands (a Lab finishing at `t` already counts).
+    const head = researchQueue[0];
+    if (head && head.endsAt !== null && head.endsAt <= t + EPSILON) {
+      if (head.field !== null) techs[head.field] = head.targetLevel;
+      researchQueue.shift();
+      startHead(researchQueue, t, structures.researchLab, speed);
+    }
   }
 
   return {
     ...state,
+    ...techs,
     resources,
     structures,
     buildSlots,
+    researchQueue,
     lastUpdatedAt: Math.max(now, state.lastUpdatedAt),
   };
 }
@@ -254,6 +303,11 @@ export function nextEventAt(
   // A finishing upgrade is a boundary too, so the client refetches when a Build Slot frees.
   for (const bs of state.buildSlots ?? []) {
     if (bs.endsAt > from && (soonest === null || bs.endsAt < soonest)) soonest = bs.endsAt;
+  }
+  // And so is the running Research, so the client refetches when it finishes.
+  const headEnd = state.researchQueue?.[0]?.endsAt ?? null;
+  if (headEnd !== null && headEnd > from && (soonest === null || headEnd < soonest)) {
+    soonest = headEnd;
   }
   return soonest;
 }

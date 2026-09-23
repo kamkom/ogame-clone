@@ -10,6 +10,7 @@ import {
   levelCost,
   maxFields,
   productionFactor,
+  researchDurationSec,
   solarPlantEnergy,
   solarSatelliteEnergy,
   storageCapacity,
@@ -243,5 +244,29 @@ describe('seconds until affordable', () => {
     expect(
       secondsUntilAffordable({ alloy: 60, crystal: 0, deuterium: 5 }, stock, rates, caps),
     ).toBe(60);
+  });
+});
+
+describe('research time (§5)', () => {
+  // researchTimeSec = floor((M+C) / (1000·(1+Lab)·S) h · 3600), at least 1 s.
+  it('is (M+C) / (1000·(1+Lab)·S), to the second', () => {
+    // Energy Theory L1 (0 / 800) at Lab 1: 800 / 2000 h = 0.4 h.
+    expect(researchDurationSec(0, 800, 1, 1)).toBe(1440);
+    // Photon Lasers L1 (200 / 100) at Lab 1: 300 / 2000 h = 0.15 h.
+    expect(researchDurationSec(200, 100, 1, 1)).toBe(540);
+    // Energy Theory L2 (0 / 1600) at Lab 1.
+    expect(researchDurationSec(0, 1600, 1, 1)).toBe(2880);
+    // Warp Drive L4 (80,000 / 160,000) at Lab 7: 240,000 / 8,000 h = 30 h.
+    expect(researchDurationSec(80_000, 160_000, 7, 1)).toBe(108_000);
+  });
+
+  it('speeds up with the Research Lab and Universe Speed, not with Lab × Speed', () => {
+    expect(researchDurationSec(0, 800, 3, 1)).toBe(720); // ÷(1+3)
+    expect(researchDurationSec(0, 800, 1, 5)).toBe(288); // ÷5
+    // The wiki's `1000·(1 + Lab·S)` typo would give 800/6000 h = 480 s here; the code sources give 288.
+  });
+
+  it('never returns less than one second (Graviton Lance costs no Resources)', () => {
+    expect(researchDurationSec(0, 0, 12, 1)).toBe(1);
   });
 });

@@ -168,10 +168,10 @@ describe('POST /api/structures/:key/upgrade', () => {
     const cookie = await register();
     setResources(100_000);
     setLevel('deuterium-synthesizer', 5);
-    setTechLevel('energy-technology', 3);
+    setTechLevel('energy-theory', 3);
     const res = await upgrade(cookie, 'fusion-reactor');
     expect(res.statusCode).toBe(200);
-    expect(res.json().technologies).toEqual({ 'energy-technology': 3 });
+    expect(res.json().technologies['energy-theory']).toBe(3);
   });
 
   it('counts in-progress upgrades against the Fields limit (409 fields_full)', async () => {

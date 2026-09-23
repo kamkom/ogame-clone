@@ -4,6 +4,7 @@ import { api, type PlanetSnapshot, type Session } from '../lib/api.ts';
 import { refetchDelay } from '../lib/liveResources.ts';
 import { CommandDeck } from './CommandDeck.tsx';
 import { Rail } from './Rail.tsx';
+import { Research } from './Research.tsx';
 import { Structures } from './Structures.tsx';
 import { TopBar } from './TopBar.tsx';
 import { WelcomeWindow } from './WelcomeWindow.tsx';
@@ -16,9 +17,10 @@ interface GameShellProps {
   loggingOut: boolean;
 }
 
-// NAV indices: 0 Overview, 1 Build (Structures). Research/Shipyard have no screen yet.
-type Screen = 'overview' | 'structures';
-const SCREEN_BY_NAV: Record<number, Screen> = { 0: 'overview', 1: 'structures' };
+// NAV indices: 0 Overview, 1 Build (Structures), 2 Research. Shipyard has no screen yet.
+type Screen = 'overview' | 'structures' | 'research';
+const SCREEN_BY_NAV: Record<number, Screen> = { 0: 'overview', 1: 'structures', 2: 'research' };
+const NAV_BY_SCREEN: Record<Screen, number> = { overview: 0, structures: 1, research: 2 };
 
 /** The logged-in game shell: rail, top bar, screen content, and the one-time welcome window. */
 export function GameShell({
@@ -47,6 +49,10 @@ export function GameShell({
     mutationFn: (slot: number) => api.cancelBuildSlot(slot),
     onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
   });
+  const enqueue = useMutation({
+    mutationFn: (technology: string) => api.enqueueResearch(technology),
+    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+  });
 
   // Refetch when the next server-side boundary is due (e.g. Deuterium depletion changes the rates).
   useEffect(() => {
@@ -65,7 +71,7 @@ export function GameShell({
   // either button dismisses it, this stays false for the rest of the session.
   const [showWelcome, setShowWelcome] = useState(session.firstLogin ?? false);
 
-  const activeNav = screen === 'structures' ? 1 : 0;
+  const activeNav = NAV_BY_SCREEN[screen];
 
   return (
     <>
@@ -79,7 +85,7 @@ export function GameShell({
         }}
       />
       <TopBar planet={planet} onRename={onRename} />
-      {screen === 'structures' ? (
+      {screen === 'structures' && (
         <Structures
           planet={planet}
           universeSpeed={universeSpeed}
@@ -87,9 +93,17 @@ export function GameShell({
           onCancel={(slot) => cancel.mutate(slot)}
           pendingKey={upgrade.isPending ? (upgrade.variables ?? null) : null}
         />
-      ) : (
-        <CommandDeck planet={planet} />
       )}
+      {screen === 'research' && (
+        <Research
+          planet={planet}
+          universeSpeed={universeSpeed}
+          onEnqueue={(technology) => enqueue.mutate(technology)}
+          pendingKey={enqueue.isPending ? (enqueue.variables ?? null) : null}
+          onGoToStructures={() => setScreen('structures')}
+        />
+      )}
+      {screen === 'overview' && <CommandDeck planet={planet} />}
       {planetQuery.isError && !dismissed && <ErrorBanner onDismiss={() => setDismissed(true)} />}
       {showWelcome && (
         <WelcomeWindow
