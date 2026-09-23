@@ -18,6 +18,7 @@ import {
 } from '../lib/structures.ts';
 import type { StructureEffect } from '../lib/structureEffect.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
+import { STRUCTURES_LAYOUT } from '../lib/structuresLayout.ts';
 import {
   CancelX,
   CheckRow,
@@ -638,9 +639,7 @@ const contentStyle = {
 
 const headingRowStyle = {
   position: 'absolute' as const,
-  left: 'var(--content-left)',
-  top: 24,
-  right: 24,
+  ...STRUCTURES_LAYOUT.heading,
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-end',
@@ -677,13 +676,9 @@ function tabButtonStyle(active: boolean) {
   };
 }
 
-const DETAIL_W = 340;
 const gridScrollStyle = {
   position: 'absolute' as const,
-  left: 'var(--content-left)',
-  top: 104,
-  right: DETAIL_W + 48,
-  bottom: 24,
+  ...STRUCTURES_LAYOUT.grid,
   overflowY: 'auto' as const,
   paddingRight: 8,
 };
@@ -778,10 +773,7 @@ const iconWellStyle = {
 
 const panelStyle = {
   position: 'absolute' as const,
-  right: 24,
-  top: 24,
-  width: DETAIL_W,
-  bottom: 24,
+  ...STRUCTURES_LAYOUT.panel,
   boxSizing: 'border-box' as const,
   padding: 20,
   borderRadius: 12,
