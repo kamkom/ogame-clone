@@ -30,7 +30,7 @@ export interface ResearchEntrySnapshot {
   cost: { alloy: number; crystal: number; deuterium: number };
   startedAt: number | null;
   endsAt: number | null;
-  /** True when the head waits for a Research Lab upgrade (the Lab lock lands in a later ticket). */
+  /** True when the head waits for a Research Lab upgrade to finish (queue rule 14). */
   waitingOnLab: boolean;
 }
 
@@ -101,14 +101,15 @@ function researchQueue(db: DatabaseSync, playerId: number): ResearchEntrySnapsho
     started_at: number | null;
     ends_at: number | null;
   }[];
-  return rows.map((r) => ({
+  // Only a Lab upgrade holds the head back, so a head that hasn't started is waiting on the Lab.
+  return rows.map((r, i) => ({
     id: r.id,
     technology: r.technology_key,
     targetLevel: r.target_level,
     cost: { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
     startedAt: r.started_at,
     endsAt: r.ends_at,
-    waitingOnLab: false,
+    waitingOnLab: i === 0 && r.started_at === null,
   }));
 }
 

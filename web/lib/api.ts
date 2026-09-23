@@ -142,4 +142,6 @@ export const api = {
     post<PlanetSnapshot>('/api/research', { technology }, fetchImpl),
   placeShipyardOrder: (ship: string, quantity: number, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>('/api/shipyard/orders', { ship, quantity }, fetchImpl),
+  cancelResearch: (entryId: number, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>(`/api/research/${entryId}/cancel`, {}, fetchImpl),
 };

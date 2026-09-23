@@ -248,6 +248,47 @@ describe('advance — Research Queue', () => {
     expect(after.researchQueue![0]).toMatchObject({ startedAt: E1, endsAt: E1 + lab3 });
   });
 
+  it('holds the head while the Research Lab upgrades, then starts it at the Lab boundary', () => {
+    // Research Lab lock: the head waits for the Lab and runs with the new Lab level.
+    const LAB_END = 2 * HOUR;
+    const waiting = state({
+      structures: { ...NO_STRUCTURES, researchLab: 1 },
+      buildSlots: [
+        {
+          slot: 1,
+          structureKey: 'research-lab',
+          field: 'researchLab',
+          targetLevel: 2,
+          endsAt: LAB_END,
+        },
+      ],
+      researchQueue: [
+        {
+          id: 1,
+          technologyKey: 'energy-theory',
+          field: 'energyTech',
+          targetLevel: 1,
+          cost: { alloy: 0, crystal: 800 },
+          startedAt: null,
+          endsAt: null,
+        },
+      ],
+    });
+    const held = advance(waiting, LAB_END - 1, 1);
+    expect(held.researchQueue![0]).toMatchObject({ startedAt: null, endsAt: null });
+
+    const lab2 = researchDurationSec(0, 800, 2, 1) * 1000;
+    const started = advance(waiting, LAB_END + 1, 1);
+    expect(started.researchQueue![0]).toMatchObject({
+      startedAt: LAB_END,
+      endsAt: LAB_END + lab2,
+    });
+
+    const done = advance(waiting, LAB_END + lab2 + 1, 1);
+    expect(done.energyTech).toBe(1);
+    expect(done.researchQueue).toEqual([]);
+  });
+
   it('schedules the head completion as the next boundary', () => {
     expect(nextEventAt(s, 1, 0)).toBe(E1);
   });
@@ -434,6 +475,7 @@ describe('advance — determinism property', () => {
       split: fc.double({ min: 0, max: 1, noNaN: true }),
       research: fc.boolean(),
       shipyard: fc.boolean(),
+      labEndsAt: fc.option(fc.integer({ min: 1, max: 48 * HOUR })),
     });
 
     // A queue whose later entries start mid-interval, at boundaries the stepped run must reproduce.
@@ -484,12 +526,27 @@ describe('advance — determinism property', () => {
 
     fc.assert(
       fc.property(arbState, (a) => {
-        const { research, shipyard, ...rest } = a;
+        const { research, shipyard, labEndsAt, ...rest } = a;
+        // With a Lab upgrade running, the head waits for its boundary instead of running.
+        const q = research ? queue(a.structures.researchLab) : [];
+        if (labEndsAt !== null && q[0]) q[0] = { ...q[0], startedAt: null, endsAt: null };
         const s: EconomyState = {
           ...rest,
           lastUpdatedAt: 0,
-          researchQueue: research ? queue(a.structures.researchLab) : [],
+          researchQueue: q,
           shipyardOrders: shipyard ? orders : [],
+          buildSlots:
+            labEndsAt === null
+              ? []
+              : [
+                  {
+                    slot: 1,
+                    structureKey: 'research-lab',
+                    field: 'researchLab',
+                    targetLevel: a.structures.researchLab + 1,
+                    endsAt: labEndsAt,
+                  },
+                ],
         };
         const t1 = Math.floor(a.t2 * a.split);
         const direct = advance(s, a.t2, a.speed);
@@ -502,6 +559,7 @@ describe('advance — determinism property', () => {
         expect(stepped.researchQueue).toEqual(direct.researchQueue);
         expect(stepped.shipyardOrders).toEqual(direct.shipyardOrders);
         expect(stepped.solarSatellites).toBe(direct.solarSatellites);
+        expect(stepped.buildSlots).toEqual(direct.buildSlots);
       }),
       { numRuns: 500 },
     );

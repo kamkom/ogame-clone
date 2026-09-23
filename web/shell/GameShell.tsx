@@ -69,6 +69,10 @@ export function GameShell({
       api.placeShipyardOrder(ship, quantity),
     onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
   });
+  const cancelResearch = useMutation({
+    mutationFn: (entryId: number) => api.cancelResearch(entryId),
+    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+  });
 
   // Refetch when the next server-side boundary is due (e.g. Deuterium depletion changes the rates).
   useEffect(() => {
@@ -115,6 +119,7 @@ export function GameShell({
           planet={planet}
           universeSpeed={universeSpeed}
           onEnqueue={(technology) => enqueue.mutate(technology)}
+          onCancel={(entryId) => cancelResearch.mutate(entryId)}
           pendingKey={enqueue.isPending ? (enqueue.variables ?? null) : null}
           onGoToStructures={() => setScreen('structures')}
         />

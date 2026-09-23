@@ -1,37 +1,53 @@
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { catalogName, TECH_LANES, TECHNOLOGIES, technologyDef } from '#shared/catalog.ts';
-import type { PlanetSnapshot, ResearchEntryView } from '../lib/api.ts';
+import type { PlanetSnapshot } from '../lib/api.ts';
+import { formatCompact } from '../lib/affordability.ts';
 import { formatResource } from '../lib/format.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { liveResources } from '../lib/liveResources.ts';
+import { RESEARCH_QUEUE_MAX } from '#shared/research.ts';
 import {
+  entryDurationSec,
   nodeStatus,
   type NodeTone,
   queueAction,
+  type QueueActionKind,
+  queueToggleLabel,
   researchProgress,
   techView,
   type TechView,
+  waitingHeadStartsAt,
 } from '../lib/research.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
+import {
+  CancelX,
+  CheckRow,
+  ClockIcon,
+  disabledBigButtonStyle,
+  LockIcon,
+  reasonListStyle,
+} from './stateControls.tsx';
 import { TECH_ICONS } from './techIcons.ts';
 
 interface ResearchProps {
   planet: PlanetSnapshot;
   universeSpeed: number;
   onEnqueue: (technology: string) => void;
+  onCancel: (entryId: number) => void;
   pendingKey: string | null;
   onGoToStructures: () => void;
 }
 
 /**
- * The Research screen: the heading with the active entry and a "+N queued" dropdown, the four
- * Technology lanes, and a detail panel with requirements, cost and the queue button. With no
- * Research Lab it shows a blocking panel instead (spec stories 52–57, 64, 65).
+ * The Research screen: the heading with the queue head and a "+ N queued" dropdown (✕ on every
+ * entry), the four Technology lanes, and a detail panel with requirements, cost and the queue
+ * button. With no Research Lab it shows a blocking panel instead (spec stories 52–65).
  */
 export function Research({
   planet,
   universeSpeed,
   onEnqueue,
+  onCancel,
   pendingKey,
   onGoToStructures,
 }: ResearchProps) {
@@ -75,15 +91,16 @@ export function Research({
       <div style={headingRowStyle}>
         <Heading lab={lab} />
         <QueueBox
-          queue={planet.researchQueue}
+          planet={planet}
           now={now}
           open={queueOpen}
           onToggle={() => setQueueOpen((o) => !o)}
+          onCancel={onCancel}
         />
       </div>
 
-      {queueOpen && planet.researchQueue.length > 0 && (
-        <QueueDropdown queue={planet.researchQueue} now={now} />
+      {queueOpen && planet.researchQueue.length > 1 && (
+        <QueueDropdown planet={planet} speed={universeSpeed} now={now} onCancel={onCancel} />
       )}
 
       <div style={lanesStyle}>
@@ -130,18 +147,37 @@ function Heading({ lab }: { lab: number }) {
   );
 }
 
-/** The header box: the active entry with its countdown and bar, and the "+N queued" chip. */
+/** The head's countdown: to its end while it runs, or "waits · …" to the Lab's finish. */
+function headTiming(planet: PlanetSnapshot, now: number): { text: string; waiting: boolean } {
+  const head = planet.researchQueue[0]!;
+  if (head.waitingOnLab) {
+    const startsAt = waitingHeadStartsAt(planet);
+    return {
+      text: `waits · ${startsAt !== null ? formatCountdown(startsAt - now) : '—'}`,
+      waiting: true,
+    };
+  }
+  return { text: head.endsAt !== null ? formatCountdown(head.endsAt - now) : '—', waiting: false };
+}
+
+/**
+ * The header box (#14 pick A): the head with its countdown, bar and ✕ — amber "waits · 00:42:18"
+ * and a striped bar while it waits on the Lab — and the "+ 4 queued · 5 of 5 ▾" toggle.
+ */
 function QueueBox({
-  queue,
+  planet,
   now,
   open,
   onToggle,
+  onCancel,
 }: {
-  queue: ResearchEntryView[];
+  planet: PlanetSnapshot;
   now: number;
   open: boolean;
   onToggle: () => void;
+  onCancel: (entryId: number) => void;
 }) {
+  const queue = planet.researchQueue;
   const head = queue[0];
   if (!head) {
     return (
@@ -150,59 +186,87 @@ function QueueBox({
       </div>
     );
   }
-  const waiting = queue.length - 1;
+  const timing = headTiming(planet, now);
+  const name = catalogName(head.technology);
   return (
-    <div style={queueBoxStyle}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, gap: 8 }}>
-        <span>
-          {catalogName(head.technology)}{' '}
-          <span style={{ color: 'var(--text-muted)' }}>→ level {head.targetLevel}</span>
+    <div style={{ ...queueBoxStyle, borderColor: timing.waiting ? 'var(--warn-line)' : undefined }}>
+      <div style={{ display: 'flex', alignItems: 'center', fontSize: 14, gap: 10 }}>
+        <span style={{ flexGrow: 1 }}>
+          {name} <span style={{ color: 'var(--text-muted)' }}>→ level {head.targetLevel}</span>
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {waiting > 0 && (
-            <button
-              type="button"
-              onClick={onToggle}
-              aria-expanded={open}
-              style={queuedChipStyle}
-              title="Show the Research Queue"
-            >
-              +{waiting} queued {open ? '▴' : '▾'}
-            </button>
-          )}
-          <span style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
-            {head.endsAt !== null ? formatCountdown(head.endsAt - now) : '—'}
-          </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: timing.waiting ? 13 : 14,
+            color: timing.waiting ? 'var(--warn)' : 'var(--accent)',
+          }}
+        >
+          {timing.text}
         </span>
+        <CancelX label={`${name} ${head.targetLevel}`} onClick={() => onCancel(head.id)} />
       </div>
-      <ProgressBar value={researchProgress(head, now)} />
+      {timing.waiting ? <StripedBar /> : <ProgressBar value={researchProgress(head, now)} />}
+      {queue.length > 1 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          style={queueToggleStyle}
+          title="Show the Research Queue"
+        >
+          {queueToggleLabel(queue)} {open ? '▴' : '▾'}
+        </button>
+      )}
     </div>
   );
 }
 
-/** The dropdown over the lanes listing every queue entry, in order. */
-function QueueDropdown({ queue, now }: { queue: ResearchEntryView[]; now: number }) {
+/** The dropdown under the box: every entry in order, with its countdown or duration and a ✕. */
+function QueueDropdown({
+  planet,
+  speed,
+  now,
+  onCancel,
+}: {
+  planet: PlanetSnapshot;
+  speed: number;
+  now: number;
+  onCancel: (entryId: number) => void;
+}) {
+  const queue = planet.researchQueue;
+  const head = headTiming(planet, now);
   return (
     <div style={dropdownStyle} role="list" aria-label="Research Queue">
-      {queue.map((e, i) => (
-        <div key={e.id} role="listitem" style={dropdownRowStyle}>
-          <span style={dropdownIndexStyle}>{i + 1}</span>
-          <TechGlyph icon={technologyDef(e.technology)?.icon ?? 'energy'} size={22} />
-          <span style={{ flexGrow: 1 }}>
-            {catalogName(e.technology)}{' '}
-            <span style={{ color: 'var(--text-muted)' }}>→ {e.targetLevel}</span>
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 13,
-              color: i === 0 ? 'var(--accent)' : 'var(--text-muted)',
-            }}
+      {queue.map((e, i) => {
+        const name = catalogName(e.technology);
+        // The head shows its live countdown; waiting entries show how long they will take.
+        let timing: string;
+        let color: string;
+        if (i === 0) {
+          timing = head.text;
+          color = head.waiting ? 'var(--warn)' : 'var(--accent)';
+        } else {
+          timing = formatDuration(entryDurationSec(e, planet, speed));
+          color = 'var(--text-body)';
+        }
+        return (
+          <div
+            key={e.id}
+            role="listitem"
+            style={{ ...dropdownRowStyle, borderTop: i > 0 ? '1px solid var(--line)' : undefined }}
           >
-            {i === 0 && e.endsAt !== null ? formatCountdown(e.endsAt - now) : 'queued'}
-          </span>
-        </div>
-      ))}
+            <span style={dropdownIndexStyle}>{i + 1}</span>
+            <TechGlyph icon={technologyDef(e.technology)?.icon ?? 'energy'} size={22} />
+            <span style={{ flexGrow: 1 }}>
+              {name} <span style={{ color: 'var(--text-muted)' }}>→ {e.targetLevel}</span>
+            </span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, color }}>
+              {timing}
+            </span>
+            <CancelX label={`${name} ${e.targetLevel}`} onClick={() => onCancel(e.id)} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -222,6 +286,20 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
+/** The bar of a head waiting on the Lab: striped, not filling. */
+function StripedBar() {
+  return (
+    <div
+      style={{
+        height: 4,
+        borderRadius: 4,
+        background: 'var(--line)',
+        backgroundImage: 'repeating-linear-gradient(90deg, #2a3a4d 0 6px, transparent 6px 12px)',
+      }}
+    />
+  );
+}
+
 function Connector({ locked }: { locked: boolean }) {
   return (
     <div
@@ -236,6 +314,8 @@ function Connector({ locked }: { locked: boolean }) {
 
 const STATUS_COLOR: Record<NodeTone, string> = {
   busy: 'var(--accent)',
+  waiting: 'var(--warn)',
+  queued: 'var(--accent)',
   locked: 'var(--text-muted)',
   idle: 'var(--text-label)',
 };
@@ -254,6 +334,7 @@ function TechNode({
   let borderColor = 'var(--line)';
   if (selected) borderColor = 'var(--accent)';
   else if (status.tone === 'busy') borderColor = 'var(--accent-line)';
+  else if (status.tone === 'waiting') borderColor = 'var(--warn-line)';
   else if (locked) borderColor = 'var(--line-strong)';
   let background = 'var(--panel)';
   if (selected) background = 'var(--accent-select)';
@@ -300,15 +381,24 @@ function DetailPanel({
   pending: boolean;
   onEnqueue: () => void;
 }) {
-  const { def, level, targetLevel, cost, durationSec, requirements } = view;
+  const { def, level, targetLevel, cost, durationSec, requirements, checks } = view;
   const action = queueAction(planet, view);
-  const enabled = action.enabled && !pending;
   const lane = TECH_LANES.find((l) => l.key === def.lane)!;
-  const costParts = [
-    cost.alloy > 0 && `${formatResource(cost.alloy)} Alloy`,
-    cost.crystal > 0 && `${formatResource(cost.crystal)} Crystal`,
-    cost.deuterium > 0 && `${formatResource(cost.deuterium)} Deut`,
-  ].filter(Boolean);
+  // Short figures turn red (#14 B+C): Research is paid when queued, so the cost must be covered.
+  const short = new Set(checks.filter((c) => !c.met).map((c) => c.resource));
+  const costParts = (
+    [
+      ['alloy', 'Alloy'],
+      ['crystal', 'Crystal'],
+      ['deuterium', 'Deut'],
+    ] as const
+  )
+    .filter(([r]) => cost[r] > 0)
+    .map(([r, label]) => (
+      <span key={r} style={{ color: short.has(r) ? 'var(--danger)' : undefined }}>
+        {formatResource(cost[r])} {label}
+      </span>
+    ));
 
   return (
     <aside style={panelStyle}>
@@ -324,11 +414,18 @@ function DetailPanel({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <StatRow label="Cost" value={costParts.length > 0 ? costParts.join(' · ') : 'Free'} />
-        {def.energyRequired !== undefined && (
+        <StatRow
+          label="Cost"
+          value={costParts.length > 0 ? joinWithDots(costParts) : 'No Resources'}
+        />
+        {view.energyRequired > 0 && (
           <StatRow
             label="Energy capacity"
-            value={formatResource(def.energyRequired * def.factor ** (targetLevel - 1))}
+            value={
+              <span style={{ color: view.energyMet ? undefined : 'var(--danger)' }}>
+                {formatResource(view.energyRequired)} · checked, not spent
+              </span>
+            }
           />
         )}
         <StatRow label="Research time" value={formatDuration(durationSec)} last />
@@ -337,52 +434,103 @@ function DetailPanel({
       {requirements.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span style={kickerStyle}>REQUIREMENTS</span>
-          {requirements.map((r) => {
-            const color = r.met ? 'var(--accent)' : 'var(--danger)';
-            return (
-              <div
-                key={r.key}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-label={r.met ? 'met' : 'not met'}
-                >
-                  <path d={r.met ? 'M5 12.5l4.5 4.5L19 7.5' : 'M7 7l10 10 M17 7L7 17'} />
-                </svg>
-                <span style={{ flexGrow: 1 }}>{r.name}</span>
-                <span style={{ fontFamily: 'var(--font-display)', color }}>
-                  {r.have} / {r.need}
-                </span>
-              </div>
-            );
-          })}
+          {requirements.map((r) => (
+            <CheckRow key={r.key} ok={r.met} label={r.name} value={`${r.have} / ${r.need}`} />
+          ))}
         </div>
       )}
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button
-          type="button"
-          disabled={!enabled}
-          onClick={onEnqueue}
-          style={outlineButtonStyle(enabled)}
-        >
-          {pending ? 'QUEUING…' : action.label}
-        </button>
-        <span style={footNoteStyle}>One research runs at a time · paid when queued</span>
+        {action.kind === 'short' && (
+          <div style={reasonListStyle}>
+            {checks.map((c) => (
+              <CheckRow
+                key={c.resource}
+                ok={c.met}
+                label={c.label}
+                value={`${formatResource(c.have)} / ${formatResource(c.need)}`}
+              />
+            ))}
+          </div>
+        )}
+        <QueueButton
+          kind={action.kind}
+          label={action.label}
+          pending={pending}
+          onEnqueue={onEnqueue}
+        />
+        <span style={footNoteStyle}>{footNote(action.kind, view, planet)}</span>
       </div>
     </aside>
   );
 }
 
-function StatRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+/** "a · b · c" for inline cost figures that each carry their own colour. */
+function joinWithDots(parts: ReactNode[]): ReactNode {
+  return parts.flatMap((p, i) => (i === 0 ? [p] : [' · ', p]));
+}
+
+/**
+ * The queue button per state: the accent outline when it can queue; a dashed "QUEUE FULL · 5 OF 5"
+ * (pick A); a clock with "AFFORDABLE IN …" when short (B+C); a lock when locked or short of Energy.
+ */
+function QueueButton({
+  kind,
+  label,
+  pending,
+  onEnqueue,
+}: {
+  kind: QueueActionKind;
+  label: string;
+  pending: boolean;
+  onEnqueue: () => void;
+}) {
+  if (kind === 'ready') {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={onEnqueue}
+        style={outlineButtonStyle(!pending)}
+      >
+        {pending ? 'QUEUING…' : label}
+      </button>
+    );
+  }
+  if (kind === 'full') {
+    return (
+      <button type="button" disabled style={queueFullButtonStyle}>
+        {label}
+      </button>
+    );
+  }
+  return (
+    <button type="button" disabled style={disabledBigButtonStyle}>
+      {kind === 'short' ? <ClockIcon size={14} /> : <LockIcon size={14} />}
+      {label}
+    </button>
+  );
+}
+
+function footNote(kind: QueueActionKind, view: TechView, planet: PlanetSnapshot): string {
+  if (kind === 'full') return `Up to ${RESEARCH_QUEUE_MAX} Technologies can be queued`;
+  if (kind === 'energy') {
+    return `${formatResource(planet.energy.produced)} Energy produced · needs ${formatResource(view.energyRequired)}`;
+  }
+  if (kind === 'short') {
+    if (view.affordableInSec === null) {
+      return 'Not reachable at current production or Storage Capacity';
+    }
+    const rates = view.checks
+      .filter((c) => !c.met)
+      .map((c) => `${c.label} +${formatCompact(planet.ratesPerHour[c.resource])}/h`)
+      .join(' · ');
+    return `Research is paid when queued · ${rates}`;
+  }
+  return 'One research runs at a time · paid when queued';
+}
+
+function StatRow({ label, value, last }: { label: string; value: ReactNode; last?: boolean }) {
   return (
     <div
       style={{
@@ -463,22 +611,21 @@ const queueBoxStyle = {
   gap: 8,
 };
 
-const queuedChipStyle = {
-  height: 22,
-  padding: '0 8px',
-  borderRadius: 6,
-  border: '1px solid var(--line-strong)',
+const queueToggleStyle = {
+  alignSelf: 'flex-start' as const,
+  padding: 0,
+  border: 0,
   background: 'transparent',
-  color: 'var(--text-body)',
-  fontFamily: 'var(--font-display)',
-  fontSize: 12,
+  color: 'var(--accent)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 13,
   cursor: 'pointer',
 };
 
 const dropdownStyle = {
   position: 'absolute' as const,
   left: 24 + 948 - 380,
-  top: 96,
+  top: 112,
   width: 380,
   zIndex: 5,
   boxSizing: 'border-box' as const,
@@ -628,6 +775,21 @@ function outlineButtonStyle(enabled: boolean) {
     cursor: enabled ? 'pointer' : 'not-allowed',
   };
 }
+
+// A full queue (#14 pick A): quiet and dashed, not a lock.
+const queueFullButtonStyle = {
+  height: 50,
+  borderRadius: 10,
+  border: '1px dashed var(--line-strong)',
+  background: 'transparent',
+  color: 'var(--text)',
+  opacity: 0.45,
+  fontFamily: 'var(--font-display)',
+  fontWeight: 600,
+  fontSize: 14,
+  letterSpacing: '0.08em',
+  cursor: 'not-allowed',
+};
 
 function primaryButtonStyle(enabled: boolean) {
   return {
