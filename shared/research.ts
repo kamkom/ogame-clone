@@ -46,6 +46,14 @@ export function technologyCost(def: TechnologyDef, level: number): StructureCost
   };
 }
 
+/**
+ * The Energy capacity researching `level` needs — checked, not spent (Graviton Lance: 300,000,
+ * tripling per level, rules reference §4). 0 for every Technology without an Energy requirement.
+ */
+export function technologyEnergyRequired(def: TechnologyDef, level: number): number {
+  return def.energyRequired ? levelCost(def.energyRequired, def.factor, level) : 0;
+}
+
 /** The highest level of `technology` the queue will reach, or `current` when none is queued. */
 function plannedLevel(technology: string, current: number, queue: QueuedResearch[]): number {
   return queue.reduce(
@@ -81,4 +89,30 @@ export function requirementStatus(
       : (levels.structures[key] ?? 0);
     return { key, name: catalogName(key), have, need, met: have >= need };
   });
+}
+
+/**
+ * The ids Cancelling entry `id` removes (queue rule 10): the entry itself plus every later entry
+ * that no longer holds once it is gone — one whose Technology requirement relied on it, or a later
+ * level of the same Technology, which can't skip the cancelled level. Removals cascade, so an entry
+ * that relied on a removed dependant goes too. `levels` are the finished levels.
+ */
+export function cancelCascade<E extends QueuedResearch & { id: number }>(
+  queue: E[],
+  id: number,
+  levels: Levels,
+): Set<number> {
+  const cancelled = new Set([id]);
+  const kept: E[] = [];
+  for (const entry of queue) {
+    if (entry.id === id) continue;
+    const current = levels.technologies[entry.technology] ?? 0;
+    const requires = technologyDef(entry.technology)?.requires ?? [];
+    const holds =
+      entry.targetLevel === researchTargetLevel(entry.technology, current, kept) &&
+      requirementStatus(requires, levels, kept).every((r) => r.met);
+    if (holds) kept.push(entry);
+    else cancelled.add(entry.id);
+  }
+  return cancelled;
 }

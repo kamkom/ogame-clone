@@ -40,6 +40,8 @@
   --deuterium: var(--accent); /* the design reuses the accent for Deuterium */
   --energy: #ffc36b;
   --danger: #ff8a8a; /* unmet requirement */
+  --warn: #ffc36b; /* waiting states (Research head held by a Lab upgrade) */
+  --warn-line: rgba(255, 195, 107, 0.35); /* border of a waiting card or box */
 
   /* Art strokes (ships, structure illustrations, planet HUD) */
   --art-hull: #a9bacd;

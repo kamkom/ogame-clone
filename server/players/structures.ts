@@ -8,6 +8,7 @@ export type UpgradeRejection =
   | 'not_found'
   | 'already_in_progress'
   | 'slots_full'
+  | 'locked_research_active'
   | 'requirements_not_met'
   | 'fields_full'
   | 'cannot_afford';
@@ -33,6 +34,15 @@ function techLevelOf(db: DatabaseSync, playerId: number, key: string): number {
     .prepare(`SELECT level FROM player_technologies WHERE player_id = ? AND technology_key = ?`)
     .get(playerId, key) as { level: number } | undefined;
   return row?.level ?? 0;
+}
+
+/** Whether the Player has a Research Queue head running. */
+function researchActive(db: DatabaseSync, playerId: number): boolean {
+  return (
+    db
+      .prepare(`SELECT 1 FROM research_queue WHERE player_id = ? AND started_at IS NOT NULL`)
+      .get(playerId) !== undefined
+  );
 }
 
 /** A Planet's Fields: finished levels, upgrades running in a Build Slot, and the max. */
@@ -74,6 +84,10 @@ export function startUpgrade(
     .all(planet.id) as { slot: number; structure_key: string }[];
   if (slots.some((s) => s.structure_key === key)) return { error: 'already_in_progress' };
   if (slots.length >= SLOT_COUNT) return { error: 'slots_full' };
+  // Research Lab lock: the Lab can't start upgrading while Research is running (queue rule 14).
+  if (key === 'research-lab' && researchActive(db, planet.player_id)) {
+    return { error: 'locked_research_active' };
+  }
 
   // Requirements use finished levels only; a level still in a Build Slot doesn't count.
   const currentLevel = (k: string) =>

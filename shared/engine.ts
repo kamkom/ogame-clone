@@ -57,7 +57,8 @@ export type TechField = 'energyTech' | 'plasmaTech';
 
 /**
  * One Research Queue entry. Only the head runs: its `startedAt`/`endsAt` are fixed when it becomes
- * head, from the Research Lab level at that moment; waiting entries carry nulls. `field` is the
+ * head (or, if the Research Lab is upgrading then, when the Lab finishes), from the Research Lab
+ * level at that moment; waiting entries carry nulls. `field` is the
  * production Technology it raises, or null for one with no economy effect.
  */
 export interface ResearchEntry {
@@ -190,10 +191,24 @@ function deuteriumAvailable(state: EconomyState): boolean {
   return state.resources.deuterium > EPSILON;
 }
 
-/** Start the head of `queue` at `at` if it is waiting, fixing its duration from `lab`. */
-function startHead(queue: ResearchEntry[], at: number, lab: number, speed: number): void {
+/** Whether a Research Lab upgrade is running in a Build Slot, which holds the Research head. */
+export function labUpgrading(buildSlots: BuildSlot[] | undefined): boolean {
+  return (buildSlots ?? []).some((bs) => bs.field === 'researchLab');
+}
+
+/**
+ * Start the head of `queue` at `at` if it is waiting, fixing its duration from `lab` — unless the
+ * Research Lab is upgrading, in which case it keeps waiting for the Lab's boundary (Lab lock).
+ */
+function startHead(
+  queue: ResearchEntry[],
+  buildSlots: BuildSlot[],
+  at: number,
+  lab: number,
+  speed: number,
+): void {
   const head = queue[0];
-  if (!head || head.startedAt !== null) return;
+  if (!head || head.startedAt !== null || labUpgrading(buildSlots)) return;
   const durationMs = researchDurationSec(head.cost.alloy, head.cost.crystal, lab, speed) * 1000;
   queue[0] = { ...head, startedAt: at, endsAt: at + durationMs };
 }
@@ -214,7 +229,7 @@ export function advance(
   const researchQueue = (state.researchQueue ?? []).map((e) => ({ ...e }));
   const techs = { energyTech: state.energyTech, plasmaTech: state.plasmaTech };
   let t = state.lastUpdatedAt;
-  startHead(researchQueue, t, structures.researchLab, speed);
+  startHead(researchQueue, buildSlots, t, structures.researchLab, speed);
 
   while (t < now - EPSILON) {
     const cursor: EconomyState = { ...state, ...techs, resources, structures, buildSlots };
@@ -267,8 +282,9 @@ export function advance(
     if (head && head.endsAt !== null && head.endsAt <= t + EPSILON) {
       if (head.field !== null) techs[head.field] = head.targetLevel;
       researchQueue.shift();
-      startHead(researchQueue, t, structures.researchLab, speed);
     }
+    // A head waiting on the Lab starts here too, once the Lab upgrade has finished at `t`.
+    startHead(researchQueue, buildSlots, t, structures.researchLab, speed);
   }
 
   return {

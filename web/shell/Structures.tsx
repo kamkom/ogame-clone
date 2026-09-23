@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useMemo, useState } from 'react';
 import {
+  catalogName,
   type RequirementStatus,
   requirementStatus,
   STRUCTURES,
@@ -19,7 +20,17 @@ import {
 import { formatResource } from '../lib/format.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { liveResources } from '../lib/liveResources.ts';
+import { labLockEndsAt } from '../lib/research.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
+import {
+  CancelX,
+  CheckRow,
+  ClockIcon,
+  disabledBigButtonStyle,
+  LockIcon,
+  reasonListStyle,
+  XIcon,
+} from './stateControls.tsx';
 
 interface StructuresProps {
   planet: PlanetSnapshot;
@@ -40,10 +51,12 @@ const TABS: { key: TabKey; label: string; count: (d: StructureDef) => boolean }[
 
 /**
  * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
- * picks): already building, requirements not met (B), both Build Slots busy (C), no free Field,
- * can't afford (B+C), or ready. Computed from the snapshot; 409s only catch races.
+ * picks): already building, requirements not met (B), the Research Lab while Research runs (C),
+ * both Build Slots busy (C), no free Field, can't afford (B+C), or ready. Computed from the
+ * snapshot; 409s only catch races.
  */
-type UpgradeState = 'building' | 'locked' | 'slots_full' | 'fields_full' | 'short' | 'ready';
+type UpgradeState =
+  'building' | 'locked' | 'research_active' | 'slots_full' | 'fields_full' | 'short' | 'ready';
 
 interface StructureView {
   def: StructureDef;
@@ -57,6 +70,8 @@ interface StructureView {
   /** Seconds until the cost is covered at current production; null when it never will be. */
   affordableInSec: number | null;
   state: UpgradeState;
+  /** For the Research Lab under the Research lock: when the lock lifts. */
+  lockEndsAt: number | null;
 }
 
 interface PlanetContext {
@@ -65,6 +80,8 @@ interface PlanetContext {
   live: { alloy: number; crystal: number; deuterium: number };
   slotsFull: boolean;
   fieldsFull: boolean;
+  /** When running Research stops locking the Research Lab; null when none runs. */
+  labLockEndsAt: number | null;
 }
 
 function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
@@ -104,6 +121,7 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
   let state: UpgradeState = 'ready';
   if (slot) state = 'building';
   else if (requirements.some((r) => !r.met)) state = 'locked';
+  else if (def.key === 'research-lab' && ctx.labLockEndsAt !== null) state = 'research_active';
   else if (ctx.slotsFull) state = 'slots_full';
   else if (ctx.fieldsFull) state = 'fields_full';
   else if (checks.some((c) => !c.met)) state = 'short';
@@ -119,6 +137,7 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
     checks,
     affordableInSec,
     state,
+    lockEndsAt: state === 'research_active' ? ctx.labLockEndsAt : null,
   };
 }
 
@@ -139,13 +158,21 @@ export function Structures({
   const slotsFull = slotsUsed >= planet.buildSlots.length;
   const { used, inProgress, max } = planet.fields;
   const fieldsFull = used + inProgress >= max;
+  const labLock = labLockEndsAt(planet, universeSpeed);
 
   const views = useMemo(
     () =>
       STRUCTURES.map((def) =>
-        viewFor(def, { planet, speed: universeSpeed, live, slotsFull, fieldsFull }),
+        viewFor(def, {
+          planet,
+          speed: universeSpeed,
+          live,
+          slotsFull,
+          fieldsFull,
+          labLockEndsAt: labLock,
+        }),
       ),
-    [planet, universeSpeed, live, slotsFull, fieldsFull],
+    [planet, universeSpeed, live, slotsFull, fieldsFull, labLock],
   );
   const shown = views.filter((v) => TABS.find((t) => t.key === tab)!.count(v.def));
   const selected = views.find((v) => v.def.key === selectedKey) ?? views[0]!;
@@ -381,7 +408,10 @@ function CardAction({
   let icon: ReactNode = <LockIcon />;
   let label: string;
   if (view.state === 'locked') label = 'LOCKED';
-  else if (view.state === 'slots_full') {
+  else if (view.state === 'research_active') {
+    icon = <ClockIcon />;
+    label = formatCountdown((view.lockEndsAt ?? now) - now);
+  } else if (view.state === 'slots_full') {
     icon = <ClockIcon />;
     label = nextFreeAt === null ? 'SLOTS FULL' : formatCountdown(nextFreeAt - now);
   } else if (view.state === 'fields_full') label = 'NO FIELDS';
@@ -548,6 +578,15 @@ function DetailAction({
     const met = view.requirements.filter((r) => r.met).length;
     label = 'LOCKED';
     footnote = `${met} of ${view.requirements.length} requirements met · current levels only`;
+  } else if (state === 'research_active') {
+    icon = <ClockIcon size={14} />;
+    label = `LAB FREE IN ${formatCountdown((view.lockEndsAt ?? now) - now)}`;
+    const queue = planet.researchQueue;
+    const name = queue[0] ? catalogName(queue[0].technology) : 'Research';
+    footnote =
+      queue.length > 1
+        ? `Free when the Research Queue finishes · ${queue.length} entries`
+        : `Free when ${name} finishes`;
   } else if (state === 'slots_full') {
     icon = <ClockIcon size={14} />;
     label = firstFree
@@ -623,36 +662,6 @@ function CostLine({
   );
 }
 
-/** One ✓/✕ row: a requirement or a Resource, with its current / required figures. */
-function CheckRow({ ok, label, value }: { ok: boolean; label: string; value: string }) {
-  const tone = ok ? 'var(--accent)' : 'var(--danger)';
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
-      <span style={{ display: 'flex', color: tone }}>{ok ? <CheckIcon /> : <XIcon />}</span>
-      <span style={{ flexGrow: 1, color: ok ? 'var(--text-body)' : 'var(--text)' }}>{label}</span>
-      <span style={{ fontFamily: 'var(--font-display)', color: tone }}>{value}</span>
-    </div>
-  );
-}
-
-/** The ✕ on an in-progress row: Cancel with a 100% refund. */
-function CancelX({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={`Cancel ${label}`}
-      title="Cancel · refund 100%"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      style={cancelXStyle}
-    >
-      <XIcon size={11} />
-    </button>
-  );
-}
-
 function RefundLine({ cost }: { cost: BuildSlotView['cost'] }) {
   return (
     <div style={refundLineStyle}>
@@ -676,54 +685,6 @@ function ResourceDot({ resource }: { resource: CostCheck['resource'] }) {
     <span
       style={{ width: 7, height: 7, borderRadius: '50%', background: RESOURCE_COLORS[resource] }}
     />
-  );
-}
-
-function Glyph({ size, children }: { size: number; children: ReactNode }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-function LockIcon({ size = 12 }: { size?: number }) {
-  return (
-    <Glyph size={size}>
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-    </Glyph>
-  );
-}
-function ClockIcon({ size = 12 }: { size?: number }) {
-  return (
-    <Glyph size={size}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </Glyph>
-  );
-}
-function XIcon({ size = 12 }: { size?: number }) {
-  return (
-    <Glyph size={size}>
-      <path d="M6 6l12 12M18 6L6 18" />
-    </Glyph>
-  );
-}
-function CheckIcon({ size = 12 }: { size?: number }) {
-  return (
-    <Glyph size={size}>
-      <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </Glyph>
   );
 }
 
@@ -962,43 +923,11 @@ function cardButtonStyle(enabled: boolean) {
   };
 }
 
-const disabledBigButtonStyle = {
-  height: 50,
-  borderRadius: 10,
-  border: '1px solid var(--line)',
-  background: 'var(--icon-well)',
-  color: 'var(--text-muted)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 9,
-  fontFamily: 'var(--font-display)',
-  fontWeight: 600,
-  fontSize: 14,
-  letterSpacing: '0.08em',
-  cursor: 'not-allowed',
-};
-
 const secondaryButtonStyle = {
   ...disabledBigButtonStyle,
   border: '1px solid var(--line-strong)',
   background: 'transparent',
   color: 'var(--text-body)',
-  cursor: 'pointer',
-};
-
-const cancelXStyle = {
-  width: 24,
-  height: 24,
-  flexShrink: 0,
-  padding: 0,
-  borderRadius: 6,
-  border: '1px solid var(--line-control)',
-  background: 'transparent',
-  color: 'var(--text-label)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   cursor: 'pointer',
 };
 
@@ -1021,14 +950,4 @@ const chipStyle = {
   color: 'var(--text-label)',
   whiteSpace: 'nowrap' as const,
   lineHeight: 1.3,
-};
-
-const reasonListStyle = {
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 8,
-  padding: '12px 14px',
-  borderRadius: 10,
-  background: 'var(--panel-raised)',
-  border: '1px solid var(--line)',
 };

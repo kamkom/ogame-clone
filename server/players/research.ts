@@ -2,26 +2,37 @@ import type { DatabaseSync } from 'node:sqlite';
 import { technologyDef } from '#shared/catalog.ts';
 import { researchDurationSec } from '#shared/economy.ts';
 import {
+  cancelCascade,
   RESEARCH_QUEUE_MAX,
   requirementStatus,
   researchTargetLevel,
   technologyCost,
+  technologyEnergyRequired,
 } from '#shared/research.ts';
-import { readResearchQueue } from './economy.ts';
+import { labUpgrading, liveProfile } from '#shared/engine.ts';
+import { readBuildSlots, readEconomyState, readResearchQueue } from './economy.ts';
 import { type PlanetRow, structureLevels, technologyLevels } from './repo.ts';
 
 /** A typed reason Research could not be queued. `not_found` is an unknown catalog key (404); the rest are 409s. */
 export type ResearchRejection =
-  'not_found' | 'research_queue_full' | 'requirements_not_met' | 'cannot_afford';
+  | 'not_found'
+  | 'research_queue_full'
+  | 'requirements_not_met'
+  | 'insufficient_energy'
+  | 'cannot_afford';
 
 export type EnqueueResult = { ok: true } | { error: ResearchRejection };
+
+/** A typed reason a Cancel was refused: the Player has no such entry (it may have just finished). */
+export type CancelResearchResult = { ok: true } | { error: 'not_found' };
 
 /**
  * Queue Research of `key` for the Player owning `planet` (spec stories 53–56). The entry is paid now
  * and its level and cost are fixed now: one past the current level and any queued entries of the
  * same Technology. A Technology requirement may be met by an earlier entry; a Structure requirement
  * must already be built. When the queue was empty the entry starts at once, its duration fixed from
- * the current Research Lab level; otherwise it waits (null times) until the engine starts it.
+ * the current Research Lab level — unless the Lab is upgrading; otherwise it waits (null times) until
+ * the engine starts it.
  * `planet` must already be advanced to `now`. Runs inside the caller's transaction.
  */
 export function enqueueResearch(
@@ -46,6 +57,10 @@ export function enqueueResearch(
   if (!status.every((r) => r.met)) return { error: 'requirements_not_met' };
 
   const targetLevel = researchTargetLevel(key, technologies[key] ?? 0, queue);
+  // An Energy requirement (Graviton Lance) is checked against the Energy produced, not spent.
+  const energy = liveProfile(readEconomyState(db, planet), speed).energy.produced;
+  if (energy < technologyEnergyRequired(def, targetLevel)) return { error: 'insufficient_energy' };
+
   const cost = technologyCost(def, targetLevel);
   if (
     Math.floor(planet.alloy) < cost.alloy ||
@@ -55,13 +70,6 @@ export function enqueueResearch(
     return { error: 'cannot_afford' };
   }
 
-  let startedAt: number | null = null;
-  let endsAt: number | null = null;
-  if (queue.length === 0) {
-    const lab = structures['research-lab'] ?? 0;
-    startedAt = now;
-    endsAt = now + researchDurationSec(cost.alloy, cost.crystal, lab, speed) * 1000;
-  }
   const { seq } = db
     .prepare(`SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM research_queue WHERE player_id = ?`)
     .get(planet.player_id) as { seq: number };
@@ -73,7 +81,7 @@ export function enqueueResearch(
     `INSERT INTO research_queue
        (player_id, seq, technology_key, target_level, cost_alloy, cost_crystal, cost_deuterium,
         lab_planet_id, started_at, ends_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
   ).run(
     planet.player_id,
     seq,
@@ -83,8 +91,75 @@ export function enqueueResearch(
     cost.crystal,
     cost.deuterium,
     planet.id,
-    startedAt,
-    endsAt,
   );
+  startWaitingHead(db, planet, now, speed);
+  return { ok: true };
+}
+
+/**
+ * Start the Research Queue head at `now` if it is waiting and the Research Lab isn't upgrading, its
+ * duration fixed from the current Lab level. While the Lab upgrades the head keeps waiting, and the
+ * engine starts it at the Lab's boundary (queue rule 14).
+ */
+function startWaitingHead(db: DatabaseSync, planet: PlanetRow, now: number, speed: number): void {
+  const head = readResearchQueue(db, planet.player_id)[0];
+  if (!head || head.startedAt !== null) return;
+  if (labUpgrading(readBuildSlots(db, planet.id))) return;
+  const lab = structureLevels(db, planet.id)['research-lab'] ?? 0;
+  const endsAt = now + researchDurationSec(head.cost.alloy, head.cost.crystal, lab, speed) * 1000;
+  db.prepare(`UPDATE research_queue SET started_at = ?, ends_at = ? WHERE id = ?`).run(
+    now,
+    endsAt,
+    head.id,
+  );
+}
+
+/**
+ * Cancel Research Queue entry `entryId`, active or waiting, and every waiting entry that depended on
+ * it (queue rule 10, spec story 58), refunding each in full. The rest move up; if the head went, the
+ * new head starts at `now` (or keeps waiting while the Lab upgrades). `planet` must already be
+ * advanced to `now`, so a finished entry is no longer queued. Runs inside the caller's transaction.
+ */
+export function cancelResearch(
+  db: DatabaseSync,
+  planet: PlanetRow,
+  entryId: number,
+  now: number,
+  speed: number,
+): CancelResearchResult {
+  const rows = db
+    .prepare(
+      `SELECT id, technology_key, target_level, cost_alloy, cost_crystal, cost_deuterium
+         FROM research_queue WHERE player_id = ? ORDER BY seq`,
+    )
+    .all(planet.player_id) as {
+    id: number;
+    technology_key: string;
+    target_level: number;
+    cost_alloy: number;
+    cost_crystal: number;
+    cost_deuterium: number;
+  }[];
+  if (!rows.some((r) => r.id === entryId)) return { error: 'not_found' };
+
+  const queue = rows.map((r) => ({
+    id: r.id,
+    technology: r.technology_key,
+    targetLevel: r.target_level,
+  }));
+  const levels = {
+    structures: structureLevels(db, planet.id),
+    technologies: technologyLevels(db, planet.player_id),
+  };
+  const cancelled = cancelCascade(queue, entryId, levels);
+
+  for (const r of rows) {
+    if (!cancelled.has(r.id)) continue;
+    db.prepare(
+      `UPDATE planets SET alloy = alloy + ?, crystal = crystal + ?, deuterium = deuterium + ? WHERE id = ?`,
+    ).run(r.cost_alloy, r.cost_crystal, r.cost_deuterium, planet.id);
+    db.prepare(`DELETE FROM research_queue WHERE id = ?`).run(r.id);
+  }
+  startWaitingHead(db, planet, now, speed);
   return { ok: true };
 }

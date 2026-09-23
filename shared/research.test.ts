@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { TECH_LANES, TECHNOLOGIES, technologyDef } from './catalog.ts';
-import { requirementStatus, researchTargetLevel, technologyCost } from './research.ts';
+import {
+  cancelCascade,
+  requirementStatus,
+  researchTargetLevel,
+  technologyCost,
+  technologyEnergyRequired,
+} from './research.ts';
 
 // Golden values cite the rules-reference doc (docs/research/ogame-rules-reference.md §2, §4) and
 // the design-catalog-mapping doc (Technologies, Gaps).
@@ -129,5 +135,43 @@ describe('requirementStatus', () => {
     expect(status).toEqual([
       { key: 'research-lab', name: 'Research Lab', have: 0, need: 1, met: false },
     ]);
+  });
+});
+
+describe('cancelCascade', () => {
+  const levels = { structures: { 'research-lab': 1 }, technologies: {} };
+  const queue = [
+    { id: 1, technology: 'energy-theory', targetLevel: 1 },
+    { id: 2, technology: 'energy-theory', targetLevel: 2 },
+    { id: 3, technology: 'photon-lasers', targetLevel: 1 }, // needs Energy Theory 2
+    { id: 4, technology: 'computation', targetLevel: 1 },
+  ];
+
+  it('removes later levels of the same Technology and entries that relied on them', () => {
+    expect(cancelCascade(queue, 1, levels)).toEqual(new Set([1, 2, 3]));
+  });
+
+  it('leaves earlier entries and independent ones alone', () => {
+    expect(cancelCascade(queue, 2, levels)).toEqual(new Set([2, 3]));
+    expect(cancelCascade(queue, 4, levels)).toEqual(new Set([4]));
+  });
+
+  it('keeps a dependant whose requirement is still met by finished levels', () => {
+    const done = { ...levels, technologies: { 'energy-theory': 2 } };
+    const later = [
+      { id: 5, technology: 'energy-theory', targetLevel: 3 },
+      { id: 6, technology: 'photon-lasers', targetLevel: 1 },
+    ];
+    expect(cancelCascade(later, 5, done)).toEqual(new Set([5]));
+  });
+});
+
+describe('technologyEnergyRequired', () => {
+  it('is 300,000 for Graviton Lance 1, tripling per level, and 0 elsewhere', () => {
+    const graviton = technologyDef('graviton-lance')!;
+    expect(technologyEnergyRequired(graviton, 1)).toBe(300_000);
+    expect(technologyEnergyRequired(graviton, 2)).toBe(900_000);
+    expect(technologyCost(graviton, 1)).toEqual({ alloy: 0, crystal: 0, deuterium: 0 });
+    expect(technologyEnergyRequired(technologyDef('energy-theory')!, 1)).toBe(0);
   });
 });

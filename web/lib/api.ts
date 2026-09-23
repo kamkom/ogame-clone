@@ -125,4 +125,6 @@ export const api = {
     post<PlanetSnapshot>(`/api/build-slots/${slot}/cancel`, {}, fetchImpl),
   enqueueResearch: (technology: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>('/api/research', { technology }, fetchImpl),
+  cancelResearch: (entryId: number, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>(`/api/research/${entryId}/cancel`, {}, fetchImpl),
 };
