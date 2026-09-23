@@ -14,6 +14,7 @@ import { sweepExpiredSessions } from './auth/sessions.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerPlanetRoutes } from './routes/planet.ts';
 import { registerResearchRoutes } from './routes/research.ts';
+import { registerShipyardRoutes } from './routes/shipyard.ts';
 import { registerStructureRoutes } from './routes/structures.ts';
 
 export interface BuildAppOptions {
@@ -62,6 +63,7 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
   registerPlanetRoutes(app);
   registerStructureRoutes(app);
   registerResearchRoutes(app);
+  registerShipyardRoutes(app);
 
   // Serve the built SPA and fall back to index.html for client routes.
   if (options.config.SERVE_WEB && existsSync(WEB_DIST)) {

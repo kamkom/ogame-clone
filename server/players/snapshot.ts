@@ -1,10 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { formatCoordinates } from '#shared/coords.ts';
-import { liveProfile, nextEventAt } from '#shared/engine.ts';
-import { readEconomyState } from './economy.ts';
+import { liveProfile, nextEventAt, orderEndsAt, orderNextUnitAt } from '#shared/engine.ts';
+import { readEconomyState, readShipyardOrders } from './economy.ts';
 import {
   HOME_DIAMETER_KM,
   type PlanetRow,
+  shipCounts,
   structureLevels,
   technologyLevels,
   tminFor,
@@ -33,6 +34,20 @@ export interface ResearchEntrySnapshot {
   waitingOnLab: boolean;
 }
 
+/** One Shipyard Order in the snapshot; the times are null while it waits behind another. */
+export interface ShipyardOrderSnapshot {
+  id: number;
+  ship: string;
+  quantity: number;
+  completed: number;
+  /** The total paid for the whole Order. */
+  cost: { alloy: number; crystal: number; deuterium: number };
+  unitDurationMs: number | null;
+  startedAt: number | null;
+  nextUnitAt: number | null;
+  endsAt: number | null;
+}
+
 // The /api/planet response shape. Resources are the exact stock at `lastUpdatedAt`; the client
 // interpolates forward from there using `ratesPerHour`, capped at `storageCapacity`.
 export interface PlanetSnapshot {
@@ -57,6 +72,10 @@ export interface PlanetSnapshot {
   technologies: Record<string, number>;
   /** The Research Queue in order, head first. */
   researchQueue: ResearchEntrySnapshot[];
+  /** Every catalog ship's docked count (Solar Satellites included). */
+  ships: Record<string, number>;
+  /** The Shipyard Orders in order, head first. */
+  shipyardOrders: ShipyardOrderSnapshot[];
   nextEventAt: number | null;
 }
 
@@ -90,6 +109,37 @@ function researchQueue(db: DatabaseSync, playerId: number): ResearchEntrySnapsho
     startedAt: r.started_at,
     endsAt: r.ends_at,
     waitingOnLab: false,
+  }));
+}
+
+/** The Planet's Shipyard Orders in order, head first, with the paid totals and unit times. */
+function shipyardOrders(db: DatabaseSync, planetId: number): ShipyardOrderSnapshot[] {
+  const paid = db
+    .prepare(
+      `SELECT id, cost_alloy, cost_crystal, cost_deuterium FROM shipyard_orders WHERE planet_id = ?`,
+    )
+    .all(planetId) as {
+    id: number;
+    cost_alloy: number;
+    cost_crystal: number;
+    cost_deuterium: number;
+  }[];
+  const costById = new Map(
+    paid.map((r) => [
+      r.id,
+      { alloy: r.cost_alloy, crystal: r.cost_crystal, deuterium: r.cost_deuterium },
+    ]),
+  );
+  return readShipyardOrders(db, planetId).map((o) => ({
+    id: o.id,
+    ship: o.shipKey,
+    quantity: o.quantity,
+    completed: o.completed,
+    cost: costById.get(o.id)!,
+    unitDurationMs: o.unitDurationMs,
+    startedAt: o.startedAt,
+    nextUnitAt: orderNextUnitAt(o),
+    endsAt: orderEndsAt(o),
   }));
 }
 
@@ -163,6 +213,8 @@ export function buildPlanetSnapshot(
     buildSlots: slots,
     technologies: technologyLevels(db, planet.player_id),
     researchQueue: researchQueue(db, planet.player_id),
+    ships: shipCounts(db, planet.id),
+    shipyardOrders: shipyardOrders(db, planet.id),
     nextEventAt: nextEventAt(economy, ctx.speed, ctx.serverNow),
   };
 }

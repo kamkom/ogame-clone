@@ -192,3 +192,19 @@ export function researchDurationSec(
   const hours = (alloyCost + crystalCost) / (1000 * (1 + researchLab) * speed);
   return Math.max(1, Math.floor(hours * 3600));
 }
+
+/**
+ * Ship build time per unit in seconds (§5): `(M+C) / (2500·(1+Shipyard)·2^Nanite·S)` hours. The
+ * Orbital Shipyard and Nanite Foundry levels are the ones at the moment the Order becomes head;
+ * an Order of n units finishes one unit every this many seconds.
+ */
+export function shipUnitDurationSec(
+  alloyCost: number,
+  crystalCost: number,
+  shipyard: number,
+  nanite: number,
+  speed = 1,
+): number {
+  const hours = (alloyCost + crystalCost) / (2500 * (1 + shipyard) * 2 ** nanite * speed);
+  return Math.max(1, Math.floor(hours * 3600));
+}

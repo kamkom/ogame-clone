@@ -1,12 +1,19 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { alloyMineOutput, researchDurationSec } from './economy.ts';
+import {
+  alloyMineEnergyUse,
+  alloyMineOutput,
+  productionFactor,
+  researchDurationSec,
+  shipUnitDurationSec,
+} from './economy.ts';
 import {
   advance,
   type EconomyState,
   liveProfile,
   nextEventAt,
   type ResearchEntry,
+  type ShipyardOrder,
   type Structures,
 } from './engine.ts';
 
@@ -22,6 +29,8 @@ const NO_STRUCTURES: Structures = {
   crystalStorage: 0,
   deuteriumStorage: 0,
   researchLab: 0,
+  orbitalShipyard: 0,
+  naniteFoundry: 0,
 };
 
 function state(overrides: Partial<EconomyState> = {}): EconomyState {
@@ -289,6 +298,111 @@ describe('advance — Research Queue', () => {
   });
 });
 
+describe('advance — Shipyard Orders', () => {
+  // Interceptor (3000 / 1000) at Shipyard 1: 2880 s per unit.
+  const UNIT = 2_880_000;
+  const interceptors: ShipyardOrder = {
+    id: 1,
+    shipKey: 'interceptor',
+    solarSatellite: false,
+    quantity: 3,
+    completed: 0,
+    unitCost: { alloy: 3000, crystal: 1000 },
+    unitDurationMs: UNIT,
+    startedAt: 0,
+  };
+  // Hauler (2000 / 2000): 1920 s per unit at Shipyard 2, 2880 s at Shipyard 1.
+  const haulers: ShipyardOrder = {
+    id: 2,
+    shipKey: 'hauler',
+    solarSatellite: false,
+    quantity: 2,
+    completed: 0,
+    unitCost: { alloy: 2000, crystal: 2000 },
+    unitDurationMs: null,
+    startedAt: null,
+  };
+  const s = state({
+    structures: { ...NO_STRUCTURES, orbitalShipyard: 1 },
+    shipyardOrders: [interceptors, haulers],
+  });
+
+  it('finishes units one at a time', () => {
+    expect(advance(s, UNIT - 1, 1).shipyardOrders![0]).toMatchObject({ id: 1, completed: 0 });
+    expect(advance(s, UNIT, 1).shipyardOrders![0]).toMatchObject({ id: 1, completed: 1 });
+    expect(advance(s, 2 * UNIT + 5, 1).shipyardOrders![0]).toMatchObject({ id: 1, completed: 2 });
+  });
+
+  it('starts the second Order when the first finishes, its unit time fixed then', () => {
+    const after = advance(s, 3 * UNIT + 1000, 1);
+    expect(after.shipyardOrders).toEqual([
+      { ...haulers, completed: 0, startedAt: 3 * UNIT, unitDurationMs: UNIT },
+    ]);
+  });
+
+  it('fixes the next unit time from the Shipyard level at the moment it becomes head', () => {
+    const withUpgrade = {
+      ...s,
+      buildSlots: [
+        {
+          slot: 1,
+          structureKey: 'orbital-shipyard',
+          field: 'orbitalShipyard' as const,
+          targetLevel: 2,
+          endsAt: 1000,
+        },
+      ],
+    };
+    const after = advance(withUpgrade, 3 * UNIT + 1000, 1);
+    const shipyard2 = shipUnitDurationSec(2000, 2000, 2, 0, 1) * 1000;
+    expect(after.shipyardOrders![0]).toMatchObject({
+      id: 2,
+      startedAt: 3 * UNIT,
+      unitDurationMs: shipyard2,
+    });
+  });
+
+  it('empties the queue once every unit has finished', () => {
+    expect(advance(s, 10 * UNIT, 1).shipyardOrders).toEqual([]);
+  });
+
+  it('schedules the next unit as the next boundary', () => {
+    expect(nextEventAt(s, 1, 0)).toBe(UNIT);
+    expect(nextEventAt(advance(s, UNIT + 5, 1), 1, UNIT + 5)).toBe(2 * UNIT);
+  });
+
+  it('raises Energy with each Solar Satellite at its own boundary', () => {
+    // Alloy Extractor 10 needs 260 Energy and nothing produces any, until satellites roll out.
+    // At Tavg 50 each satellite gives floor(210 / 6) = 35.
+    const sats = state({
+      structures: { ...NO_STRUCTURES, alloyMine: 10, orbitalShipyard: 1 },
+      shipyardOrders: [
+        {
+          id: 3,
+          shipKey: 'solar-satellite',
+          solarSatellite: true,
+          quantity: 3,
+          completed: 0,
+          unitCost: { alloy: 0, crystal: 2000 },
+          unitDurationMs: HOUR,
+          startedAt: 0,
+        },
+      ],
+    });
+    const oneAt = advance(sats, HOUR, 1);
+    expect(oneAt.solarSatellites).toBe(1);
+    expect(liveProfile(oneAt, 1).energy.produced).toBe(35);
+
+    const after = advance(sats, 3 * HOUR, 1);
+    expect(after.solarSatellites).toBe(3);
+    expect(after.shipyardOrders).toEqual([]);
+    const use = alloyMineEnergyUse(10);
+    const hour = (n: number) =>
+      30 + alloyMineOutput(10, { position: 4, factor: productionFactor(35 * n, use) });
+    expect(after.resources.alloy).toBeCloseTo(500 + hour(0) + hour(1) + hour(2), 6);
+  });
+});
+
 describe('advance — determinism property', () => {
   it('advancing through an intermediate time equals advancing straight there', () => {
     const arbState = fc.record({
@@ -307,6 +421,8 @@ describe('advance — determinism property', () => {
         crystalStorage: fc.integer({ min: 0, max: 3 }),
         deuteriumStorage: fc.integer({ min: 0, max: 3 }),
         researchLab: fc.integer({ min: 0, max: 12 }),
+        orbitalShipyard: fc.integer({ min: 1, max: 12 }),
+        naniteFoundry: fc.integer({ min: 0, max: 2 }),
       }),
       solarSatellites: fc.integer({ min: 0, max: 50 }),
       energyTech: fc.integer({ min: 0, max: 20 }),
@@ -317,6 +433,7 @@ describe('advance — determinism property', () => {
       t2: fc.integer({ min: 1, max: 240 * HOUR }),
       split: fc.double({ min: 0, max: 1, noNaN: true }),
       research: fc.boolean(),
+      shipyard: fc.boolean(),
     });
 
     // A queue whose later entries start mid-interval, at boundaries the stepped run must reproduce.
@@ -341,13 +458,38 @@ describe('advance — determinism property', () => {
       })),
     ];
 
+    // Satellites whose units land mid-interval, then Interceptors starting at their end.
+    const orders: ShipyardOrder[] = [
+      {
+        id: 1,
+        shipKey: 'solar-satellite',
+        solarSatellite: true,
+        quantity: 20,
+        completed: 0,
+        unitCost: { alloy: 0, crystal: 2000 },
+        unitDurationMs: null,
+        startedAt: null,
+      },
+      {
+        id: 2,
+        shipKey: 'interceptor',
+        solarSatellite: false,
+        quantity: 50,
+        completed: 0,
+        unitCost: { alloy: 3000, crystal: 1000 },
+        unitDurationMs: null,
+        startedAt: null,
+      },
+    ];
+
     fc.assert(
       fc.property(arbState, (a) => {
-        const { research, ...rest } = a;
+        const { research, shipyard, ...rest } = a;
         const s: EconomyState = {
           ...rest,
           lastUpdatedAt: 0,
           researchQueue: research ? queue(a.structures.researchLab) : [],
+          shipyardOrders: shipyard ? orders : [],
         };
         const t1 = Math.floor(a.t2 * a.split);
         const direct = advance(s, a.t2, a.speed);
@@ -358,6 +500,8 @@ describe('advance — determinism property', () => {
         expect(stepped.plasmaTech).toBe(direct.plasmaTech);
         expect(stepped.energyTech).toBe(direct.energyTech);
         expect(stepped.researchQueue).toEqual(direct.researchQueue);
+        expect(stepped.shipyardOrders).toEqual(direct.shipyardOrders);
+        expect(stepped.solarSatellites).toBe(direct.solarSatellites);
       }),
       { numRuns: 500 },
     );

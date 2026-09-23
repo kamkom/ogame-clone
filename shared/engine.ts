@@ -14,6 +14,7 @@ import {
   fusionReactorEnergy,
   productionFactor,
   researchDurationSec,
+  shipUnitDurationSec,
   solarPlantEnergy,
   solarSatelliteEnergy,
   storageCapacity,
@@ -36,6 +37,9 @@ export interface Structures {
   deuteriumStorage: number;
   /** Not a production Structure, but its level fixes each Research duration when it starts. */
   researchLab: number;
+  /** With the Nanite Foundry, fixes each Shipyard Order's per-unit time when it becomes head. */
+  orbitalShipyard: number;
+  naniteFoundry: number;
 }
 
 /**
@@ -71,6 +75,36 @@ export interface ResearchEntry {
   endsAt: number | null;
 }
 
+/**
+ * One Shipyard Order. Orders run one after another; only the head builds. Its `startedAt` and
+ * `unitDurationMs` are fixed when it becomes head, from the Orbital Shipyard and Nanite Foundry
+ * levels at that moment, and unit k (1-based) finishes at `startedAt + k·unitDurationMs`.
+ */
+export interface ShipyardOrder {
+  id: number;
+  shipKey: string;
+  /** Solar Satellites add Energy as each unit finishes; other ships don't touch the economy. */
+  solarSatellite: boolean;
+  quantity: number;
+  completed: number;
+  /** The unit's Alloy and Crystal, which set the per-unit time. */
+  unitCost: { alloy: number; crystal: number };
+  unitDurationMs: number | null;
+  startedAt: number | null;
+}
+
+/** When the Order's next unit finishes, or null while it waits. */
+export function orderNextUnitAt(order: ShipyardOrder): number | null {
+  if (order.startedAt === null || order.unitDurationMs === null) return null;
+  return order.startedAt + (order.completed + 1) * order.unitDurationMs;
+}
+
+/** When the Order's last unit finishes, or null while it waits. */
+export function orderEndsAt(order: ShipyardOrder): number | null {
+  if (order.startedAt === null || order.unitDurationMs === null) return null;
+  return order.startedAt + order.quantity * order.unitDurationMs;
+}
+
 export interface EconomyState {
   /** Current Resource stock (fractional; only floored for display and spending). */
   resources: Resources;
@@ -87,6 +121,8 @@ export interface EconomyState {
   buildSlots?: BuildSlot[];
   /** The Player's Research Queue in order, head first. Absent or empty when nothing is queued. */
   researchQueue?: ResearchEntry[];
+  /** The Planet's Shipyard Orders in order, head first. Absent or empty when none is placed. */
+  shipyardOrders?: ShipyardOrder[];
 }
 
 /** The instantaneous production picture used to integrate one boundary-free segment. */
@@ -198,6 +234,65 @@ function startHead(queue: ResearchEntry[], at: number, lab: number, speed: numbe
   queue[0] = { ...head, startedAt: at, endsAt: at + durationMs };
 }
 
+/** Start the head Order at `at` if it is waiting, fixing its unit time from the current levels. */
+function startOrder(
+  orders: ShipyardOrder[],
+  at: number,
+  structures: Structures,
+  speed: number,
+): void {
+  const head = orders[0];
+  if (!head || head.startedAt !== null) return;
+  const unitSec = shipUnitDurationSec(
+    head.unitCost.alloy,
+    head.unitCost.crystal,
+    structures.orbitalShipyard,
+    structures.naniteFoundry,
+    speed,
+  );
+  orders[0] = { ...head, startedAt: at, unitDurationMs: unitSec * 1000 };
+}
+
+/**
+ * The Shipyard's next integration boundary. Each Solar Satellite unit changes Energy, so each is
+ * a boundary; other ships don't affect production, so their units are counted exactly at whatever
+ * boundary comes next and only the Order's end (where the next Order starts) splits the integral.
+ */
+function shipyardBoundary(orders: ShipyardOrder[]): number | null {
+  const head = orders[0];
+  if (!head) return null;
+  return head.solarSatellite ? orderNextUnitAt(head) : orderEndsAt(head);
+}
+
+/**
+ * Count the head's units finished by `t`, and when it is done, start the next Order at the moment
+ * its last unit finished. Returns how many Solar Satellites rolled out.
+ */
+function settleOrders(
+  orders: ShipyardOrder[],
+  t: number,
+  structures: Structures,
+  speed: number,
+): number {
+  let satellites = 0;
+  for (let head = orders[0]; head?.startedAt != null && head.unitDurationMs != null;) {
+    const done = Math.min(
+      head.quantity,
+      Math.floor((t - head.startedAt + EPSILON) / head.unitDurationMs),
+    );
+    if (head.solarSatellite) satellites += done - head.completed;
+    if (done < head.quantity) {
+      orders[0] = { ...head, completed: done };
+      break;
+    }
+    const endsAt = orderEndsAt(head)!;
+    orders.shift();
+    startOrder(orders, endsAt, structures, speed);
+    head = orders[0];
+  }
+  return satellites;
+}
+
 /**
  * Advance `state` to `now` in closed form. Returns a new state; the input is not mutated.
  * A `now` at or before `lastUpdatedAt` is a no-op — time only ever moves forward here.
@@ -212,12 +307,22 @@ export function advance(
   let structures = { ...state.structures };
   let buildSlots = (state.buildSlots ?? []).map((s) => ({ ...s }));
   const researchQueue = (state.researchQueue ?? []).map((e) => ({ ...e }));
+  const shipyardOrders = (state.shipyardOrders ?? []).map((o) => ({ ...o }));
   const techs = { energyTech: state.energyTech, plasmaTech: state.plasmaTech };
+  let solarSatellites = state.solarSatellites;
   let t = state.lastUpdatedAt;
   startHead(researchQueue, t, structures.researchLab, speed);
+  startOrder(shipyardOrders, t, structures, speed);
 
   while (t < now - EPSILON) {
-    const cursor: EconomyState = { ...state, ...techs, resources, structures, buildSlots };
+    const cursor: EconomyState = {
+      ...state,
+      ...techs,
+      resources,
+      structures,
+      buildSlots,
+      solarSatellites,
+    };
     const profile = computeProfile(cursor, speed, deuteriumAvailable(cursor));
 
     let segEnd = now;
@@ -232,6 +337,9 @@ export function advance(
     // So is the running Research: a production Technology changes the rates from its endsAt on.
     const headEnd = researchQueue[0]?.endsAt ?? null;
     if (headEnd !== null && headEnd > t && headEnd < segEnd) segEnd = headEnd;
+    // And so is the Shipyard: each Solar Satellite unit, and the end of the head Order.
+    const unitAt = shipyardBoundary(shipyardOrders);
+    if (unitAt !== null && unitAt > t && unitAt < segEnd) segEnd = unitAt;
     if (segEnd <= t) segEnd = now; // guard against a degenerate zero-length segment
 
     const dtHours = (segEnd - t) / MS_PER_HOUR;
@@ -269,6 +377,9 @@ export function advance(
       researchQueue.shift();
       startHead(researchQueue, t, structures.researchLab, speed);
     }
+
+    // Then count the ships finished by `t`; a Solar Satellite adds Energy from its own boundary on.
+    solarSatellites += settleOrders(shipyardOrders, t, structures, speed);
   }
 
   return {
@@ -278,6 +389,8 @@ export function advance(
     structures,
     buildSlots,
     researchQueue,
+    shipyardOrders,
+    solarSatellites,
     lastUpdatedAt: Math.max(now, state.lastUpdatedAt),
   };
 }
@@ -309,5 +422,9 @@ export function nextEventAt(
   if (headEnd !== null && headEnd > from && (soonest === null || headEnd < soonest)) {
     soonest = headEnd;
   }
+  // And every Shipyard unit, so docked counts rise one by one on the client.
+  const head = state.shipyardOrders?.[0];
+  const unitAt = head ? orderNextUnitAt(head) : null;
+  if (unitAt !== null && unitAt > from && (soonest === null || unitAt < soonest)) soonest = unitAt;
   return soonest;
 }

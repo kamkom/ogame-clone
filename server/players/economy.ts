@@ -4,16 +4,24 @@ import {
   type BuildSlot,
   type EconomyState,
   type ResearchEntry,
+  type ShipyardOrder,
   type Structures,
   type TechField,
 } from '#shared/engine.ts';
+import { shipDef } from '#shared/catalog.ts';
 import { tx } from '../db/tx.ts';
-import { getPlanetByPlayer, type PlanetRow, structureLevels, technologyLevels } from './repo.ts';
+import {
+  getPlanetByPlayer,
+  type PlanetRow,
+  shipCounts,
+  structureLevels,
+  technologyLevels,
+} from './repo.ts';
 
 // How catalog keys (shared/catalog.ts) map onto the engine's state fields. The eight production
-// Structures plus the Research Lab (whose level fixes Research durations); the other four (Robotics
-// Works, Orbital Shipyard, Nanite Foundry, Terraformer) have no effect on the engine, so a Build
-// Slot for them carries a null `field`.
+// Structures plus the Research Lab, Orbital Shipyard and Nanite Foundry (whose levels fix Research
+// and ship durations); the other two (Robotics Works, Terraformer) have no effect on the engine, so
+// a Build Slot for them carries a null `field`.
 const STRUCTURE_KEYS: Record<keyof Structures, string> = {
   alloyMine: 'alloy-extractor',
   crystalMine: 'crystal-refinery',
@@ -24,6 +32,8 @@ const STRUCTURE_KEYS: Record<keyof Structures, string> = {
   crystalStorage: 'crystal-vault',
   deuteriumStorage: 'deuterium-tank',
   researchLab: 'research-lab',
+  orbitalShipyard: 'orbital-shipyard',
+  naniteFoundry: 'nanite-foundry',
 };
 // The engine `field` for a catalog key, or null when the key doesn't affect production.
 const FIELD_BY_KEY = new Map<string, keyof Structures>(
@@ -40,7 +50,7 @@ const TECH_KEYS: Record<TechField, string> = {
 const TECH_FIELD_BY_KEY = new Map<string, TechField>(
   (Object.entries(TECH_KEYS) as [TechField, string][]).map(([field, key]) => [key, field]),
 );
-const SOLAR_SATELLITE_KEY = 'solarSatellite';
+const SOLAR_SATELLITE_KEY = 'solar-satellite';
 
 /** The Build Slots currently occupied on a Planet, as engine state. */
 export function readBuildSlots(db: DatabaseSync, planetId: number): BuildSlot[] {
@@ -90,6 +100,36 @@ export function readResearchQueue(db: DatabaseSync, playerId: number): ResearchE
   }));
 }
 
+/** A Planet's Shipyard Orders in order, head first, as engine state. */
+export function readShipyardOrders(db: DatabaseSync, planetId: number): ShipyardOrder[] {
+  const rows = db
+    .prepare(
+      `SELECT id, ship_key, quantity, completed, unit_duration_ms, started_at
+         FROM shipyard_orders WHERE planet_id = ? ORDER BY seq`,
+    )
+    .all(planetId) as {
+    id: number;
+    ship_key: string;
+    quantity: number;
+    completed: number;
+    unit_duration_ms: number | null;
+    started_at: number | null;
+  }[];
+  return rows.map((r) => {
+    const cost = shipDef(r.ship_key)?.cost ?? { alloy: 0, crystal: 0 };
+    return {
+      id: r.id,
+      shipKey: r.ship_key,
+      solarSatellite: r.ship_key === SOLAR_SATELLITE_KEY,
+      quantity: r.quantity,
+      completed: r.completed,
+      unitCost: { alloy: cost.alloy, crystal: cost.crystal },
+      unitDurationMs: r.unit_duration_ms,
+      startedAt: r.started_at,
+    };
+  });
+}
+
 // `Tmax = Tavg + 20` on every OGame Planet, so `Tavg = Tmax − 20` (rules reference §6.1).
 const TAVG_OFFSET = 20;
 
@@ -97,12 +137,7 @@ const TAVG_OFFSET = 20;
 export function readEconomyState(db: DatabaseSync, planet: PlanetRow): EconomyState {
   const levels = structureLevels(db, planet.id);
   const techs = technologyLevels(db, planet.player_id);
-  const satellites =
-    ((
-      db
-        .prepare(`SELECT count FROM planet_ships WHERE planet_id = ? AND ship_key = ?`)
-        .get(planet.id, SOLAR_SATELLITE_KEY) as { count: number } | undefined
-    )?.count ?? 0) | 0;
+  const satellites = shipCounts(db, planet.id)[SOLAR_SATELLITE_KEY] ?? 0;
 
   const structures = Object.fromEntries(
     Object.entries(STRUCTURE_KEYS).map(([field, key]) => [field, levels[key] ?? 0]),
@@ -119,6 +154,7 @@ export function readEconomyState(db: DatabaseSync, planet: PlanetRow): EconomySt
     tavg: planet.tmax - TAVG_OFFSET,
     buildSlots: readBuildSlots(db, planet.id),
     researchQueue: readResearchQueue(db, planet.player_id),
+    shipyardOrders: readShipyardOrders(db, planet.id),
   };
 }
 
@@ -140,6 +176,7 @@ export function advanceAndPersist(
   ).run(alloy, crystal, deuterium, now, planet.id);
   finalizeFinishedUpgrades(db, planet.id, now);
   persistResearchQueue(db, planet.player_id, before.researchQueue ?? [], advanced);
+  persistShipyardOrders(db, planet.id, before.shipyardOrders ?? [], advanced);
   return { ...planet, alloy, crystal, deuterium, resources_updated_at: now };
 }
 
@@ -190,6 +227,37 @@ function persistResearchQueue(
       e.endsAt,
       e.id,
     );
+  }
+}
+
+/**
+ * Reconcile the stored Shipyard Orders with the engine's: every unit `advance` finished joins the
+ * docked count, a finished Order leaves the table, and a running one keeps its progress and the
+ * start and unit times the engine fixed for it.
+ */
+function persistShipyardOrders(
+  db: DatabaseSync,
+  planetId: number,
+  before: ShipyardOrder[],
+  advanced: EconomyState,
+): void {
+  const remaining = new Map((advanced.shipyardOrders ?? []).map((o) => [o.id, o]));
+  for (const o of before) {
+    const now = remaining.get(o.id);
+    const finished = (now?.completed ?? o.quantity) - o.completed;
+    if (finished > 0) {
+      db.prepare(
+        `INSERT INTO planet_ships (planet_id, ship_key, count) VALUES (?, ?, ?)
+           ON CONFLICT(planet_id, ship_key) DO UPDATE SET count = count + excluded.count`,
+      ).run(planetId, o.shipKey, finished);
+    }
+    if (!now) {
+      db.prepare(`DELETE FROM shipyard_orders WHERE id = ?`).run(o.id);
+    } else {
+      db.prepare(
+        `UPDATE shipyard_orders SET completed = ?, unit_duration_ms = ?, started_at = ? WHERE id = ?`,
+      ).run(now.completed, now.unitDurationMs, now.startedAt, o.id);
+    }
   }
 }
 

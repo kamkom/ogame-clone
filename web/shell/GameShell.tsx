@@ -5,6 +5,7 @@ import { refetchDelay } from '../lib/liveResources.ts';
 import { CommandDeck } from './CommandDeck.tsx';
 import { Rail } from './Rail.tsx';
 import { Research } from './Research.tsx';
+import { Shipyard } from './Shipyard.tsx';
 import { Structures } from './Structures.tsx';
 import { TopBar } from './TopBar.tsx';
 import { WelcomeWindow } from './WelcomeWindow.tsx';
@@ -17,10 +18,20 @@ interface GameShellProps {
   loggingOut: boolean;
 }
 
-// NAV indices: 0 Overview, 1 Build (Structures), 2 Research. Shipyard has no screen yet.
-type Screen = 'overview' | 'structures' | 'research';
-const SCREEN_BY_NAV: Record<number, Screen> = { 0: 'overview', 1: 'structures', 2: 'research' };
-const NAV_BY_SCREEN: Record<Screen, number> = { overview: 0, structures: 1, research: 2 };
+// NAV indices: 0 Overview, 1 Build (Structures), 2 Research, 3 Shipyard.
+type Screen = 'overview' | 'structures' | 'research' | 'shipyard';
+const SCREEN_BY_NAV: Record<number, Screen> = {
+  0: 'overview',
+  1: 'structures',
+  2: 'research',
+  3: 'shipyard',
+};
+const NAV_BY_SCREEN: Record<Screen, number> = {
+  overview: 0,
+  structures: 1,
+  research: 2,
+  shipyard: 3,
+};
 
 /** The logged-in game shell: rail, top bar, screen content, and the one-time welcome window. */
 export function GameShell({
@@ -51,6 +62,11 @@ export function GameShell({
   });
   const enqueue = useMutation({
     mutationFn: (technology: string) => api.enqueueResearch(technology),
+    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+  });
+  const placeOrder = useMutation({
+    mutationFn: ({ ship, quantity }: { ship: string; quantity: number }) =>
+      api.placeShipyardOrder(ship, quantity),
     onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
   });
 
@@ -100,6 +116,15 @@ export function GameShell({
           universeSpeed={universeSpeed}
           onEnqueue={(technology) => enqueue.mutate(technology)}
           pendingKey={enqueue.isPending ? (enqueue.variables ?? null) : null}
+          onGoToStructures={() => setScreen('structures')}
+        />
+      )}
+      {screen === 'shipyard' && (
+        <Shipyard
+          planet={planet}
+          universeSpeed={universeSpeed}
+          onOrder={(ship, quantity) => placeOrder.mutate({ ship, quantity })}
+          pendingKey={placeOrder.isPending ? (placeOrder.variables?.ship ?? null) : null}
           onGoToStructures={() => setScreen('structures')}
         />
       )}

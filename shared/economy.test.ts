@@ -16,6 +16,7 @@ import {
   storageCapacity,
   structureDurationSec,
   secondsUntilAffordable,
+  shipUnitDurationSec,
 } from './economy.ts';
 import { structureDef } from './catalog.ts';
 
@@ -268,5 +269,33 @@ describe('research time (§5)', () => {
 
   it('never returns less than one second (Graviton Lance costs no Resources)', () => {
     expect(researchDurationSec(0, 0, 12, 1)).toBe(1);
+  });
+});
+
+describe('ship build time per unit (§5 shipTimeSec)', () => {
+  it('matches OGame per-unit times at x1', () => {
+    // Light Fighter (3000 / 1000) at Shipyard 1: 4000 / 5000 h = 0.8 h = 48 min (wiki Shipyard).
+    expect(shipUnitDurationSec(3000, 1000, 1, 0)).toBe(2880);
+    // Solar Satellite (0 / 2000) at Shipyard 1: 2000 / 5000 h = 0.4 h.
+    expect(shipUnitDurationSec(0, 2000, 1, 0)).toBe(1440);
+    // Cruiser (20,000 / 7,000) at Shipyard 5: 27,000 / 15,000 h = 1.8 h.
+    expect(shipUnitDurationSec(20_000, 7000, 5, 0)).toBe(6480);
+    // Battleship (45,000 / 15,000) at Shipyard 7: 60,000 / 20,000 h = 3 h.
+    expect(shipUnitDurationSec(45_000, 15_000, 7, 0)).toBe(10_800);
+    // Small Cargo (2000 / 2000) at Shipyard 2: 4000 / 7500 h = 1920 s.
+    expect(shipUnitDurationSec(2000, 2000, 2, 0)).toBe(1920);
+  });
+
+  it('halves with each Nanite Foundry level and divides by Universe Speed', () => {
+    expect(shipUnitDurationSec(3000, 1000, 1, 1)).toBe(1440);
+    expect(shipUnitDurationSec(3000, 1000, 1, 2)).toBe(720);
+    expect(shipUnitDurationSec(3000, 1000, 1, 0, 4)).toBe(720);
+  });
+
+  it('floors to whole seconds and never drops below 1 s', () => {
+    // Espionage Probe (0 / 1000) at Shipyard 2: 1000 / 7500 h = 480 s.
+    expect(shipUnitDurationSec(0, 1000, 2, 0)).toBe(480);
+    // 1000 / (2500·13·2^5·8) h = 0.43 s → 1 s.
+    expect(shipUnitDurationSec(0, 1000, 12, 5, 8)).toBe(1);
   });
 });

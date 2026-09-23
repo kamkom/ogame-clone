@@ -498,9 +498,194 @@ export function technologyDef(key: string): TechnologyDef | undefined {
   return TECH_BY_KEY.get(key);
 }
 
-/** The display name of any catalog Structure or Technology key (the key itself when unknown). */
+/** The 9 v1 ship keys: the design's 8 plus the Solar Satellite. */
+export type ShipKey =
+  | 'interceptor'
+  | 'corvette'
+  | 'cruiser'
+  | 'dreadnought'
+  | 'hauler'
+  | 'freighter'
+  | 'scout-drone'
+  | 'salvager'
+  | 'solar-satellite';
+
+/**
+ * Where a ship counts in Fleet Strength (the design's Combat 338 / Cargo 121 / Support 40).
+ * Solar Satellites are an Energy source, left out of fleet numbers (spec story 75).
+ */
+export type ShipClass = 'combat' | 'cargo' | 'support' | 'energy';
+
+/** Base combat and flight stats (rules reference §10.1; upgrades by Technology are not applied). */
+export interface ShipStats {
+  attack: number;
+  shields: number;
+  /** Structural integrity. */
+  hull: number;
+  speed: number;
+  cargo: number;
+  fuel: number;
+}
+
+export interface ShipDef {
+  key: ShipKey;
+  /** The design's display name. */
+  name: string;
+  /** The OGame entity this maps to, for the record. */
+  ogame: string;
+  /** The role subtitle under the name. */
+  role: string;
+  shipClass: ShipClass;
+  /** Unit price; an Order costs this × quantity (rules reference §2). */
+  cost: StructureCost;
+  stats: ShipStats;
+  /** Direct requirements (rules reference §10.1, [AG] + [WIKI]). */
+  requires: Requirement[];
+  /** Silhouette key into design/data/ships.json, or null when the art ticket hasn't drawn it. */
+  art: string | null;
+}
+
+// The design's list order, then the Solar Satellite last (spec story 66).
+export const SHIPS: ShipDef[] = [
+  {
+    key: 'interceptor',
+    name: 'Interceptor',
+    ogame: 'Light Fighter',
+    role: 'Light fighter',
+    shipClass: 'combat',
+    cost: { alloy: 3000, crystal: 1000, deuterium: 0 },
+    stats: { attack: 50, shields: 10, hull: 4000, speed: 12_500, cargo: 50, fuel: 20 },
+    requires: [
+      { key: 'orbital-shipyard', level: 1 },
+      { key: 'combustion-drive', level: 1 },
+    ],
+    art: 'Interceptor',
+  },
+  {
+    key: 'corvette',
+    name: 'Corvette',
+    ogame: 'Heavy Fighter',
+    role: 'Escort',
+    shipClass: 'combat',
+    cost: { alloy: 6000, crystal: 4000, deuterium: 0 },
+    stats: { attack: 150, shields: 25, hull: 10_000, speed: 10_000, cargo: 100, fuel: 75 },
+    requires: [
+      { key: 'orbital-shipyard', level: 3 },
+      { key: 'armor-plating', level: 2 },
+      { key: 'impulse-drive', level: 2 },
+    ],
+    art: 'Corvette',
+  },
+  {
+    key: 'cruiser',
+    name: 'Cruiser',
+    ogame: 'Cruiser',
+    role: 'Line ship',
+    shipClass: 'combat',
+    cost: { alloy: 20_000, crystal: 7000, deuterium: 2000 },
+    stats: { attack: 400, shields: 50, hull: 27_000, speed: 15_000, cargo: 800, fuel: 300 },
+    requires: [
+      { key: 'orbital-shipyard', level: 5 },
+      { key: 'impulse-drive', level: 4 },
+      { key: 'ion-lattice', level: 2 },
+    ],
+    art: 'Cruiser',
+  },
+  {
+    key: 'dreadnought',
+    name: 'Dreadnought',
+    ogame: 'Battleship',
+    role: 'Capital ship',
+    shipClass: 'combat',
+    cost: { alloy: 45_000, crystal: 15_000, deuterium: 0 },
+    stats: { attack: 1000, shields: 200, hull: 60_000, speed: 10_000, cargo: 1500, fuel: 500 },
+    requires: [
+      { key: 'orbital-shipyard', level: 7 },
+      { key: 'warp-drive', level: 4 },
+    ],
+    art: 'Dreadnought',
+  },
+  {
+    key: 'hauler',
+    name: 'Hauler',
+    ogame: 'Small Cargo',
+    role: 'Small cargo',
+    shipClass: 'cargo',
+    cost: { alloy: 2000, crystal: 2000, deuterium: 0 },
+    stats: { attack: 5, shields: 10, hull: 4000, speed: 5000, cargo: 5000, fuel: 10 },
+    requires: [
+      { key: 'orbital-shipyard', level: 2 },
+      { key: 'combustion-drive', level: 2 },
+    ],
+    art: 'Hauler',
+  },
+  {
+    key: 'freighter',
+    name: 'Freighter',
+    ogame: 'Large Cargo',
+    role: 'Large cargo',
+    shipClass: 'cargo',
+    cost: { alloy: 6000, crystal: 6000, deuterium: 0 },
+    stats: { attack: 5, shields: 25, hull: 12_000, speed: 7500, cargo: 25_000, fuel: 50 },
+    requires: [
+      { key: 'orbital-shipyard', level: 4 },
+      { key: 'combustion-drive', level: 6 },
+    ],
+    art: 'Freighter',
+  },
+  {
+    key: 'scout-drone',
+    name: 'Scout Drone',
+    ogame: 'Espionage Probe',
+    role: 'Espionage',
+    shipClass: 'support',
+    cost: { alloy: 0, crystal: 1000, deuterium: 0 },
+    stats: { attack: 0, shields: 0, hull: 1000, speed: 100_000_000, cargo: 0, fuel: 1 },
+    requires: [
+      { key: 'orbital-shipyard', level: 3 },
+      { key: 'combustion-drive', level: 3 },
+      { key: 'signal-intelligence', level: 2 },
+    ],
+    art: 'Scout Drone',
+  },
+  {
+    key: 'salvager',
+    name: 'Salvager',
+    ogame: 'Recycler',
+    role: 'Debris recovery',
+    shipClass: 'cargo',
+    cost: { alloy: 10_000, crystal: 6000, deuterium: 2000 },
+    stats: { attack: 1, shields: 10, hull: 16_000, speed: 2000, cargo: 20_000, fuel: 300 },
+    requires: [
+      { key: 'orbital-shipyard', level: 4 },
+      { key: 'combustion-drive', level: 6 },
+      { key: 'shield-harmonics', level: 2 },
+    ],
+    art: 'Salvager',
+  },
+  {
+    key: 'solar-satellite',
+    name: 'Solar Satellite',
+    ogame: 'Solar Satellite',
+    role: 'Energy',
+    shipClass: 'energy',
+    cost: { alloy: 0, crystal: 2000, deuterium: 500 },
+    stats: { attack: 1, shields: 1, hull: 2000, speed: 0, cargo: 0, fuel: 0 },
+    requires: [{ key: 'orbital-shipyard', level: 1 }],
+    art: null,
+  },
+];
+
+const SHIP_BY_KEY = new Map<string, ShipDef>(SHIPS.map((s) => [s.key, s]));
+
+/** The ship definition for a key, or undefined when the key is not in the catalog. */
+export function shipDef(key: string): ShipDef | undefined {
+  return SHIP_BY_KEY.get(key);
+}
+
+/** The display name of any catalog Structure, Technology or ship key (the key itself when unknown). */
 export function catalogName(key: string): string {
-  return structureDef(key)?.name ?? technologyDef(key)?.name ?? key;
+  return structureDef(key)?.name ?? technologyDef(key)?.name ?? shipDef(key)?.name ?? key;
 }
 
 export interface RequirementStatus {
@@ -516,7 +701,7 @@ export interface RequirementStatus {
  * finished level — never one still being built).
  */
 export function requirementStatus(
-  def: StructureDef,
+  def: { requires: Requirement[] },
   levelOf: (key: string) => number,
 ): RequirementStatus[] {
   return def.requires.map((r) => {

@@ -26,6 +26,19 @@ export interface ResearchEntryView {
   waitingOnLab: boolean;
 }
 
+export interface ShipyardOrderView {
+  id: number;
+  ship: string;
+  quantity: number;
+  completed: number;
+  /** The total paid for the whole Order. */
+  cost: { alloy: number; crystal: number; deuterium: number };
+  unitDurationMs: number | null;
+  startedAt: number | null;
+  nextUnitAt: number | null;
+  endsAt: number | null;
+}
+
 export interface PlanetSnapshot {
   id: number;
   name: string;
@@ -44,6 +57,8 @@ export interface PlanetSnapshot {
   buildSlots: (BuildSlotView | null)[];
   technologies: Record<string, number>;
   researchQueue: ResearchEntryView[];
+  ships: Record<string, number>;
+  shipyardOrders: ShipyardOrderView[];
   nextEventAt: number | null;
 }
 
@@ -125,4 +140,6 @@ export const api = {
     post<PlanetSnapshot>(`/api/build-slots/${slot}/cancel`, {}, fetchImpl),
   enqueueResearch: (technology: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>('/api/research', { technology }, fetchImpl),
+  placeShipyardOrder: (ship: string, quantity: number, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>('/api/shipyard/orders', { ship, quantity }, fetchImpl),
 };
