@@ -12,6 +12,12 @@ export const SHIP_ORDER_MAX_UNITS = 99_999;
 /** At most 10 Orders per Planet (spec story 71). */
 export const SHIPYARD_ORDERS_MAX = 10;
 
+/**
+ * The Structures that lock against Shipyard Orders (spec stories 49, 73): neither may start
+ * upgrading while any Order exists, and no Order is accepted while either upgrades.
+ */
+export const SHIPYARD_LOCK_STRUCTURES: readonly string[] = ['orbital-shipyard', 'nanite-foundry'];
+
 const RESOURCES = ['alloy', 'crystal', 'deuterium'] as const;
 
 /** Whether `quantity` is a whole number of units an Order may hold. */

@@ -8,6 +8,7 @@ import {
   type StructureTab,
 } from '#shared/catalog.ts';
 import { levelCost, secondsUntilAffordable, structureDurationSec } from '#shared/economy.ts';
+import { SHIPYARD_LOCK_STRUCTURES } from '#shared/shipyard.ts';
 import type { BuildSlotView, PlanetSnapshot } from '../lib/api.ts';
 import {
   affordableInLabel,
@@ -21,6 +22,7 @@ import { formatResource } from '../lib/format.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { liveResources } from '../lib/liveResources.ts';
 import { labLockEndsAt } from '../lib/research.ts';
+import { ordersEndAt } from '../lib/shipyard.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
 import {
   CancelX,
@@ -52,11 +54,19 @@ const TABS: { key: TabKey; label: string; count: (d: StructureDef) => boolean }[
 /**
  * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
  * picks): already building, requirements not met (B), the Research Lab while Research runs (C),
+ * the Orbital Shipyard and Nanite Foundry while Shipyard Orders exist (C),
  * both Build Slots busy (C), no free Field, can't afford (B+C), or ready. Computed from the
  * snapshot; 409s only catch races.
  */
 type UpgradeState =
-  'building' | 'locked' | 'research_active' | 'slots_full' | 'fields_full' | 'short' | 'ready';
+  | 'building'
+  | 'locked'
+  | 'research_active'
+  | 'shipyard_busy'
+  | 'slots_full'
+  | 'fields_full'
+  | 'short'
+  | 'ready';
 
 interface StructureView {
   def: StructureDef;
@@ -70,7 +80,7 @@ interface StructureView {
   /** Seconds until the cost is covered at current production; null when it never will be. */
   affordableInSec: number | null;
   state: UpgradeState;
-  /** For the Research Lab under the Research lock: when the lock lifts. */
+  /** For a Structure under the Research or Shipyard lock: when the lock lifts. */
   lockEndsAt: number | null;
 }
 
@@ -82,6 +92,8 @@ interface PlanetContext {
   fieldsFull: boolean;
   /** When running Research stops locking the Research Lab; null when none runs. */
   labLockEndsAt: number | null;
+  /** When the Shipyard Orders finish and stop locking the Shipyard and Nanite Foundry. */
+  ordersEndAt: number | null;
 }
 
 function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
@@ -122,7 +134,9 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
   if (slot) state = 'building';
   else if (requirements.some((r) => !r.met)) state = 'locked';
   else if (def.key === 'research-lab' && ctx.labLockEndsAt !== null) state = 'research_active';
-  else if (ctx.slotsFull) state = 'slots_full';
+  else if (SHIPYARD_LOCK_STRUCTURES.includes(def.key) && ctx.ordersEndAt !== null) {
+    state = 'shipyard_busy';
+  } else if (ctx.slotsFull) state = 'slots_full';
   else if (ctx.fieldsFull) state = 'fields_full';
   else if (checks.some((c) => !c.met)) state = 'short';
 
@@ -137,7 +151,12 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
     checks,
     affordableInSec,
     state,
-    lockEndsAt: state === 'research_active' ? ctx.labLockEndsAt : null,
+    lockEndsAt:
+      state === 'research_active'
+        ? ctx.labLockEndsAt
+        : state === 'shipyard_busy'
+          ? ctx.ordersEndAt
+          : null,
   };
 }
 
@@ -159,6 +178,7 @@ export function Structures({
   const { used, inProgress, max } = planet.fields;
   const fieldsFull = used + inProgress >= max;
   const labLock = labLockEndsAt(planet, universeSpeed);
+  const ordersEnd = ordersEndAt(planet, universeSpeed);
 
   const views = useMemo(
     () =>
@@ -170,9 +190,10 @@ export function Structures({
           slotsFull,
           fieldsFull,
           labLockEndsAt: labLock,
+          ordersEndAt: ordersEnd,
         }),
       ),
-    [planet, universeSpeed, live, slotsFull, fieldsFull, labLock],
+    [planet, universeSpeed, live, slotsFull, fieldsFull, labLock, ordersEnd],
   );
   const shown = views.filter((v) => TABS.find((t) => t.key === tab)!.count(v.def));
   const selected = views.find((v) => v.def.key === selectedKey) ?? views[0]!;
@@ -408,7 +429,7 @@ function CardAction({
   let icon: ReactNode = <LockIcon />;
   let label: string;
   if (view.state === 'locked') label = 'LOCKED';
-  else if (view.state === 'research_active') {
+  else if (view.state === 'research_active' || view.state === 'shipyard_busy') {
     icon = <ClockIcon />;
     label = formatCountdown((view.lockEndsAt ?? now) - now);
   } else if (view.state === 'slots_full') {
@@ -587,6 +608,11 @@ function DetailAction({
       queue.length > 1
         ? `Free when the Research Queue finishes · ${queue.length} entries`
         : `Free when ${name} finishes`;
+  } else if (state === 'shipyard_busy') {
+    icon = <ClockIcon size={14} />;
+    label = `ORDERS FINISH IN ${formatCountdown((view.lockEndsAt ?? now) - now)}`;
+    const orders = planet.shipyardOrders.length;
+    footnote = `Free when ${orders === 1 ? 'the Shipyard Order finishes' : `all ${orders} Shipyard Orders finish`}`;
   } else if (state === 'slots_full') {
     icon = <ClockIcon size={14} />;
     label = firstFree

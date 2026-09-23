@@ -233,6 +233,68 @@ describe('POST /api/shipyard/orders', () => {
     expect(res.json()).toEqual({ error: 'not_found' });
   });
 
+  describe('Shipyard locks', () => {
+    function upgrade(cookie: string, key: string) {
+      return app.inject({
+        method: 'POST',
+        url: `/api/structures/${key}/upgrade`,
+        headers: { cookie },
+        payload: {},
+      });
+    }
+
+    // The Nanite Foundry needs Robotics Works 10 and Computation 10.
+    const NANITE_READY = { 'orbital-shipyard': 2, 'robotics-works': 10 };
+    const NANITE_TECH = { computation: 10 };
+
+    for (const key of ['orbital-shipyard', 'nanite-foundry']) {
+      it(`refuses to upgrade the ${key} while an Order exists with 409 locked_shipyard_busy`, async () => {
+        const cookie = await register();
+        seed(1e9, NANITE_READY, NANITE_TECH);
+        const placed = (await order(cookie, 'solar-satellite', 2)).json();
+        const res = await upgrade(cookie, key);
+        expect(res.statusCode).toBe(409);
+        expect(res.json()).toEqual({ error: 'locked_shipyard_busy' });
+
+        clock.advance(placed.shipyardOrders[0].endsAt - T0);
+        expect((await upgrade(cookie, key)).statusCode).toBe(200);
+      });
+
+      it(`refuses Orders while the ${key} upgrades with 409 locked_shipyard_upgrading, until its endsAt`, async () => {
+        const cookie = await register();
+        seed(1e9, NANITE_READY, NANITE_TECH);
+        const endsAt: number = (await upgrade(cookie, key)).json().buildSlots[0].endsAt;
+        const res = await order(cookie, 'solar-satellite', 1);
+        expect(res.statusCode).toBe(409);
+        expect(res.json()).toEqual({ error: 'locked_shipyard_upgrading' });
+
+        clock.advance(endsAt - T0 - 1);
+        expect((await order(cookie, 'solar-satellite', 1)).statusCode).toBe(409);
+        clock.advance(1);
+        expect((await order(cookie, 'solar-satellite', 1)).statusCode).toBe(200);
+      });
+    }
+
+    it('lets the Nanite Foundry and another Structure occupy both slots at once', async () => {
+      const cookie = await register();
+      seed(1e9, NANITE_READY, NANITE_TECH);
+      expect((await upgrade(cookie, 'nanite-foundry')).statusCode).toBe(200);
+      const res = await upgrade(cookie, 'alloy-extractor');
+      expect(res.statusCode).toBe(200);
+      expect(res.json().buildSlots.map((s: { structure: string }) => s.structure)).toEqual([
+        'nanite-foundry',
+        'alloy-extractor',
+      ]);
+    });
+
+    it('does not lock other Structures while an Order exists', async () => {
+      const cookie = await register();
+      seed(1e9, NANITE_READY, NANITE_TECH);
+      await order(cookie, 'solar-satellite', 1);
+      expect((await upgrade(cookie, 'robotics-works')).statusCode).toBe(200);
+    });
+  });
+
   it('counts combat ships as their units finish', async () => {
     const cookie = await register();
     seed(1e6, { 'orbital-shipyard': 1 }, { 'combustion-drive': 1 });

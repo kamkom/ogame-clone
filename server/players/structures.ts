@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { levelCost, maxFields, structureDurationSec } from '#shared/economy.ts';
 import { requirementStatus, structureDef } from '#shared/catalog.ts';
+import { SHIPYARD_LOCK_STRUCTURES } from '#shared/shipyard.ts';
 import type { PlanetRow } from './repo.ts';
 
 /** A typed reason an upgrade could not start. `not_found` is an unknown catalog key (404); the rest are 409s. */
@@ -9,6 +10,7 @@ export type UpgradeRejection =
   | 'already_in_progress'
   | 'slots_full'
   | 'locked_research_active'
+  | 'locked_shipyard_busy'
   | 'requirements_not_met'
   | 'fields_full'
   | 'cannot_afford';
@@ -42,6 +44,13 @@ function researchActive(db: DatabaseSync, playerId: number): boolean {
     db
       .prepare(`SELECT 1 FROM research_queue WHERE player_id = ? AND started_at IS NOT NULL`)
       .get(playerId) !== undefined
+  );
+}
+
+/** Whether the Planet has any Shipyard Order, running or waiting. */
+function shipyardBusy(db: DatabaseSync, planetId: number): boolean {
+  return (
+    db.prepare(`SELECT 1 FROM shipyard_orders WHERE planet_id = ?`).get(planetId) !== undefined
   );
 }
 
@@ -87,6 +96,10 @@ export function startUpgrade(
   // Research Lab lock: the Lab can't start upgrading while Research is running (queue rule 14).
   if (key === 'research-lab' && researchActive(db, planet.player_id)) {
     return { error: 'locked_research_active' };
+  }
+  // Shipyard lock: the Orbital Shipyard and Nanite Foundry wait until every Order has finished.
+  if (SHIPYARD_LOCK_STRUCTURES.includes(key) && shipyardBusy(db, planet.id)) {
+    return { error: 'locked_shipyard_busy' };
   }
 
   // Requirements use finished levels only; a level still in a Build Slot doesn't count.

@@ -3,15 +3,24 @@
 // screen offers matches what the server accepts.
 
 import { SHIPS, type ShipDef, shipDef } from '#shared/catalog.ts';
-import { shipUnitDurationSec, solarSatelliteEnergy } from '#shared/economy.ts';
+import {
+  type ResourceAmounts,
+  secondsUntilAffordable,
+  shipUnitDurationSec,
+  solarSatelliteEnergy,
+} from '#shared/economy.ts';
 import type { RequirementStatus } from '#shared/research.ts';
 import {
   maxAffordableUnits,
+  orderCost,
   SHIP_ORDER_MAX_UNITS,
+  SHIPYARD_LOCK_STRUCTURES,
   SHIPYARD_ORDERS_MAX,
   shipRequirementStatus,
 } from '#shared/shipyard.ts';
-import type { PlanetSnapshot, ShipyardOrderView } from './api.ts';
+import { affordableInLabel, formatAffordableIn } from './affordability.ts';
+import type { BuildSlotView, PlanetSnapshot, ShipyardOrderView } from './api.ts';
+import { formatCountdown } from './duration.ts';
 import type { LiveResources } from './liveResources.ts';
 
 export interface ShipView {
@@ -70,19 +79,80 @@ export function buildLabel(def: ShipDef, quantity: number): string {
   return `BUILD ${quantity} ${quantity === 1 ? name : `${name}S`}`;
 }
 
-/** The detail panel's button: what it says and whether it can be pressed. */
+/** How long until `stock` pays for `quantity` × `def` at current production; null when never. */
+function affordableInSec(
+  def: ShipDef,
+  quantity: number,
+  planet: PlanetSnapshot,
+  stock: ResourceAmounts,
+): number | null {
+  return secondsUntilAffordable(
+    orderCost(def, quantity),
+    stock,
+    planet.ratesPerHour,
+    planet.storageCapacity,
+  );
+}
+
+/** "Max 14", or at Max 0 when one unit will be affordable: "Max 0 · 1 in 8m" (#14 pick B+C). */
+export function maxLabel(view: ShipView, planet: PlanetSnapshot, stock: ResourceAmounts): string {
+  const max = `Max ${view.maxN.toLocaleString('en-US')}`;
+  if (view.maxN > 0) return max;
+  const sec = affordableInSec(view.def, 1, planet, stock);
+  return sec === null ? max : `${max} · 1 in ${formatAffordableIn(sec)}`;
+}
+
+/**
+ * The Orbital Shipyard or Nanite Foundry upgrade holding new Orders back (spec story 73); when both
+ * upgrade, the one that ends last. Null when neither is upgrading.
+ */
+export function shipyardUpgrade(planet: PlanetSnapshot): BuildSlotView | null {
+  let last: BuildSlotView | null = null;
+  for (const s of planet.buildSlots) {
+    if (s && SHIPYARD_LOCK_STRUCTURES.includes(s.structure) && (!last || s.endsAt > last.endsAt)) {
+      last = s;
+    }
+  }
+  return last;
+}
+
+/**
+ * When every Shipyard Order has finished, so the Orbital Shipyard and Nanite Foundry may upgrade
+ * again (spec story 49). Waiting Orders run at the current levels, which can't change while Orders
+ * exist, so the time is exact. Null with no Orders.
+ */
+export function ordersEndAt(planet: PlanetSnapshot, speed: number): number | null {
+  const [head, ...rest] = planet.shipyardOrders;
+  if (!head || head.endsAt === null) return null;
+  return rest.reduce((t, o) => t + waitingOrderSec(o, planet, speed) * 1000, head.endsAt);
+}
+
+export type OrderActionKind = 'upgrading' | 'full' | 'locked' | 'short' | 'ready';
+
+/** The detail panel's button: which state it is in, what it says and whether it can be pressed. */
 export function orderAction(
   planet: PlanetSnapshot,
   view: ShipView,
   quantity: number,
-): { label: string; enabled: boolean } {
+  stock: ResourceAmounts,
+  now: number,
+): { kind: OrderActionKind; label: string; enabled: boolean } {
+  const upgrade = shipyardUpgrade(planet);
+  if (upgrade) {
+    const label = `ORDERS OPEN IN ${formatCountdown(upgrade.endsAt - now)}`;
+    return { kind: 'upgrading', label, enabled: false };
+  }
   const orders = planet.shipyardOrders.length;
   if (orders >= SHIPYARD_ORDERS_MAX) {
-    return { label: `QUEUE FULL · ${orders} OF ${SHIPYARD_ORDERS_MAX}`, enabled: false };
+    const label = `QUEUE FULL · ${orders} OF ${SHIPYARD_ORDERS_MAX}`;
+    return { kind: 'full', label, enabled: false };
   }
-  if (!view.unlocked) return { label: 'LOCKED', enabled: false };
-  if (quantity > view.maxN) return { label: 'NOT ENOUGH RESOURCES', enabled: false };
-  return { label: buildLabel(view.def, quantity), enabled: true };
+  if (!view.unlocked) return { kind: 'locked', label: 'LOCKED', enabled: false };
+  if (quantity > view.maxN) {
+    const label = affordableInLabel(affordableInSec(view.def, quantity, planet, stock));
+    return { kind: 'short', label, enabled: false };
+  }
+  return { kind: 'ready', label: buildLabel(view.def, quantity), enabled: true };
 }
 
 export interface OrderProgress {

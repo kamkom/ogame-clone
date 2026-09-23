@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react';
-import { SHIPS, shipDef } from '#shared/catalog.ts';
-import { orderCost, unlockText } from '#shared/shipyard.ts';
-import type { PlanetSnapshot, ShipyardOrderView } from '../lib/api.ts';
-import { formatCompact } from '../lib/affordability.ts';
+import { type ReactNode, useMemo, useState } from 'react';
+import { catalogName, SHIPS, shipDef } from '#shared/catalog.ts';
+import { orderCost, SHIPYARD_ORDERS_MAX, unlockText } from '#shared/shipyard.ts';
+import type { BuildSlotView, PlanetSnapshot, ShipyardOrderView } from '../lib/api.ts';
+import { costChecks, formatCompact } from '../lib/affordability.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { type LiveResources, liveResources } from '../lib/liveResources.ts';
 import {
   averageTemperature,
   clampQuantity,
   fleetStrength,
+  maxLabel,
   orderAction,
+  type OrderActionKind,
   orderProgress,
   ordersLabel,
   satelliteEnergyEach,
+  shipyardUpgrade,
   shipView,
   type ShipView,
   waitingOrderSec,
@@ -20,6 +23,13 @@ import {
 import { useServerNow } from '../lib/useServerNow.ts';
 import { RESOURCES } from './icons.tsx';
 import { ShipBlueprint, ShipSilhouette } from './shipArt.tsx';
+import {
+  CheckRow,
+  ClockIcon,
+  disabledBigButtonStyle,
+  LockIcon,
+  reasonListStyle,
+} from './stateControls.tsx';
 
 interface ShipyardProps {
   planet: PlanetSnapshot;
@@ -57,6 +67,7 @@ export function Shipyard({
   );
   const selected = views.get(selectedKey) ?? views.get(SHIPS[0]!.key)!;
   const shipyard = planet.structures['orbital-shipyard'] ?? 0;
+  const upgrade = shipyardUpgrade(planet);
 
   if (shipyard === 0) {
     return (
@@ -81,7 +92,7 @@ export function Shipyard({
   return (
     <div style={contentStyle}>
       <section style={listColumnStyle}>
-        <Heading level={shipyard} />
+        <Heading level={shipyard} upgrade={upgrade} now={now} />
         <div style={tabsStyle}>
           <button type="button" aria-pressed="true" style={tabStyle(true)}>
             Ships
@@ -113,6 +124,7 @@ export function Shipyard({
         view={selected}
         planet={planet}
         live={live}
+        now={now}
         quantity={quantity}
         quantityText={quantityText}
         onQuantityText={setQuantityText}
@@ -121,19 +133,43 @@ export function Shipyard({
       />
 
       <aside style={asideStyle}>
-        <ProductionQueue planet={planet} now={now} universeSpeed={universeSpeed} />
+        <ProductionQueue
+          planet={planet}
+          upgrade={upgrade}
+          now={now}
+          universeSpeed={universeSpeed}
+        />
         <FleetStrengthPanel ships={planet.ships} />
       </aside>
     </div>
   );
 }
 
-function Heading({ level }: { level: number }) {
+/** "Orbital Shipyard level 10", or while it upgrades "… level 10 → 11 in 01:30:00" (#14 pick C). */
+function Heading({
+  level,
+  upgrade = null,
+  now = 0,
+}: {
+  level: number;
+  upgrade?: BuildSlotView | null;
+  now?: number;
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <h1 style={titleStyle}>Shipyard</h1>
       <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-        Orbital Shipyard level {level}
+        {upgrade ? (
+          <>
+            {catalogName(upgrade.structure)} level {upgrade.targetLevel - 1} → {upgrade.targetLevel}{' '}
+            in{' '}
+            <span style={{ fontFamily: 'var(--font-display)', color: 'var(--warn)' }}>
+              {formatCountdown(upgrade.endsAt - now)}
+            </span>
+          </>
+        ) : (
+          `Orbital Shipyard level ${level}`
+        )}
       </span>
     </div>
   );
@@ -179,6 +215,7 @@ function DetailPanel({
   view,
   planet,
   live,
+  now,
   quantity,
   quantityText,
   onQuantityText,
@@ -188,6 +225,7 @@ function DetailPanel({
   view: ShipView;
   planet: PlanetSnapshot;
   live: LiveResources;
+  now: number;
   quantity: number;
   quantityText: string;
   onQuantityText: (text: string) => void;
@@ -196,8 +234,7 @@ function DetailPanel({
 }) {
   const { def } = view;
   const setQuantity = (n: number) => onQuantityText(String(clampQuantity(String(n))));
-  const action = orderAction(planet, view, quantity);
-  const enabled = action.enabled && !pending;
+  const action = orderAction(planet, view, quantity, live, now);
   const cost = orderCost(def, quantity);
   const energyEach = satelliteEnergyEach(planet);
   const stats =
@@ -243,7 +280,12 @@ function DetailPanel({
           </div>
         ))}
       </div>
-      <div style={orderBoxStyle}>
+      <div
+        style={{
+          ...orderBoxStyle,
+          borderColor: action.kind === 'ready' ? 'var(--accent-line)' : 'var(--line)',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <label htmlFor="qty" style={kickerStyle}>
             QUANTITY
@@ -283,7 +325,7 @@ function DetailPanel({
               color: view.maxN > 0 ? 'var(--accent)' : 'var(--danger)',
             }}
           >
-            Max {view.maxN.toLocaleString('en-US')}
+            {maxLabel(view, planet, live)}
           </button>
           <span style={durationStyle} title={`${formatDuration(view.unitSec)} per unit`}>
             {formatDuration(view.unitSec * quantity)}
@@ -317,37 +359,118 @@ function DetailPanel({
               </span>
             ))}
           </div>
-          <button
-            type="button"
-            disabled={!enabled}
-            onClick={onOrder}
-            style={primaryButtonStyle(enabled)}
-          >
-            {pending ? 'ORDERING…' : action.label}
-          </button>
+          <OrderButton
+            kind={action.kind}
+            label={action.label}
+            pending={pending}
+            onOrder={onOrder}
+          />
         </div>
+        {action.kind === 'short' && (
+          <div style={reasonListStyle}>
+            {costChecks(cost, live).map((c) => (
+              <CheckRow
+                key={c.resource}
+                ok={c.met}
+                label={c.label}
+                value={`${c.have.toLocaleString('en-US')} / ${c.need.toLocaleString('en-US')}`}
+              />
+            ))}
+          </div>
+        )}
+        {action.kind === 'full' && (
+          <span style={orderNoteStyle}>
+            The Shipyard takes up to {SHIPYARD_ORDERS_MAX} Orders · Orders can't be cancelled
+          </span>
+        )}
       </div>
     </section>
   );
 }
 
+/**
+ * The order button per state: BUILD N when it can order; a dashed "QUEUE FULL · 10 OF 10" (pick A);
+ * a clock with "ORDERS OPEN IN …" while the Shipyard upgrades (C) or "AFFORDABLE IN …" when short
+ * (B+C); a lock when the ship is locked.
+ */
+function OrderButton({
+  kind,
+  label,
+  pending,
+  onOrder,
+}: {
+  kind: OrderActionKind;
+  label: string;
+  pending: boolean;
+  onOrder: () => void;
+}) {
+  if (kind === 'ready') {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={onOrder}
+        style={primaryButtonStyle(!pending)}
+      >
+        {pending ? 'ORDERING…' : label}
+      </button>
+    );
+  }
+  if (kind === 'full') {
+    return (
+      <button type="button" disabled style={queueFullButtonStyle}>
+        {label}
+      </button>
+    );
+  }
+  const icon: ReactNode = kind === 'locked' ? <LockIcon size={14} /> : <ClockIcon size={14} />;
+  return (
+    <button type="button" disabled style={orderDisabledButtonStyle}>
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 function ProductionQueue({
   planet,
+  upgrade,
   now,
   universeSpeed,
 }: {
   planet: PlanetSnapshot;
+  upgrade: BuildSlotView | null;
   now: number;
   universeSpeed: number;
 }) {
   const orders = planet.shipyardOrders;
+  // All 10 Orders listed compactly once the Orders are full (#14 pick A).
+  const full = orders.length >= SHIPYARD_ORDERS_MAX;
   return (
     <div style={{ ...panelStyle, gap: 14 }}>
       <div style={panelHeaderStyle}>
         <span style={{ color: 'var(--text-muted)' }}>PRODUCTION QUEUE</span>
-        <span style={{ color: 'var(--accent)' }}>{ordersLabel(orders.length)}</span>
+        <span style={{ color: orders.length === 0 ? 'var(--text-muted)' : 'var(--accent)' }}>
+          {full ? `${orders.length} / ${SHIPYARD_ORDERS_MAX} ORDERS` : ordersLabel(orders.length)}
+        </span>
       </div>
-      {orders.length === 0 ? (
+      {upgrade && orders.length === 0 ? (
+        <UpgradeRow upgrade={upgrade} now={now} />
+      ) : full ? (
+        <div style={compactListStyle} role="list" aria-label="Production Queue">
+          {orders.map((o, i) =>
+            i === 0 ? (
+              <OrderRow key={o.id} order={o} first now={now} waitingSec={0} />
+            ) : (
+              <CompactOrderRow
+                key={o.id}
+                order={o}
+                waitingSec={waitingOrderSec(o, planet, universeSpeed)}
+              />
+            ),
+          )}
+        </div>
+      ) : orders.length === 0 ? (
         <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
           No Orders · ships roll out here unit by unit
         </span>
@@ -432,6 +555,49 @@ function OrderRow({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** The Orbital Shipyard / Nanite Foundry upgrade as the queue's only row, in amber (#14 pick C). */
+function UpgradeRow({ upgrade, now }: { upgrade: BuildSlotView; now: number }) {
+  const total = upgrade.endsAt - upgrade.startedAt;
+  const fraction = total > 0 ? Math.min(1, Math.max(0, (now - upgrade.startedAt) / total)) : 1;
+  return (
+    <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+        <span>
+          {catalogName(upgrade.structure)} → {upgrade.targetLevel}
+        </span>
+        <span style={{ fontFamily: 'var(--font-display)', color: 'var(--warn)' }}>
+          {formatCountdown(upgrade.endsAt - now)}
+        </span>
+      </div>
+      <div style={{ height: 4, borderRadius: 4, background: 'var(--line)' }}>
+        <div
+          style={{
+            width: `${Math.round(fraction * 100)}%`,
+            height: 4,
+            borderRadius: 4,
+            background: 'var(--warn)',
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        Orders open when the upgrade finishes
+      </span>
+    </div>
+  );
+}
+
+/** A waiting Order as one compact line, for the full queue: "Hauler · 20 … 1h 40m". */
+function CompactOrderRow({ order, waitingSec }: { order: ShipyardOrderView; waitingSec: number }) {
+  return (
+    <div role="listitem" style={compactRowStyle}>
+      <span>
+        {catalogName(order.ship)} · {order.quantity.toLocaleString('en-US')}
+      </span>
+      <span style={{ fontFamily: 'var(--font-display)' }}>{formatDuration(waitingSec)}</span>
     </div>
   );
 }
@@ -726,6 +892,33 @@ function primaryButtonStyle(enabled: boolean) {
   };
 }
 
+const orderDisabledButtonStyle = {
+  ...disabledBigButtonStyle,
+  height: 48,
+  padding: '0 22px',
+};
+
+// A full queue (#14 pick A): quiet and dashed, not a lock.
+const queueFullButtonStyle = {
+  height: 48,
+  padding: '0 22px',
+  borderRadius: 10,
+  border: '1px dashed var(--line-strong)',
+  background: 'transparent',
+  color: 'var(--text)',
+  opacity: 0.45,
+  fontFamily: 'var(--font-display)',
+  fontWeight: 600,
+  fontSize: 14,
+  letterSpacing: '0.08em',
+  cursor: 'not-allowed',
+};
+
+const orderNoteStyle = {
+  fontSize: 13,
+  color: 'var(--text-label)',
+};
+
 const asideStyle = {
   position: 'absolute' as const,
   right: 24,
@@ -762,6 +955,21 @@ const queueListStyle = {
   gap: 14,
   maxHeight: 4 * QUEUE_ROW_H + 3 * 14,
   overflowY: 'auto' as const,
+};
+
+const compactListStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 8,
+};
+
+const compactRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  paddingTop: 8,
+  borderTop: '1px solid var(--line)',
+  fontSize: 13,
+  color: 'var(--text-body)',
 };
 
 const queueRowStyle = {

@@ -5,10 +5,13 @@ import {
   buildLabel,
   clampQuantity,
   fleetStrength,
+  maxLabel,
   orderAction,
   orderProgress,
+  ordersEndAt,
   ordersLabel,
   satelliteEnergyEach,
+  shipyardUpgrade,
   shipView,
   waitingOrderSec,
 } from './shipyard.ts';
@@ -100,26 +103,99 @@ describe('buildLabel', () => {
 describe('orderAction', () => {
   it('is enabled when unlocked and affordable', () => {
     const v = shipView(satellite, snapshot(), 1, stock);
-    expect(orderAction(snapshot(), v, 3)).toEqual({
+    expect(orderAction(snapshot(), v, 3, stock, 0)).toEqual({
+      kind: 'ready',
       label: 'BUILD 3 SOLAR SATELLITES',
       enabled: true,
     });
   });
 
-  it('is disabled when locked, short, or the Orders are full', () => {
-    expect(orderAction(snapshot(), shipView(cruiser, snapshot(), 1, stock), 1)).toEqual({
+  it('is disabled when locked or the Orders are full', () => {
+    expect(orderAction(snapshot(), shipView(cruiser, snapshot(), 1, stock), 1, stock, 0)).toEqual({
+      kind: 'locked',
       label: 'LOCKED',
       enabled: false,
     });
     const v = shipView(satellite, snapshot(), 1, stock);
-    expect(orderAction(snapshot(), v, 51)).toEqual({
-      label: 'NOT ENOUGH RESOURCES',
-      enabled: false,
-    });
     const full = snapshot({
       shipyardOrders: Array.from({ length: 10 }, (_, i) => order({ id: i })),
     });
-    expect(orderAction(full, v, 1)).toEqual({ label: 'QUEUE FULL · 10 OF 10', enabled: false });
+    expect(orderAction(full, v, 1, stock, 0)).toEqual({
+      kind: 'full',
+      label: 'QUEUE FULL · 10 OF 10',
+      enabled: false,
+    });
+  });
+
+  it('says when the quantity becomes affordable at current production (B+C)', () => {
+    // 51 satellites need 102,000 Crystal: 2,000 short at 15/h is 133h 20m.
+    const v = shipView(satellite, snapshot(), 1, stock);
+    expect(orderAction(snapshot(), v, 51, stock, 0)).toEqual({
+      kind: 'short',
+      label: 'AFFORDABLE IN 5d 13h',
+      enabled: false,
+    });
+    const noCrystal = snapshot({ ratesPerHour: { alloy: 30, crystal: 0, deuterium: 0 } });
+    expect(orderAction(noCrystal, v, 51, stock, 0).label).toBe("CAN'T AFFORD YET");
+  });
+
+  it('waits for an Orbital Shipyard or Nanite Foundry upgrade: ORDERS OPEN IN (C)', () => {
+    const upgrading = snapshot({ buildSlots: [slot('orbital-shipyard', 5_400_000), null] });
+    const v = shipView(satellite, upgrading, 1, stock);
+    expect(orderAction(upgrading, v, 1, stock, 0)).toEqual({
+      kind: 'upgrading',
+      label: 'ORDERS OPEN IN 01:30:00',
+      enabled: false,
+    });
+  });
+});
+
+function slot(structure: string, endsAt: number, n = 1) {
+  return {
+    slot: n,
+    structure,
+    targetLevel: 2,
+    cost: { alloy: 800, crystal: 400, deuterium: 200 },
+    startedAt: 0,
+    endsAt,
+  };
+}
+
+describe('shipyardUpgrade', () => {
+  it('finds the Orbital Shipyard or Nanite Foundry upgrade that ends last, ignoring others', () => {
+    expect(shipyardUpgrade(snapshot())).toBeNull();
+    expect(shipyardUpgrade(snapshot({ buildSlots: [slot('robotics-works', 10), null] }))).toBe(
+      null,
+    );
+    const both = snapshot({
+      buildSlots: [slot('orbital-shipyard', 100), slot('nanite-foundry', 200, 2)],
+    });
+    expect(shipyardUpgrade(both)?.structure).toBe('nanite-foundry');
+  });
+});
+
+describe('ordersEndAt', () => {
+  it('is null with no Orders, else the head end plus waiting Orders at current levels', () => {
+    expect(ordersEndAt(snapshot(), 1)).toBeNull();
+    const planet = snapshot({
+      shipyardOrders: [
+        order({ endsAt: 3000 }),
+        order({ id: 2, quantity: 2, unitDurationMs: null, startedAt: null, endsAt: null }),
+      ],
+    });
+    expect(ordersEndAt(planet, 1)).toBe(3000 + 2 * 1_440_000);
+  });
+});
+
+describe('maxLabel', () => {
+  it('shows Max N, or Max 0 with when one unit is affordable', () => {
+    expect(maxLabel(shipView(satellite, snapshot(), 1, stock), snapshot(), stock)).toBe('Max 50');
+    // One satellite needs 2000 Crystal; 10 short at 15/h is 40m.
+    const poor = { ...stock, crystal: 1990 };
+    const v = shipView(satellite, snapshot(), 1, poor);
+    expect(maxLabel(v, snapshot(), poor)).toBe('Max 0 · 1 in 40m');
+    const noCrystal = snapshot({ ratesPerHour: { alloy: 30, crystal: 0, deuterium: 0 } });
+    expect(maxLabel(v, noCrystal, poor)).toBe('Max 0');
   });
 });
 

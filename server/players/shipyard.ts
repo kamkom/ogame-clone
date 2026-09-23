@@ -4,6 +4,7 @@ import { shipUnitDurationSec } from '#shared/economy.ts';
 import {
   isValidQuantity,
   orderCost,
+  SHIPYARD_LOCK_STRUCTURES,
   SHIPYARD_ORDERS_MAX,
   shipRequirementStatus,
 } from '#shared/shipyard.ts';
@@ -13,6 +14,7 @@ import { type PlanetRow, structureLevels, technologyLevels } from './repo.ts';
 export type ShipyardRejection =
   | 'not_found'
   | 'invalid_quantity'
+  | 'locked_shipyard_upgrading'
   | 'shipyard_orders_full'
   | 'requirements_not_met'
   | 'cannot_afford';
@@ -37,6 +39,14 @@ export function placeShipyardOrder(
   const def = shipDef(key);
   if (!def) return { error: 'not_found' };
   if (!isValidQuantity(quantity)) return { error: 'invalid_quantity' };
+
+  // Shipyard lock: no new Orders while the Orbital Shipyard or Nanite Foundry upgrades.
+  const upgrading = db
+    .prepare(`SELECT structure_key FROM build_slots WHERE planet_id = ?`)
+    .all(planet.id) as { structure_key: string }[];
+  if (upgrading.some((s) => SHIPYARD_LOCK_STRUCTURES.includes(s.structure_key))) {
+    return { error: 'locked_shipyard_upgrading' };
+  }
 
   const { placed } = db
     .prepare(`SELECT COUNT(*) AS placed FROM shipyard_orders WHERE planet_id = ?`)
