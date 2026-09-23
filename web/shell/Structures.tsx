@@ -140,6 +140,10 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
   else if (ctx.fieldsFull) state = 'fields_full';
   else if (checks.some((c) => !c.met)) state = 'short';
 
+  let lockEndsAt: number | null = null;
+  if (state === 'research_active') lockEndsAt = ctx.labLockEndsAt;
+  else if (state === 'shipyard_busy') lockEndsAt = ctx.ordersEndAt;
+
   return {
     def,
     level,
@@ -151,12 +155,7 @@ function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
     checks,
     affordableInSec,
     state,
-    lockEndsAt:
-      state === 'research_active'
-        ? ctx.labLockEndsAt
-        : state === 'shipyard_busy'
-          ? ctx.ordersEndAt
-          : null,
+    lockEndsAt,
   };
 }
 

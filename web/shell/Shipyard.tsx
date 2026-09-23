@@ -454,39 +454,71 @@ function ProductionQueue({
           {full ? `${orders.length} / ${SHIPYARD_ORDERS_MAX} ORDERS` : ordersLabel(orders.length)}
         </span>
       </div>
-      {upgrade && orders.length === 0 ? (
-        <UpgradeRow upgrade={upgrade} now={now} />
-      ) : full ? (
-        <div style={compactListStyle} role="list" aria-label="Production Queue">
-          {orders.map((o, i) =>
-            i === 0 ? (
-              <OrderRow key={o.id} order={o} first now={now} waitingSec={0} />
-            ) : (
-              <CompactOrderRow
-                key={o.id}
-                order={o}
-                waitingSec={waitingOrderSec(o, planet, universeSpeed)}
-              />
-            ),
-          )}
-        </div>
-      ) : orders.length === 0 ? (
-        <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-          No Orders · ships roll out here unit by unit
-        </span>
-      ) : (
-        <div style={queueListStyle} role="list" aria-label="Production Queue">
-          {orders.map((o, i) => (
-            <OrderRow
+      <QueueBody
+        planet={planet}
+        upgrade={upgrade}
+        full={full}
+        now={now}
+        universeSpeed={universeSpeed}
+      />
+    </div>
+  );
+}
+
+/**
+ * The queue's rows: the Shipyard upgrade alone when it holds back an empty queue (#14 pick C), all
+ * Orders compactly when full (pick A), an empty note, or the running Order and those waiting.
+ */
+function QueueBody({
+  planet,
+  upgrade,
+  full,
+  now,
+  universeSpeed,
+}: {
+  planet: PlanetSnapshot;
+  upgrade: BuildSlotView | null;
+  full: boolean;
+  now: number;
+  universeSpeed: number;
+}) {
+  const orders = planet.shipyardOrders;
+  if (upgrade && orders.length === 0) return <UpgradeRow upgrade={upgrade} now={now} />;
+  if (full) {
+    return (
+      <div style={compactListStyle} role="list" aria-label="Production Queue">
+        {orders.map((o, i) =>
+          i === 0 ? (
+            <OrderRow key={o.id} order={o} first now={now} waitingSec={0} />
+          ) : (
+            <CompactOrderRow
               key={o.id}
               order={o}
-              first={i === 0}
-              now={now}
               waitingSec={waitingOrderSec(o, planet, universeSpeed)}
             />
-          ))}
-        </div>
-      )}
+          ),
+        )}
+      </div>
+    );
+  }
+  if (orders.length === 0) {
+    return (
+      <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+        No Orders · ships roll out here unit by unit
+      </span>
+    );
+  }
+  return (
+    <div style={queueListStyle} role="list" aria-label="Production Queue">
+      {orders.map((o, i) => (
+        <OrderRow
+          key={o.id}
+          order={o}
+          first={i === 0}
+          now={now}
+          waitingSec={waitingOrderSec(o, planet, universeSpeed)}
+        />
+      ))}
     </div>
   );
 }
