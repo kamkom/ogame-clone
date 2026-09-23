@@ -6,6 +6,8 @@ import type { ResourceAmounts } from '#shared/economy.ts';
 
 type Resource = keyof ResourceAmounts;
 
+const RESOURCES = ['alloy', 'crystal', 'deuterium'] as const;
+
 const LABELS: Record<Resource, string> = {
   alloy: 'Alloy',
   crystal: 'Crystal',
@@ -52,12 +54,10 @@ export interface CostCheck {
 
 /** One ✓/✕ row per Resource the cost needs (`18,410 / 30,240` Alloy). */
 export function costChecks(cost: ResourceAmounts, stock: ResourceAmounts): CostCheck[] {
-  return (['alloy', 'crystal', 'deuterium'] as const)
-    .filter((r) => cost[r] > 0)
-    .map((r) => {
-      const have = Math.floor(stock[r]);
-      return { resource: r, label: LABELS[r], have, need: cost[r], met: have >= cost[r] };
-    });
+  return RESOURCES.filter((r) => cost[r] > 0).map((r) => {
+    const have = Math.floor(stock[r]);
+    return { resource: r, label: LABELS[r], have, need: cost[r], met: have >= cost[r] };
+  });
 }
 
 /** The card button naming what's short, e.g. "SHORT: ALLOY · DEUT". */
@@ -78,8 +78,7 @@ export function formatCompact(value: number): string {
 
 /** A cost's non-zero figures in compact form, e.g. "102k · 30.7k" for a Cancel refund line. */
 export function formatCostCompact(cost: ResourceAmounts): string {
-  return (['alloy', 'crystal', 'deuterium'] as const)
-    .filter((r) => cost[r] > 0)
+  return RESOURCES.filter((r) => cost[r] > 0)
     .map((r) => formatCompact(cost[r]))
     .join(' · ');
 }

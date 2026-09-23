@@ -76,14 +76,15 @@ export function startUpgrade(
   if (slots.length >= SLOT_COUNT) return { error: 'slots_full' };
 
   // Requirements use finished levels only; a level still in a Build Slot doesn't count.
-  const levels = (k: string) =>
+  const currentLevel = (k: string) =>
     structureDef(k) ? levelOf(db, planet.id, k) : techLevelOf(db, planet.player_id, k);
-  if (requirementStatus(def, levels).some((r) => !r.met)) return { error: 'requirements_not_met' };
+  if (requirementStatus(def, currentLevel).some((r) => !r.met))
+    return { error: 'requirements_not_met' };
 
   const fields = planetFields(db, planet.id);
   if (fields.used + fields.inProgress >= fields.max) return { error: 'fields_full' };
 
-  const targetLevel = levels(key) + 1;
+  const targetLevel = currentLevel(key) + 1;
   const cost = {
     alloy: levelCost(def.baseCost.alloy, def.factor, targetLevel),
     crystal: levelCost(def.baseCost.crystal, def.factor, targetLevel),
@@ -97,8 +98,8 @@ export function startUpgrade(
     return { error: 'cannot_afford' };
   }
 
-  const robotics = levels('robotics-works');
-  const nanite = levels('nanite-foundry');
+  const robotics = currentLevel('robotics-works');
+  const nanite = currentLevel('nanite-foundry');
   const durationSec = structureDurationSec(
     cost.alloy,
     cost.crystal,
