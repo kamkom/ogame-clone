@@ -162,11 +162,10 @@ function StructureCard({
   onSelect: () => void;
 }) {
   const { def, level, slot } = view;
-  const border = selected
-    ? '1px solid var(--accent)'
-    : slot
-      ? '1px solid var(--accent-line)'
-      : '1px solid var(--line)';
+  let borderColor = 'var(--line)';
+  if (selected) borderColor = 'var(--accent)';
+  else if (slot) borderColor = 'var(--accent-line)';
+  const border = `1px solid ${borderColor}`;
   return (
     <button type="button" onClick={onSelect} style={{ ...cardStyle, border }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -224,6 +223,16 @@ function DetailPanel({
   const blockedBySlots = slotsFull && !inProgress;
   const canUpgrade = !inProgress && !blockedBySlots && affordable && !pending;
 
+  // Explains why the upgrade button is (or isn't) actionable, shown when nothing is building here.
+  let idleFootnote = 'Starts now in a free Build Slot';
+  if (blockedBySlots && nextFreeAt !== null) {
+    idleFootnote = `Both slots busy · frees in ${formatCountdown(nextFreeAt - now)}`;
+  } else if (!affordable) {
+    idleFootnote = 'Not enough Resources yet';
+  } else if (pending) {
+    idleFootnote = 'Starting…';
+  }
+
   return (
     <aside style={panelStyle}>
       <div style={panelArtStyle}>
@@ -280,15 +289,7 @@ function DetailPanel({
             >
               {level === 0 ? 'BUILD' : `UPGRADE TO LEVEL ${targetLevel}`}
             </button>
-            <span style={panelFootNoteStyle}>
-              {blockedBySlots && nextFreeAt !== null
-                ? `Both slots busy · frees in ${formatCountdown(nextFreeAt - now)}`
-                : !affordable
-                  ? 'Not enough Resources yet'
-                  : pending
-                    ? 'Starting…'
-                    : `Starts now in a free Build Slot`}
-            </span>
+            <span style={panelFootNoteStyle}>{idleFootnote}</span>
           </>
         )}
       </div>
