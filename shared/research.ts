@@ -10,6 +10,9 @@ import {
 } from './catalog.ts';
 import { levelCost } from './economy.ts';
 
+/** At most 5 entries: one running, four waiting (spec story 53). */
+export const RESEARCH_QUEUE_MAX = 5;
+
 /** A Research Queue entry, as far as these rules care. */
 export interface QueuedResearch {
   technology: string;

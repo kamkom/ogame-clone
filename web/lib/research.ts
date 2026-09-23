@@ -5,6 +5,7 @@
 import { catalogName, type TechnologyDef } from '#shared/catalog.ts';
 import { researchDurationSec } from '#shared/economy.ts';
 import {
+  RESEARCH_QUEUE_MAX,
   type RequirementStatus,
   requirementStatus,
   researchTargetLevel,
@@ -12,8 +13,6 @@ import {
 } from '#shared/research.ts';
 import type { PlanetSnapshot, ResearchEntryView } from './api.ts';
 import type { LiveResources } from './liveResources.ts';
-
-const QUEUE_MAX = 5;
 
 export interface TechView {
   def: TechnologyDef;
@@ -98,8 +97,8 @@ export function queueAction(
   view: TechView,
 ): { label: string; enabled: boolean } {
   const queue = planet.researchQueue;
-  if (queue.length >= QUEUE_MAX) {
-    return { label: `QUEUE FULL · ${queue.length} OF ${QUEUE_MAX}`, enabled: false };
+  if (queue.length >= RESEARCH_QUEUE_MAX) {
+    return { label: `QUEUE FULL · ${queue.length} OF ${RESEARCH_QUEUE_MAX}`, enabled: false };
   }
   if (!view.unlocked) return { label: 'LOCKED', enabled: false };
   if (!view.affordable) return { label: 'NOT ENOUGH RESOURCES', enabled: false };

@@ -1,7 +1,12 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { technologyDef } from '#shared/catalog.ts';
 import { researchDurationSec } from '#shared/economy.ts';
-import { requirementStatus, researchTargetLevel, technologyCost } from '#shared/research.ts';
+import {
+  RESEARCH_QUEUE_MAX,
+  requirementStatus,
+  researchTargetLevel,
+  technologyCost,
+} from '#shared/research.ts';
 import { readResearchQueue } from './economy.ts';
 import { type PlanetRow, structureLevels, technologyLevels } from './repo.ts';
 
@@ -10,9 +15,6 @@ export type ResearchRejection =
   'not_found' | 'research_queue_full' | 'requirements_not_met' | 'cannot_afford';
 
 export type EnqueueResult = { ok: true } | { error: ResearchRejection };
-
-/** At most 5 entries: one running, four waiting (spec story 53). */
-export const RESEARCH_QUEUE_MAX = 5;
 
 /**
  * Queue Research of `key` for the Player owning `planet` (spec stories 53–56). The entry is paid now
