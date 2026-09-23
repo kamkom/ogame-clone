@@ -222,23 +222,23 @@ function ConstructionQueue({
   onCancel: (slot: number) => void;
 }) {
   const slots = slotRows(planet);
-  const busy = slots.filter((s) => s.busy !== null).length;
+  const busyCount = slots.filter((s) => s.busy !== null).length;
   return (
     <div
       style={{
         ...queueBoxStyle,
-        borderColor: busy > 0 ? 'var(--accent-line)' : 'var(--line)',
+        borderColor: busyCount > 0 ? 'var(--accent-line)' : 'var(--line)',
       }}
     >
       <div style={{ ...kickerStyle, display: 'flex', justifyContent: 'space-between' }}>
         <span>CONSTRUCTION QUEUE</span>
-        <span style={{ color: busy > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
-          {busy} / {slots.length}
+        <span style={{ color: busyCount > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
+          {busyCount} / {slots.length}
         </span>
       </div>
-      {slots.map(({ slot, busy: s }) =>
-        s ? (
-          <BusySlot key={slot} slot={s} now={now} onCancel={() => onCancel(slot)} />
+      {slots.map(({ slot, busy }) =>
+        busy ? (
+          <BusySlot key={slot} slot={busy} now={now} onCancel={() => onCancel(slot)} />
         ) : (
           <div key={slot} style={freeSlotStyle}>
             SLOT {slot} · Free
