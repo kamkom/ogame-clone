@@ -133,7 +133,16 @@ export function GameShell({
           onGoToStructures={() => setScreen('structures')}
         />
       )}
-      {screen === 'overview' && <CommandDeck planet={planet} />}
+      {screen === 'overview' && (
+        <CommandDeck
+          planet={planet}
+          universeSpeed={universeSpeed}
+          onUpgrade={(key) => upgrade.mutate(key)}
+          onCancel={(slot) => cancel.mutate(slot)}
+          onManage={() => setScreen('structures')}
+          pendingKey={upgrade.isPending ? (upgrade.variables ?? null) : null}
+        />
+      )}
       {planetQuery.isError && !dismissed && <ErrorBanner onDismiss={() => setDismissed(true)} />}
       {showWelcome && (
         <WelcomeWindow
