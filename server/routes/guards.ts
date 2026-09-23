@@ -60,8 +60,18 @@ export function resolvePlayerId(request: FastifyRequest, reply: FastifyReply): n
  */
 export async function requireSession(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const playerId = resolvePlayerId(request, reply);
-  if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
+  if (playerId === null) return unauthenticated(request, reply);
   request.playerId = playerId;
+}
+
+/**
+ * The 401 body. It carries the Universe Speed, the one fact the login card needs before there is
+ * a session (story 16), so no route has to be public for it.
+ */
+export function unauthenticated(request: FastifyRequest, reply: FastifyReply) {
+  return reply
+    .code(401)
+    .send({ error: 'unauthenticated', universeSpeed: request.server.config.UNIVERSE_SPEED });
 }
 
 declare module 'fastify' {

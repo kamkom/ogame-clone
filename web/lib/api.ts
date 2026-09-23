@@ -34,6 +34,8 @@ export interface ApiErrorBody {
   fields?: FieldErrors;
   /** A single validation code, e.g. from a failed Planet rename ('length' | 'chars' | 'spaces'). */
   code?: string;
+  /** On a 401: the Universe Speed, for the login card (story 16). */
+  universeSpeed?: number;
 }
 
 export class ApiError extends Error {
@@ -77,14 +79,7 @@ function post<T>(path: string, payload: unknown, fetchImpl?: FetchImpl): Promise
   return apiFetch<T>(path, { method: 'POST', body: JSON.stringify(payload) }, fetchImpl);
 }
 
-export interface Health {
-  status: string;
-  serverNow: number;
-  universeSpeed: number;
-}
-
 export const api = {
-  health: (fetchImpl?: FetchImpl) => apiFetch<Health>('/api/health', {}, fetchImpl),
   me: (fetchImpl?: FetchImpl) => apiFetch<Session>('/api/auth/me', {}, fetchImpl),
   planet: (fetchImpl?: FetchImpl) => apiFetch<PlanetSnapshot>('/api/planet', {}, fetchImpl),
   register: (username: string, password: string, fetchImpl?: FetchImpl) =>

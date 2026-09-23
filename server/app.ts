@@ -51,12 +51,6 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
 
   app.register(cookie);
 
-  app.get('/api/health', () => ({
-    status: 'ok',
-    serverNow: clock.now(),
-    universeSpeed: options.config.UNIVERSE_SPEED,
-  }));
-
   registerAuthRoutes(app);
   registerPlanetRoutes(app);
   registerStructureRoutes(app);

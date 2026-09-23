@@ -31,6 +31,11 @@ describe('api wrapper', () => {
     }
   });
 
+  it('carries the Universe Speed on the me 401', async () => {
+    const { impl } = fakeFetch(401, { error: 'unauthenticated', universeSpeed: 8 });
+    await expect(api.me(impl)).rejects.toMatchObject({ body: { universeSpeed: 8 } });
+  });
+
   it('surfaces field errors from a 400', async () => {
     const { impl } = fakeFetch(400, { error: 'validation', fields: { username: 'taken' } });
     try {

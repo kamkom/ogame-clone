@@ -6,7 +6,13 @@ import { validateRegistration } from '../auth/validation.ts';
 import { findPlayerByUsernameLower, getPlayer, registerPlayer } from '../players/repo.ts';
 import { buildPlanetSnapshot } from '../players/snapshot.ts';
 import { loadAdvancedPlayer } from '../players/state.ts';
-import { SESSION_COOKIE, csrf, requireSession, sessionCookieOptions } from './guards.ts';
+import {
+  SESSION_COOKIE,
+  csrf,
+  requireSession,
+  sessionCookieOptions,
+  unauthenticated,
+} from './guards.ts';
 
 interface Credentials {
   username: string;
@@ -104,7 +110,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     { onRequest: requireSession },
     (request: FastifyRequest, reply: FastifyReply) => {
       const player = getPlayer(app.db, request.playerId);
-      if (!player) return reply.code(401).send({ error: 'unauthenticated' });
+      if (!player) return unauthenticated(request, reply);
       return reply.send({ player });
     },
   );

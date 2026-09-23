@@ -60,6 +60,13 @@ describe('API contract', () => {
       expect((await app.inject({ method: 'GET', url: '/api/planet' })).statusCode).toBe(401);
       expect((await app.inject({ method: 'GET', url: '/api/auth/me' })).statusCode).toBe(401);
     });
+
+    it('has no public health route; the me 401 carries the Universe Speed (story 16)', async () => {
+      expect((await app.inject({ method: 'GET', url: '/api/health' })).statusCode).toBe(404);
+      const me = await app.inject({ method: 'GET', url: '/api/auth/me' });
+      expect(me.statusCode).toBe(401);
+      expect(me.json()).toEqual({ error: 'unauthenticated', universeSpeed: 3 });
+    });
   });
 
   describe('with a session', () => {

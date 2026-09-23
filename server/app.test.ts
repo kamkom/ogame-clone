@@ -11,17 +11,19 @@ describe('buildApp', () => {
     await app?.close();
   });
 
-  it('serves /api/health with the injected clock and config', async () => {
+  it('wires the injected clock and config into the routes', async () => {
     const clock = new ManualClock(1_700_000_000_000);
     const config = loadConfig({ UNIVERSE_SPEED: '8', SERVE_WEB: 'false' });
     app = buildApp({ dbPath: ':memory:', clock, config });
 
-    const res = await app.inject({ method: 'GET', url: '/api/health' });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({
-      status: 'ok',
-      serverNow: 1_700_000_000_000,
-      universeSpeed: 8,
+    const me = await app.inject({ method: 'GET', url: '/api/auth/me' });
+    expect(me.json()).toEqual({ error: 'unauthenticated', universeSpeed: 8 });
+
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'Vega', password: 'password1' },
     });
+    expect(reg.json().snapshot).toMatchObject({ serverNow: 1_700_000_000_000, universeSpeed: 8 });
   });
 });

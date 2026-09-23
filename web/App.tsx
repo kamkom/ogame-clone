@@ -16,7 +16,6 @@ import { retryPolicy } from './lib/queryErrors.ts';
 export function App() {
   const queryClient = useQueryClient();
 
-  const health = useQuery({ queryKey: ['health'], queryFn: () => api.health() });
   const me = useQuery<Session, ApiError>({
     queryKey: ME_KEY,
     queryFn: () => api.me(),
@@ -40,8 +39,8 @@ export function App() {
     onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
 
-  // Only the auth screen needs this; once signed in, the snapshot carries `universeSpeed`.
-  const universeSpeed = health.data?.universeSpeed ?? 1;
+  // Only the auth screen needs this, and the me 401 carries it; once signed in, the snapshot does.
+  const universeSpeed = me.error?.body?.universeSpeed ?? 1;
 
   function onAuthenticated(player: Player, snapshot?: PlanetSnapshot) {
     // Seed the Planet first, so a new Player's shell renders without a second request.
