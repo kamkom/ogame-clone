@@ -31,6 +31,7 @@ export interface PlanetSnapshot {
   storageCapacity: { alloy: number; crystal: number; deuterium: number };
   energy: { produced: number; consumed: number; productionFactor: number };
   structures: Record<string, number>;
+  technologies: Record<string, number>;
   buildSlots: (BuildSlotView | null)[];
   nextEventAt: number | null;
 }
@@ -109,4 +110,6 @@ export const api = {
     post<PlanetSnapshot>('/api/planet/rename', { name }, fetchImpl),
   upgradeStructure: (key: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>(`/api/structures/${key}/upgrade`, {}, fetchImpl),
+  cancelBuildSlot: (slot: number, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>(`/api/build-slots/${slot}/cancel`, {}, fetchImpl),
 };

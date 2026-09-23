@@ -142,3 +142,38 @@ export function structureDurationSec(
     (alloyCost + crystalCost) / (2500 * earlyDivisor * (1 + robotics) * 2 ** nanite * speed);
   return Math.max(1, Math.floor(hours * 3600));
 }
+
+/** A home Planet's Fields before the Terraformer bonus (spec: every Planet is 163 Fields). */
+export const BASE_FIELDS = 163;
+
+/** Max Fields: 163 plus the Terraformer bonus `5·L + floor(L/2)`. Not scaled by Universe Speed. */
+export function maxFields(terraformerLevel: number): number {
+  return BASE_FIELDS + 5 * terraformerLevel + Math.floor(terraformerLevel / 2);
+}
+
+export interface ResourceAmounts {
+  alloy: number;
+  crystal: number;
+  deuterium: number;
+}
+
+/**
+ * Seconds until `stock` covers `cost` at the current per-hour `rates`, rounded up; 0 when it
+ * already does. Null ("never") when a short Resource has no positive rate or its Storage Capacity
+ * is below the cost, since production stops at the cap.
+ */
+export function secondsUntilAffordable(
+  cost: ResourceAmounts,
+  stock: ResourceAmounts,
+  ratesPerHour: ResourceAmounts,
+  capacity: ResourceAmounts,
+): number | null {
+  let worst = 0;
+  for (const key of ['alloy', 'crystal', 'deuterium'] as const) {
+    const missing = cost[key] - stock[key];
+    if (missing <= 0) continue;
+    if (ratesPerHour[key] <= 0 || capacity[key] < cost[key]) return null;
+    worst = Math.max(worst, Math.ceil((missing / ratesPerHour[key]) * 3600));
+  }
+  return worst;
+}

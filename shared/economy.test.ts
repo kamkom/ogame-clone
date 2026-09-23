@@ -8,11 +8,13 @@ import {
   fusionDeuteriumBurn,
   fusionReactorEnergy,
   levelCost,
+  maxFields,
   productionFactor,
   solarPlantEnergy,
   solarSatelliteEnergy,
   storageCapacity,
   structureDurationSec,
+  secondsUntilAffordable,
 } from './economy.ts';
 import { structureDef } from './catalog.ts';
 
@@ -177,5 +179,69 @@ describe('structure build time (§5)', () => {
 
   it('never returns less than one second', () => {
     expect(structureDurationSec(1, 1, 1, 0, 0, 1, false)).toBe(1);
+  });
+});
+
+describe('max Fields (163 + Terraformer bonus 5·L + floor(L/2))', () => {
+  it.each([
+    [0, 163],
+    [1, 168],
+    [2, 174],
+    [3, 179],
+    [10, 218],
+  ])('Terraformer %i → %i Fields', (level, expected) => {
+    expect(maxFields(level)).toBe(expected);
+  });
+});
+
+describe('seconds until affordable', () => {
+  const caps = { alloy: 10_000, crystal: 10_000, deuterium: 10_000 };
+  const rates = { alloy: 3600, crystal: 1800, deuterium: 0 };
+
+  it('is 0 when the cost is already covered', () => {
+    const stock = { alloy: 100, crystal: 100, deuterium: 0 };
+    expect(
+      secondsUntilAffordable({ alloy: 100, crystal: 50, deuterium: 0 }, stock, rates, caps),
+    ).toBe(0);
+  });
+
+  it('waits for the slowest short Resource, rounded up to a whole second', () => {
+    const stock = { alloy: 0, crystal: 0, deuterium: 0 };
+    // Alloy needs 60 at 1/s = 60s; Crystal needs 45 at 0.5/s = 90s.
+    expect(
+      secondsUntilAffordable({ alloy: 60, crystal: 45, deuterium: 0 }, stock, rates, caps),
+    ).toBe(90);
+    expect(
+      secondsUntilAffordable({ alloy: 60.5, crystal: 0, deuterium: 0 }, stock, rates, caps),
+    ).toBe(61);
+  });
+
+  it('is null ("never") when a short Resource has no production', () => {
+    const stock = { alloy: 0, crystal: 0, deuterium: 0 };
+    expect(
+      secondsUntilAffordable({ alloy: 0, crystal: 0, deuterium: 1 }, stock, rates, caps),
+    ).toBeNull();
+  });
+
+  it('is null when a negative rate drains a short Resource', () => {
+    const stock = { alloy: 0, crystal: 0, deuterium: 0 };
+    const draining = { ...rates, deuterium: -100 };
+    expect(
+      secondsUntilAffordable({ alloy: 0, crystal: 0, deuterium: 1 }, stock, draining, caps),
+    ).toBeNull();
+  });
+
+  it('is null when the Storage Capacity is below the cost', () => {
+    const stock = { alloy: 0, crystal: 0, deuterium: 0 };
+    expect(
+      secondsUntilAffordable({ alloy: 10_001, crystal: 0, deuterium: 0 }, stock, rates, caps),
+    ).toBeNull();
+  });
+
+  it('ignores a zero rate on a Resource that is not short', () => {
+    const stock = { alloy: 0, crystal: 0, deuterium: 5 };
+    expect(
+      secondsUntilAffordable({ alloy: 60, crystal: 0, deuterium: 5 }, stock, rates, caps),
+    ).toBe(60);
   });
 });

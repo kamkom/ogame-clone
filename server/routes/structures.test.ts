@@ -82,8 +82,8 @@ describe('POST /api/structures/:key/upgrade', () => {
 
   it('rejects an unaffordable upgrade with 409 cannot_afford', async () => {
     const cookie = await register();
-    // Fusion Reactor L1 costs 900 Alloy; a new Player has 500.
-    const res = await upgrade(cookie, 'fusion-reactor');
+    // Research Lab L1 costs 200 Deuterium; a new Player has 0.
+    const res = await upgrade(cookie, 'research-lab');
     expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({ error: 'cannot_afford' });
   });
@@ -116,5 +116,177 @@ describe('POST /api/structures/:key/upgrade', () => {
     expect(after.fields.inProgress).toBe(0);
     // Alloy income is now higher than base income alone.
     expect(after.ratesPerHour.alloy).toBeGreaterThan(baseRate);
+  });
+
+  function setLevel(key: string, level: number) {
+    app.db
+      .prepare(
+        `INSERT INTO planet_structures (planet_id, structure_key, level) VALUES (1, ?, ?)
+           ON CONFLICT(planet_id, structure_key) DO UPDATE SET level = excluded.level`,
+      )
+      .run(key, level);
+  }
+
+  function setTechLevel(key: string, level: number) {
+    app.db
+      .prepare(
+        `INSERT INTO player_technologies (player_id, technology_key, level) VALUES (1, ?, ?)`,
+      )
+      .run(key, level);
+  }
+
+  function setResources(amount: number) {
+    app.db
+      .prepare(`UPDATE planets SET alloy = ?, crystal = ?, deuterium = ? WHERE id = 1`)
+      .run(amount, amount, amount);
+  }
+
+  async function planet(cookie: string) {
+    return (await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } })).json();
+  }
+
+  it('rejects an upgrade whose requirements are not met with 409 requirements_not_met', async () => {
+    const cookie = await register();
+    setResources(10_000);
+    // Orbital Shipyard requires Robotics Works 2; the new Player has none.
+    const res = await upgrade(cookie, 'orbital-shipyard');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'requirements_not_met' });
+  });
+
+  it('counts only finished levels for requirements, not a level still being built', async () => {
+    const cookie = await register();
+    setResources(10_000);
+    setLevel('robotics-works', 1);
+    expect((await upgrade(cookie, 'robotics-works')).statusCode).toBe(200); // → 2, in progress
+    const res = await upgrade(cookie, 'orbital-shipyard');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'requirements_not_met' });
+  });
+
+  it('allows an upgrade once Structure and Technology requirements are met', async () => {
+    const cookie = await register();
+    setResources(100_000);
+    setLevel('deuterium-synthesizer', 5);
+    setTechLevel('energy-technology', 3);
+    const res = await upgrade(cookie, 'fusion-reactor');
+    expect(res.statusCode).toBe(200);
+    expect(res.json().technologies).toEqual({ 'energy-technology': 3 });
+  });
+
+  it('counts in-progress upgrades against the Fields limit (409 fields_full)', async () => {
+    const cookie = await register();
+    setResources(10_000);
+    setLevel('research-lab', 162); // 162 of 163 Fields used
+    expect((await upgrade(cookie, 'alloy-extractor')).statusCode).toBe(200); // 162 + 1 in progress
+    const res = await upgrade(cookie, 'crystal-refinery');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'fields_full' });
+  });
+
+  it('raises max Fields by the Terraformer bonus 5·L + floor(L/2)', async () => {
+    const cookie = await register();
+    expect((await planet(cookie)).fields.max).toBe(163);
+    setLevel('terraformer', 3);
+    const after = await planet(cookie);
+    expect(after.fields.max).toBe(163 + 15 + 1);
+    expect(after.fields.used).toBe(3);
+  });
+
+  it('lets a Terraformer-raised max admit an upgrade the base Fields would refuse', async () => {
+    const cookie = await register();
+    setResources(10_000);
+    setLevel('research-lab', 162);
+    setLevel('terraformer', 1); // used 163, max 163 + 5 = 168
+    expect((await upgrade(cookie, 'alloy-extractor')).statusCode).toBe(200);
+  });
+});
+
+describe('POST /api/build-slots/:slot/cancel', () => {
+  let app: FastifyInstance;
+  let clock: ManualClock;
+
+  beforeEach(() => {
+    clock = new ManualClock(1_000_000);
+    app = buildApp({
+      dbPath: ':memory:',
+      clock,
+      config: loadConfig({ SERVE_WEB: 'false' }),
+      rng: () => 0.5,
+    });
+  });
+  afterEach(async () => {
+    await app.close();
+  });
+
+  async function register(): Promise<string> {
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'Vega', password: 'password1' },
+    });
+    return `session=${reg.cookies.find((c) => c.name === 'session')!.value}`;
+  }
+
+  function post(cookie: string, url: string) {
+    return app.inject({ method: 'POST', url, headers: { cookie }, payload: {} });
+  }
+
+  it('requires a session', async () => {
+    const res = await post('', '/api/build-slots/1/cancel');
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('refunds exactly the paid cost, frees the slot and returns the Field', async () => {
+    const cookie = await register();
+    const started = (await post(cookie, '/api/structures/alloy-extractor/upgrade')).json();
+    expect(started.fields.inProgress).toBe(1);
+
+    const res = await post(cookie, '/api/build-slots/1/cancel');
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    // No time passed: back to exactly the starting 500 / 500 / 0.
+    expect(body.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
+    expect(body.buildSlots).toEqual([null, null]);
+    expect(body.fields.inProgress).toBe(0);
+    expect(body.fields.used).toBe(0);
+    expect(body.structures['alloy-extractor']).toBe(0);
+    expect(body.nextEventAt).toBeNull();
+  });
+
+  it('refunds the cost on top of production earned since the start', async () => {
+    const cookie = await register();
+    await post(cookie, '/api/structures/solar-array/upgrade'); // 75 / 30, slot 1
+    await post(cookie, '/api/structures/alloy-extractor/upgrade'); // 60 / 15, slot 2
+    clock.advance(1000); // 1s of base income, still well before either finishes
+    const body = (await post(cookie, '/api/build-slots/2/cancel')).json();
+    expect(body.buildSlots[0]).toMatchObject({ structure: 'solar-array' });
+    expect(body.buildSlots[1]).toBeNull();
+    // 500 − 75 − 60 + 60 refund + 30/h · 1s
+    expect(body.resources.alloy).toBeCloseTo(425 + 30 / 3600, 9);
+    expect(body.resources.crystal).toBeCloseTo(470 + 15 / 3600, 9);
+  });
+
+  it('rejects Cancel on an empty slot with 409 not_found', async () => {
+    const cookie = await register();
+    const res = await post(cookie, '/api/build-slots/2/cancel');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'not_found' });
+  });
+
+  it('rejects Cancel on an upgrade that has already finished with 409 not_found', async () => {
+    const cookie = await register();
+    await post(cookie, '/api/structures/alloy-extractor/upgrade');
+    clock.advance(5 * 60_000);
+    const res = await post(cookie, '/api/build-slots/1/cancel');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'not_found' });
+  });
+
+  it('rejects a slot number outside 1–2 with 409 not_found', async () => {
+    const cookie = await register();
+    const res = await post(cookie, '/api/build-slots/3/cancel');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'not_found' });
   });
 });

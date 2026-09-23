@@ -24,8 +24,8 @@ const FIELD_BY_KEY = new Map<string, keyof Structures>(
     field,
   ]),
 );
-const ENERGY_TECH_KEY = 'energyTechnology';
-const PLASMA_TECH_KEY = 'plasmaTechnology';
+const ENERGY_TECH_KEY = 'energy-technology';
+const PLASMA_TECH_KEY = 'plasma-technology';
 const SOLAR_SATELLITE_KEY = 'solarSatellite';
 
 /** The Build Slots currently occupied on a Planet, as engine state. */

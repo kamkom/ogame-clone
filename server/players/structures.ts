@@ -1,12 +1,21 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { levelCost, structureDurationSec } from '#shared/economy.ts';
-import { structureDef } from '#shared/catalog.ts';
+import { levelCost, maxFields, structureDurationSec } from '#shared/economy.ts';
+import { requirementStatus, structureDef } from '#shared/catalog.ts';
 import type { PlanetRow } from './repo.ts';
 
 /** A typed reason an upgrade could not start. `not_found` is an unknown catalog key (404); the rest are 409s. */
-export type UpgradeRejection = 'not_found' | 'already_in_progress' | 'slots_full' | 'cannot_afford';
+export type UpgradeRejection =
+  | 'not_found'
+  | 'already_in_progress'
+  | 'slots_full'
+  | 'requirements_not_met'
+  | 'fields_full'
+  | 'cannot_afford';
 
 export type UpgradeResult = { ok: true } | { error: UpgradeRejection };
+
+/** A typed reason a Cancel was refused: the slot holds no running upgrade. */
+export type CancelResult = { ok: true } | { error: 'not_found' };
 
 const SLOT_COUNT = 2;
 
@@ -16,6 +25,32 @@ function levelOf(db: DatabaseSync, planetId: number, key: string): number {
     .prepare(`SELECT level FROM planet_structures WHERE planet_id = ? AND structure_key = ?`)
     .get(planetId, key) as { level: number } | undefined;
   return row?.level ?? 0;
+}
+
+/** The stored level of a Technology for a Player (0 when there is no row). */
+function techLevelOf(db: DatabaseSync, playerId: number, key: string): number {
+  const row = db
+    .prepare(`SELECT level FROM player_technologies WHERE player_id = ? AND technology_key = ?`)
+    .get(playerId, key) as { level: number } | undefined;
+  return row?.level ?? 0;
+}
+
+/** A Planet's Fields: finished levels, upgrades running in a Build Slot, and the max. */
+export function planetFields(
+  db: DatabaseSync,
+  planetId: number,
+): { used: number; inProgress: number; max: number } {
+  const { used } = db
+    .prepare(`SELECT COALESCE(SUM(level), 0) AS used FROM planet_structures WHERE planet_id = ?`)
+    .get(planetId) as { used: number };
+  const { inProgress } = db
+    .prepare(`SELECT COUNT(*) AS inProgress FROM build_slots WHERE planet_id = ?`)
+    .get(planetId) as { inProgress: number };
+  return {
+    used: Number(used),
+    inProgress: Number(inProgress),
+    max: maxFields(levelOf(db, planetId, 'terraformer')),
+  };
 }
 
 /**
@@ -40,7 +75,15 @@ export function startUpgrade(
   if (slots.some((s) => s.structure_key === key)) return { error: 'already_in_progress' };
   if (slots.length >= SLOT_COUNT) return { error: 'slots_full' };
 
-  const targetLevel = levelOf(db, planet.id, key) + 1;
+  // Requirements use finished levels only; a level still in a Build Slot doesn't count.
+  const levels = (k: string) =>
+    structureDef(k) ? levelOf(db, planet.id, k) : techLevelOf(db, planet.player_id, k);
+  if (requirementStatus(def, levels).some((r) => !r.met)) return { error: 'requirements_not_met' };
+
+  const fields = planetFields(db, planet.id);
+  if (fields.used + fields.inProgress >= fields.max) return { error: 'fields_full' };
+
+  const targetLevel = levels(key) + 1;
   const cost = {
     alloy: levelCost(def.baseCost.alloy, def.factor, targetLevel),
     crystal: levelCost(def.baseCost.crystal, def.factor, targetLevel),
@@ -54,8 +97,8 @@ export function startUpgrade(
     return { error: 'cannot_afford' };
   }
 
-  const robotics = levelOf(db, planet.id, 'robotics-works');
-  const nanite = levelOf(db, planet.id, 'nanite-foundry');
+  const robotics = levels('robotics-works');
+  const nanite = levels('nanite-foundry');
   const durationSec = structureDurationSec(
     cost.alloy,
     cost.crystal,
@@ -86,5 +129,26 @@ export function startUpgrade(
     now,
     endsAt,
   );
+  return { ok: true };
+}
+
+/**
+ * Cancel the upgrade running in Build Slot `slot`: refund exactly what was paid for it, free the
+ * slot and so return its Field (spec story 47). `planet` must already be advanced to now, so an
+ * upgrade that has finished is no longer in its slot. Runs inside the caller's transaction.
+ */
+export function cancelUpgrade(db: DatabaseSync, planet: PlanetRow, slot: number): CancelResult {
+  const row = db
+    .prepare(
+      `SELECT cost_alloy, cost_crystal, cost_deuterium FROM build_slots WHERE planet_id = ? AND slot = ?`,
+    )
+    .get(planet.id, slot) as
+    { cost_alloy: number; cost_crystal: number; cost_deuterium: number } | undefined;
+  if (!row) return { error: 'not_found' };
+
+  db.prepare(
+    `UPDATE planets SET alloy = alloy + ?, crystal = crystal + ?, deuterium = deuterium + ? WHERE id = ?`,
+  ).run(row.cost_alloy, row.cost_crystal, row.cost_deuterium, planet.id);
+  db.prepare(`DELETE FROM build_slots WHERE planet_id = ? AND slot = ?`).run(planet.id, slot);
   return { ok: true };
 }

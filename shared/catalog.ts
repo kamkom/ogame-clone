@@ -1,8 +1,8 @@
 // The shared Structures catalog: data only, imported by both the server and the web so displayed
 // names, costs and requirements can never disagree. Costs and factors come from the rules-reference
 // doc (docs/research/ogame-rules-reference.md §3); the design names come from the catalog-mapping
-// doc (docs/research/design-catalog-mapping.md). Requirements are stored as data and enforced in a
-// later ticket. A missing row means level 0.
+// doc (docs/research/design-catalog-mapping.md). Requirements are checked against current levels
+// only (spec story 43). A missing row means level 0.
 
 /** The 13 v1 Structure keys (stable, kebab-case). */
 export type StructureKey =
@@ -29,7 +29,7 @@ export interface StructureCost {
   deuterium: number;
 }
 
-/** A direct requirement on another Structure or Technology level (enforced in a later ticket). */
+/** A direct requirement on another Structure or Technology level. */
 export interface Requirement {
   key: string;
   level: number;
@@ -230,4 +230,44 @@ const BY_KEY = new Map<string, StructureDef>(STRUCTURES.map((s) => [s.key, s]));
 /** The Structure definition for a key, or undefined when the key is not in the catalog. */
 export function structureDef(key: string): StructureDef | undefined {
   return BY_KEY.get(key);
+}
+
+// Design names for the Technologies that Structure requirements point at. The full Technology
+// catalog lands with the Research slice; until then only these keys are referenced.
+const TECHNOLOGY_NAMES: Record<string, string> = {
+  'energy-technology': 'Energy Theory',
+  'computer-technology': 'Computation',
+};
+
+/** The display name of a requirement's Structure or Technology key. */
+export function requirementName(key: string): string {
+  return BY_KEY.get(key)?.name ?? TECHNOLOGY_NAMES[key] ?? key;
+}
+
+export interface RequirementStatus {
+  key: string;
+  name: string;
+  required: number;
+  current: number;
+  met: boolean;
+}
+
+/**
+ * Each direct requirement of `def` against `levelOf` (a Structure or Technology key's current,
+ * finished level — never one still being built).
+ */
+export function requirementStatus(
+  def: StructureDef,
+  levelOf: (key: string) => number,
+): RequirementStatus[] {
+  return def.requires.map((r) => {
+    const current = levelOf(r.key);
+    return {
+      key: r.key,
+      name: requirementName(r.key),
+      required: r.level,
+      current,
+      met: current >= r.level,
+    };
+  });
 }

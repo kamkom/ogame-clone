@@ -1,7 +1,21 @@
-import { useMemo, useState } from 'react';
-import { STRUCTURES, type StructureDef, type StructureTab } from '#shared/catalog.ts';
-import { levelCost, structureDurationSec } from '#shared/economy.ts';
+import { type KeyboardEvent, type ReactNode, useMemo, useState } from 'react';
+import {
+  type RequirementStatus,
+  requirementStatus,
+  STRUCTURES,
+  type StructureDef,
+  type StructureTab,
+} from '#shared/catalog.ts';
+import { levelCost, secondsUntilAffordable, structureDurationSec } from '#shared/economy.ts';
 import type { BuildSlotView, PlanetSnapshot } from '../lib/api.ts';
+import {
+  affordableInLabel,
+  type CostCheck,
+  costChecks,
+  formatCompact,
+  formatCostCompact,
+  shortLabel,
+} from '../lib/affordability.ts';
 import { formatResource } from '../lib/format.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { liveResources } from '../lib/liveResources.ts';
@@ -11,6 +25,7 @@ interface StructuresProps {
   planet: PlanetSnapshot;
   universeSpeed: number;
   onUpgrade: (key: string) => void;
+  onCancel: (slot: number) => void;
   pendingKey: string | null;
 }
 
@@ -23,6 +38,13 @@ const TABS: { key: TabKey; label: string; count: (d: StructureDef) => boolean }[
   { key: 'storage', label: 'Storage', count: (d) => d.tab === 'storage' },
 ];
 
+/**
+ * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
+ * picks): already building, requirements not met (B), both Build Slots busy (C), no free Field,
+ * can't afford (B+C), or ready. Computed from the snapshot; 409s only catch races.
+ */
+type UpgradeState = 'building' | 'locked' | 'slots_full' | 'fields_full' | 'short' | 'ready';
+
 interface StructureView {
   def: StructureDef;
   level: number;
@@ -30,15 +52,23 @@ interface StructureView {
   cost: { alloy: number; crystal: number; deuterium: number };
   durationSec: number;
   slot: BuildSlotView | null;
-  affordable: boolean;
+  requirements: RequirementStatus[];
+  checks: CostCheck[];
+  /** Seconds until the cost is covered at current production; null when it never will be. */
+  affordableInSec: number | null;
+  state: UpgradeState;
 }
 
-function viewFor(
-  def: StructureDef,
-  planet: PlanetSnapshot,
-  speed: number,
-  live: { alloy: number; crystal: number; deuterium: number },
-): StructureView {
+interface PlanetContext {
+  planet: PlanetSnapshot;
+  speed: number;
+  live: { alloy: number; crystal: number; deuterium: number };
+  slotsFull: boolean;
+  fieldsFull: boolean;
+}
+
+function viewFor(def: StructureDef, ctx: PlanetContext): StructureView {
+  const { planet, speed, live } = ctx;
   const level = planet.structures[def.key] ?? 0;
   const targetLevel = level + 1;
   const cost = {
@@ -58,30 +88,73 @@ function viewFor(
     def.isNaniteFoundry ?? false,
   );
   const slot = planet.buildSlots.find((s) => s?.structure === def.key) ?? null;
-  const affordable =
-    Math.floor(live.alloy) >= cost.alloy &&
-    Math.floor(live.crystal) >= cost.crystal &&
-    Math.floor(live.deuterium) >= cost.deuterium;
-  return { def, level, targetLevel, cost, durationSec, slot, affordable };
+  // Current (finished) levels only: a level still in a Build Slot doesn't count.
+  const requirements = requirementStatus(
+    def,
+    (k) => planet.structures[k] ?? planet.technologies[k] ?? 0,
+  );
+  const checks = costChecks(cost, live);
+  const affordableInSec = secondsUntilAffordable(
+    cost,
+    live,
+    planet.ratesPerHour,
+    planet.storageCapacity,
+  );
+
+  let state: UpgradeState = 'ready';
+  if (slot) state = 'building';
+  else if (requirements.some((r) => !r.met)) state = 'locked';
+  else if (ctx.slotsFull) state = 'slots_full';
+  else if (ctx.fieldsFull) state = 'fields_full';
+  else if (checks.some((c) => !c.met)) state = 'short';
+
+  return {
+    def,
+    level,
+    targetLevel,
+    cost,
+    durationSec,
+    slot,
+    requirements,
+    checks,
+    affordableInSec,
+    state,
+  };
 }
 
 /** The Structures screen: filter tabs, a scrolling 3-column card grid, and a detail panel. */
-export function Structures({ planet, universeSpeed, onUpgrade, pendingKey }: StructuresProps) {
+export function Structures({
+  planet,
+  universeSpeed,
+  onUpgrade,
+  onCancel,
+  pendingKey,
+}: StructuresProps) {
   const now = useServerNow(planet.serverNow);
   const live = liveResources(planet, now);
   const [tab, setTab] = useState<TabKey>('all');
   const [selectedKey, setSelectedKey] = useState<string>(STRUCTURES[0]!.key);
 
+  const slotsUsed = planet.buildSlots.filter((s) => s !== null).length;
+  const slotsFull = slotsUsed >= planet.buildSlots.length;
+  const { used, inProgress, max } = planet.fields;
+  const fieldsFull = used + inProgress >= max;
+
   const views = useMemo(
-    () => STRUCTURES.map((def) => viewFor(def, planet, universeSpeed, live)),
-    [planet, universeSpeed, live],
+    () =>
+      STRUCTURES.map((def) =>
+        viewFor(def, { planet, speed: universeSpeed, live, slotsFull, fieldsFull }),
+      ),
+    [planet, universeSpeed, live, slotsFull, fieldsFull],
   );
   const shown = views.filter((v) => TABS.find((t) => t.key === tab)!.count(v.def));
   const selected = views.find((v) => v.def.key === selectedKey) ?? views[0]!;
 
-  const slotsUsed = planet.buildSlots.filter((s) => s !== null).length;
-  const slotsFull = slotsUsed >= planet.buildSlots.length;
-  const nextFreeAt = slotsFull ? Math.min(...planet.buildSlots.map((s) => s!.endsAt)) : null;
+  // The slot that frees first, for the "SLOT FREES IN" countdowns.
+  const busy = planet.buildSlots.filter((s): s is BuildSlotView => s !== null);
+  const firstFree = slotsFull
+    ? busy.reduce((a, b) => (b.endsAt < a.endsAt ? b : a), busy[0]!)
+    : null;
 
   return (
     <div style={contentStyle}>
@@ -90,8 +163,8 @@ export function Structures({ planet, universeSpeed, onUpgrade, pendingKey }: Str
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <h1 style={titleStyle}>Structures</h1>
           <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-            {planet.fields.used} of {planet.fields.max} Fields developed · {slotsUsed} of{' '}
-            {planet.buildSlots.length} Build Slots in use
+            {used} of {max} Fields developed · {slotsUsed} of {planet.buildSlots.length} Build Slots
+            in use
           </span>
         </div>
         <div style={tabsStyle}>
@@ -124,8 +197,12 @@ export function Structures({ planet, universeSpeed, onUpgrade, pendingKey }: Str
               key={v.def.key}
               view={v}
               now={now}
+              nextFreeAt={firstFree?.endsAt ?? null}
               selected={v.def.key === selectedKey}
+              pending={pendingKey === v.def.key}
               onSelect={() => setSelectedKey(v.def.key)}
+              onUpgrade={() => onUpgrade(v.def.key)}
+              onCancel={onCancel}
             />
           ))}
         </div>
@@ -135,10 +212,11 @@ export function Structures({ planet, universeSpeed, onUpgrade, pendingKey }: Str
       <DetailPanel
         view={selected}
         now={now}
-        slotsFull={slotsFull}
-        nextFreeAt={nextFreeAt}
+        planet={planet}
+        firstFree={firstFree}
         pending={pendingKey === selected.def.key}
         onUpgrade={() => onUpgrade(selected.def.key)}
+        onCancel={onCancel}
       />
     </div>
   );
@@ -153,52 +231,165 @@ function gridScrollTop() {
 function StructureCard({
   view,
   now,
+  nextFreeAt,
   selected,
+  pending,
   onSelect,
+  onUpgrade,
+  onCancel,
 }: {
   view: StructureView;
   now: number;
+  nextFreeAt: number | null;
   selected: boolean;
+  pending: boolean;
   onSelect: () => void;
+  onUpgrade: () => void;
+  onCancel: (slot: number) => void;
 }) {
-  const { def, level, slot } = view;
+  const { def, level, slot, state } = view;
   let borderColor = 'var(--line)';
   if (selected) borderColor = 'var(--accent)';
   else if (slot) borderColor = 'var(--accent-line)';
   const border = `1px solid ${borderColor}`;
+  // The card holds its own buttons (✕, UPGRADE), so it is a focusable div rather than a <button>.
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect();
+    }
+  };
   return (
-    <button type="button" onClick={onSelect} style={{ ...cardStyle, border }}>
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onClick={onSelect}
+      onKeyDown={onKeyDown}
+      style={{ ...cardStyle, border }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <ArtWell art={def.art} />
         <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
           <span style={{ fontSize: 16, fontWeight: 600 }}>{def.name}</span>
           <span style={cardCategoryStyle}>{def.category}</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1 }}>
-            {level}
-          </span>
-          <span style={cardLevelLabelStyle}>LEVEL</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          {state === 'locked' ? (
+            <Chip>LOCKED</Chip>
+          ) : (
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 28,
+                lineHeight: 1,
+                color: slot ? 'var(--accent)' : 'var(--text)',
+              }}
+            >
+              {level}
+            </span>
+          )}
+          <span style={cardLevelLabelStyle}>{level === 0 ? 'NOT BUILT' : 'LEVEL'}</span>
         </div>
       </div>
       <div style={{ flexGrow: 1 }} />
       {slot ? (
-        <div style={cardFooterStyle}>
-          <span style={{ color: 'var(--accent)' }}>Building level {slot.targetLevel}</span>
-          <span style={{ fontFamily: 'var(--font-display)' }}>
-            {formatCountdown(slot.endsAt - now)}
-          </span>
+        <div style={{ ...cardFooterStyle, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ color: 'var(--accent)', flexGrow: 1 }}>
+              Building level {slot.targetLevel}
+            </span>
+            <span>{formatCountdown(slot.endsAt - now)}</span>
+            <CancelX label={def.name} onClick={() => onCancel(slot.slot)} />
+          </div>
+          <RefundLine cost={slot.cost} />
         </div>
       ) : (
         <div style={cardFooterStyle}>
-          <span style={{ color: 'var(--text-muted)' }}>
-            {level === 0 ? 'NOT BUILT' : `Level ${level}`}
-          </span>
-          <span style={{ color: view.affordable ? 'var(--text-body)' : 'var(--danger)' }}>
-            {formatDuration(view.durationSec)}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            <CostFigures checks={view.checks} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {formatDuration(view.durationSec)}
+            </span>
+          </div>
+          <CardAction
+            view={view}
+            now={now}
+            nextFreeAt={nextFreeAt}
+            pending={pending}
+            onUpgrade={onUpgrade}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Compact cost figures on a card; the short ones turn red (#14 B+C). */
+function CostFigures({ checks }: { checks: CostCheck[] }) {
+  return (
+    <div style={{ display: 'flex', gap: 10 }}>
+      {checks.map((c) => (
+        <span
+          key={c.resource}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            color: c.met ? 'var(--text)' : 'var(--danger)',
+          }}
+        >
+          <ResourceDot resource={c.resource} />
+          {formatCompact(c.need)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The card's button: UPGRADE/BUILD when ready, otherwise disabled with its reason. */
+function CardAction({
+  view,
+  now,
+  nextFreeAt,
+  pending,
+  onUpgrade,
+}: {
+  view: StructureView;
+  now: number;
+  nextFreeAt: number | null;
+  pending: boolean;
+  onUpgrade: () => void;
+}) {
+  if (view.state === 'ready') {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        aria-label={`Upgrade ${view.def.name}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpgrade();
+        }}
+        style={cardButtonStyle(true)}
+      >
+        {view.level === 0 ? 'BUILD' : 'UPGRADE'}
+      </button>
+    );
+  }
+  let icon: ReactNode = <LockIcon />;
+  let label: string;
+  if (view.state === 'locked') label = 'LOCKED';
+  else if (view.state === 'slots_full') {
+    icon = <ClockIcon />;
+    label = nextFreeAt === null ? 'SLOTS FULL' : formatCountdown(nextFreeAt - now);
+  } else if (view.state === 'fields_full') label = 'NO FIELDS';
+  else label = shortLabel(view.checks);
+  return (
+    <button type="button" disabled style={cardButtonStyle(false)}>
+      {icon}
+      {label}
     </button>
   );
 }
@@ -206,32 +397,24 @@ function StructureCard({
 function DetailPanel({
   view,
   now,
-  slotsFull,
-  nextFreeAt,
+  planet,
+  firstFree,
   pending,
   onUpgrade,
+  onCancel,
 }: {
   view: StructureView;
   now: number;
-  slotsFull: boolean;
-  nextFreeAt: number | null;
+  planet: PlanetSnapshot;
+  firstFree: BuildSlotView | null;
   pending: boolean;
   onUpgrade: () => void;
+  onCancel: (slot: number) => void;
 }) {
-  const { def, level, targetLevel, cost, durationSec, slot, affordable } = view;
-  const inProgress = slot !== null;
-  const blockedBySlots = slotsFull && !inProgress;
-  const canUpgrade = !inProgress && !blockedBySlots && affordable && !pending;
-
-  // Explains why the upgrade button is (or isn't) actionable, shown when nothing is building here.
-  let idleFootnote = 'Starts now in a free Build Slot';
-  if (blockedBySlots && nextFreeAt !== null) {
-    idleFootnote = `Both slots busy · frees in ${formatCountdown(nextFreeAt - now)}`;
-  } else if (!affordable) {
-    idleFootnote = 'Not enough Resources yet';
-  } else if (pending) {
-    idleFootnote = 'Starting…';
-  }
+  const { def, level, targetLevel, cost, durationSec, slot, state } = view;
+  const levelFrom = level === 0 ? 'NOT BUILT' : `LEVEL ${level}`;
+  const costMet = (r: CostCheck['resource']) =>
+    view.checks.find((c) => c.resource === r)?.met ?? true;
 
   return (
     <aside style={panelStyle}>
@@ -240,7 +423,7 @@ function DetailPanel({
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={panelKickerStyle}>
-          {def.category} · LEVEL {level} → {targetLevel}
+          {def.category} · {levelFrom} → LEVEL {targetLevel}
         </span>
         <h2 style={panelTitleStyle}>{def.name}</h2>
         <p style={panelDescStyle}>{def.description}</p>
@@ -248,53 +431,161 @@ function DetailPanel({
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <StatRow label="Build time" value={formatDuration(durationSec)} />
+        <StatRow label="Fields" value="+1" />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+        {view.requirements.length > 0 && state === 'locked' && (
+          <>
+            <span style={panelKickerStyle}>REQUIREMENTS</span>
+            {view.requirements.map((r) => (
+              <CheckRow
+                key={r.key}
+                ok={r.met}
+                label={r.name}
+                value={`${r.current} / ${r.required}`}
+              />
+            ))}
+            <div style={{ height: 4 }} />
+          </>
+        )}
         <span style={panelKickerStyle}>COST</span>
-        <CostLine label="Alloy" amount={cost.alloy} have={view.affordable} color="var(--alloy)" />
+        <CostLine label="Alloy" amount={cost.alloy} have={costMet('alloy')} color="var(--alloy)" />
         <CostLine
           label="Crystal"
           amount={cost.crystal}
-          have={view.affordable}
+          have={costMet('crystal')}
           color="var(--crystal)"
         />
         {cost.deuterium > 0 && (
           <CostLine
             label="Deuterium"
             amount={cost.deuterium}
-            have={view.affordable}
+            have={costMet('deuterium')}
             color="var(--deuterium)"
           />
+        )}
+        {state === 'short' && (
+          <div style={reasonListStyle}>
+            {view.checks.map((c) => (
+              <CheckRow
+                key={c.resource}
+                ok={c.met}
+                label={c.label}
+                value={`${formatResource(c.have)} / ${formatResource(c.need)}`}
+              />
+            ))}
+          </div>
         )}
       </div>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {inProgress ? (
-          <>
-            <button type="button" disabled style={buttonStyle(false)}>
-              IN PROGRESS
-            </button>
-            <span style={panelFootNoteStyle}>
-              Finishes in {formatCountdown(slot!.endsAt - now)}
-            </span>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              disabled={!canUpgrade}
-              onClick={onUpgrade}
-              style={buttonStyle(canUpgrade)}
-            >
-              {level === 0 ? 'BUILD' : `UPGRADE TO LEVEL ${targetLevel}`}
-            </button>
-            <span style={panelFootNoteStyle}>{idleFootnote}</span>
-          </>
-        )}
+        <DetailAction
+          view={view}
+          now={now}
+          planet={planet}
+          firstFree={firstFree}
+          pending={pending}
+          onUpgrade={onUpgrade}
+          onCancel={() => slot && onCancel(slot.slot)}
+        />
       </div>
     </aside>
   );
+}
+
+/** The detail panel's button and the footnote under it, one per upgrade state (#14 picks). */
+function DetailAction({
+  view,
+  now,
+  planet,
+  firstFree,
+  pending,
+  onUpgrade,
+  onCancel,
+}: {
+  view: StructureView;
+  now: number;
+  planet: PlanetSnapshot;
+  firstFree: BuildSlotView | null;
+  pending: boolean;
+  onUpgrade: () => void;
+  onCancel: () => void;
+}) {
+  const { level, targetLevel, slot, state } = view;
+
+  if (state === 'building' && slot) {
+    return (
+      <>
+        <button type="button" onClick={onCancel} style={secondaryButtonStyle}>
+          <XIcon />
+          CANCEL UPGRADE · {formatCountdown(slot.endsAt - now)}
+        </button>
+        <span style={panelFootNoteStyle}>
+          Cancel refunds {formatCostCompact(slot.cost)} · Field returned
+        </span>
+      </>
+    );
+  }
+
+  if (state === 'ready') {
+    return (
+      <>
+        <button type="button" disabled={pending} onClick={onUpgrade} style={buttonStyle(!pending)}>
+          {level === 0 ? 'BUILD' : `UPGRADE TO LEVEL ${targetLevel}`}
+        </button>
+        <span style={panelFootNoteStyle}>
+          {pending ? 'Starting…' : 'Starts now in a free Build Slot'}
+        </span>
+      </>
+    );
+  }
+
+  let icon: ReactNode = <LockIcon size={14} />;
+  let label: string;
+  let footnote: string;
+  if (state === 'locked') {
+    const met = view.requirements.filter((r) => r.met).length;
+    label = 'LOCKED';
+    footnote = `${met} of ${view.requirements.length} requirements met · current levels only`;
+  } else if (state === 'slots_full') {
+    icon = <ClockIcon size={14} />;
+    label = firstFree
+      ? `SLOT FREES IN ${formatCountdown(firstFree.endsAt - now)}`
+      : 'BUILD SLOTS FULL';
+    const name = firstFree ? (STRUCTURE_NAMES.get(firstFree.structure) ?? firstFree.structure) : '';
+    footnote = `No waiting list — come back when ${name} finishes`;
+  } else if (state === 'fields_full') {
+    const { used, inProgress, max } = planet.fields;
+    label = 'NO FREE FIELDS';
+    footnote = `${used} used + ${inProgress} building of ${max} Fields`;
+  } else {
+    icon = <ClockIcon size={14} />;
+    label = affordableInLabel(view.affordableInSec);
+    footnote =
+      view.affordableInSec === null
+        ? 'Not reachable at current production or Storage Capacity'
+        : `At current production · ${ratesLine(view, planet)}`;
+  }
+  return (
+    <>
+      <button type="button" disabled style={disabledBigButtonStyle}>
+        {icon}
+        {label}
+      </button>
+      <span style={panelFootNoteStyle}>{footnote}</span>
+    </>
+  );
+}
+
+const STRUCTURE_NAMES = new Map<string, string>(STRUCTURES.map((d) => [d.key, d.name]));
+
+/** "Alloy +42.1k/h · Crystal +21.9k/h" for the Resources this upgrade is short of. */
+function ratesLine(view: StructureView, planet: PlanetSnapshot): string {
+  return view.checks
+    .filter((c) => !c.met)
+    .map((c) => `${c.label} +${formatCompact(planet.ratesPerHour[c.resource])}/h`)
+    .join(' · ');
 }
 
 function StatRow({ label, value }: { label: string; value: string }) {
@@ -322,13 +613,117 @@ function CostLine({
       style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--font-display)' }}
     >
       <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-      <span style={{ flexGrow: 1 }}>
+      <span style={{ flexGrow: 1, color: have ? 'var(--text)' : 'var(--danger)' }}>
         {formatResource(amount)} {label}
       </span>
       <span style={{ fontSize: 12, color: have ? 'var(--accent)' : 'var(--danger)' }}>
         {have ? 'Available' : 'Short'}
       </span>
     </div>
+  );
+}
+
+/** One ✓/✕ row: a requirement or a Resource, with its current / required figures. */
+function CheckRow({ ok, label, value }: { ok: boolean; label: string; value: string }) {
+  const tone = ok ? 'var(--accent)' : 'var(--danger)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+      <span style={{ display: 'flex', color: tone }}>{ok ? <CheckIcon /> : <XIcon />}</span>
+      <span style={{ flexGrow: 1, color: ok ? 'var(--text-body)' : 'var(--text)' }}>{label}</span>
+      <span style={{ fontFamily: 'var(--font-display)', color: tone }}>{value}</span>
+    </div>
+  );
+}
+
+/** The ✕ on an in-progress row: Cancel with a 100% refund. */
+function CancelX({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Cancel ${label}`}
+      title="Cancel · refund 100%"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={cancelXStyle}
+    >
+      <XIcon size={11} />
+    </button>
+  );
+}
+
+function RefundLine({ cost }: { cost: BuildSlotView['cost'] }) {
+  return (
+    <div style={refundLineStyle}>
+      <span>Cancel refunds {formatCostCompact(cost)}</span>
+      <span>Field returned</span>
+    </div>
+  );
+}
+
+function Chip({ children }: { children: ReactNode }) {
+  return <span style={chipStyle}>{children}</span>;
+}
+
+const RESOURCE_COLORS = {
+  alloy: 'var(--alloy)',
+  crystal: 'var(--crystal)',
+  deuterium: 'var(--deuterium)',
+};
+function ResourceDot({ resource }: { resource: CostCheck['resource'] }) {
+  return (
+    <span
+      style={{ width: 7, height: 7, borderRadius: '50%', background: RESOURCE_COLORS[resource] }}
+    />
+  );
+}
+
+function Glyph({ size, children }: { size: number; children: ReactNode }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+function LockIcon({ size = 12 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </Glyph>
+  );
+}
+function ClockIcon({ size = 12 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Glyph>
+  );
+}
+function XIcon({ size = 12 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Glyph>
+  );
+}
+function CheckIcon({ size = 12 }: { size?: number }) {
+  return (
+    <Glyph size={size}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </Glyph>
   );
 }
 
@@ -544,4 +939,96 @@ const panelFootNoteStyle = {
   textAlign: 'center' as const,
   fontSize: 12,
   color: 'var(--text-muted)',
+};
+
+function cardButtonStyle(enabled: boolean) {
+  return {
+    height: 36,
+    padding: '0 12px',
+    borderRadius: 8,
+    border: `1px solid ${enabled ? 'var(--line-strong)' : 'var(--line)'}`,
+    background: enabled ? 'transparent' : 'var(--icon-well)',
+    color: enabled ? 'var(--text)' : 'var(--text-muted)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+    whiteSpace: 'nowrap' as const,
+    fontFamily: 'var(--font-display)',
+    fontWeight: 600,
+    fontSize: 12,
+    letterSpacing: '0.06em',
+    cursor: enabled ? 'pointer' : 'not-allowed',
+  };
+}
+
+const disabledBigButtonStyle = {
+  height: 50,
+  borderRadius: 10,
+  border: '1px solid var(--line)',
+  background: 'var(--icon-well)',
+  color: 'var(--text-muted)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 9,
+  fontFamily: 'var(--font-display)',
+  fontWeight: 600,
+  fontSize: 14,
+  letterSpacing: '0.08em',
+  cursor: 'not-allowed',
+};
+
+const secondaryButtonStyle = {
+  ...disabledBigButtonStyle,
+  border: '1px solid var(--line-strong)',
+  background: 'transparent',
+  color: 'var(--text-body)',
+  cursor: 'pointer',
+};
+
+const cancelXStyle = {
+  width: 24,
+  height: 24,
+  flexShrink: 0,
+  padding: 0,
+  borderRadius: 6,
+  border: '1px solid var(--line-control)',
+  background: 'transparent',
+  color: 'var(--text-label)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+};
+
+const refundLineStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  fontFamily: 'var(--font-body)',
+  fontSize: 12,
+  color: 'var(--text-muted)',
+};
+
+const chipStyle = {
+  fontFamily: 'var(--font-display)',
+  fontSize: 9.5,
+  fontWeight: 600,
+  letterSpacing: '0.12em',
+  padding: '2px 6px',
+  borderRadius: 4,
+  border: '1px solid var(--line-strong)',
+  color: 'var(--text-label)',
+  whiteSpace: 'nowrap' as const,
+  lineHeight: 1.3,
+};
+
+const reasonListStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 8,
+  padding: '12px 14px',
+  borderRadius: 10,
+  background: 'var(--panel-raised)',
+  border: '1px solid var(--line)',
 };

@@ -43,6 +43,10 @@ export function GameShell({
     mutationFn: (key: string) => api.upgradeStructure(key),
     onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
   });
+  const cancel = useMutation({
+    mutationFn: (slot: number) => api.cancelBuildSlot(slot),
+    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+  });
 
   // Refetch when the next server-side boundary is due (e.g. Deuterium depletion changes the rates).
   useEffect(() => {
@@ -80,6 +84,7 @@ export function GameShell({
           planet={planet}
           universeSpeed={universeSpeed}
           onUpgrade={(key) => upgrade.mutate(key)}
+          onCancel={(slot) => cancel.mutate(slot)}
           pendingKey={upgrade.isPending ? (upgrade.variables ?? null) : null}
         />
       ) : (

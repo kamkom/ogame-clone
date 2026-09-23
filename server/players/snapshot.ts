@@ -3,7 +3,8 @@ import { formatCoordinates } from '#shared/coords.ts';
 import { liveProfile, nextEventAt } from '#shared/engine.ts';
 import { STRUCTURES } from '#shared/catalog.ts';
 import { readEconomyState } from './economy.ts';
-import { HOME_DIAMETER_KM, HOME_FIELDS, type PlanetRow, tminFor } from './repo.ts';
+import { HOME_DIAMETER_KM, type PlanetRow, tminFor } from './repo.ts';
+import { planetFields } from './structures.ts';
 
 /** One occupied Build Slot in the snapshot, or null for a free slot. */
 export interface BuildSlotSnapshot {
@@ -33,6 +34,8 @@ export interface PlanetSnapshot {
   energy: { produced: number; consumed: number; productionFactor: number };
   /** Every catalog Structure's current level (0 when not built). */
   structures: Record<string, number>;
+  /** The Player's stored Technology levels (a missing key is level 0). */
+  technologies: Record<string, number>;
   /** The two Build Slots, index 0 = slot 1; null for a free slot. */
   buildSlots: (BuildSlotSnapshot | null)[];
   nextEventAt: number | null;
@@ -41,14 +44,6 @@ export interface PlanetSnapshot {
 export interface SnapshotContext {
   serverNow: number;
   speed: number;
-}
-
-/** Fields in use = the sum of finished Structure levels on the Planet. */
-function usedFields(db: DatabaseSync, planetId: number): number {
-  const row = db
-    .prepare(`SELECT COALESCE(SUM(level), 0) AS used FROM planet_structures WHERE planet_id = ?`)
-    .get(planetId) as { used: number };
-  return Number(row.used);
 }
 
 /** Every catalog Structure's level (0 when it has no row yet). */
@@ -60,6 +55,14 @@ function structureLevels(db: DatabaseSync, planetId: number): Record<string, num
   const levels: Record<string, number> = {};
   for (const def of STRUCTURES) levels[def.key] = stored.get(def.key) ?? 0;
   return levels;
+}
+
+/** The Player's stored Technology levels, keyed by Technology key. */
+function technologyLevels(db: DatabaseSync, playerId: number): Record<string, number> {
+  const rows = db
+    .prepare(`SELECT technology_key, level FROM player_technologies WHERE player_id = ?`)
+    .all(playerId) as { technology_key: string; level: number }[];
+  return Object.fromEntries(rows.map((r) => [r.technology_key, r.level]));
 }
 
 /** The two Build Slots, index 0 = slot 1, index 1 = slot 2; null where the slot is free. */
@@ -116,11 +119,7 @@ export function buildPlanetSnapshot(
     coordinates,
     coordinatesLabel: formatCoordinates(coordinates),
     temperature: { min: tminFor(planet.tmax), max: planet.tmax },
-    fields: {
-      used: usedFields(db, planet.id),
-      inProgress: slots.filter((s) => s !== null).length,
-      max: HOME_FIELDS,
-    },
+    fields: planetFields(db, planet.id),
     diameterKm: HOME_DIAMETER_KM,
     resources: {
       alloy: planet.alloy,
@@ -133,6 +132,7 @@ export function buildPlanetSnapshot(
     storageCapacity: profile.storage,
     energy: profile.energy,
     structures: structureLevels(db, planet.id),
+    technologies: technologyLevels(db, planet.player_id),
     buildSlots: slots,
     nextEventAt: nextEventAt(economy, ctx.speed, ctx.serverNow),
   };

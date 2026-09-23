@@ -10,7 +10,6 @@ export const STARTING_ALLOY = 500;
 export const STARTING_CRYSTAL = 500;
 export const STARTING_DEUTERIUM = 0;
 export const DEFAULT_PLANET_NAME = 'Homeworld';
-export const HOME_FIELDS = 163;
 export const HOME_DIAMETER_KM = 12800;
 
 // A collision on the Coordinates UNIQUE constraint just redraws; this caps the retries so a
