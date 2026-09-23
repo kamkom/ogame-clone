@@ -1,24 +1,53 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { advance, type EconomyState, type Structures } from '#shared/engine.ts';
+import { advance, type BuildSlot, type EconomyState, type Structures } from '#shared/engine.ts';
 import { tx } from '../db/tx.ts';
 import { getPlanetByPlayer, type PlanetRow } from './repo.ts';
 
-// How catalog keys in the database map onto the engine's state fields. These are the keys the
-// later Structures/Research slices will write; nothing writes them yet, so a home Planet reads
-// back all-zero and only base income accrues.
+// How catalog keys (shared/catalog.ts) map onto the engine's production-state fields. Only these
+// eight Structures affect production; the other five (Robotics Works, Orbital Shipyard, Research
+// Lab, Nanite Foundry, Terraformer) have no economy effect, so a Build Slot for them carries a
+// null `field`.
 const STRUCTURE_KEYS: Record<keyof Structures, string> = {
-  alloyMine: 'alloyExtractor',
-  crystalMine: 'crystalRefinery',
-  deuteriumSynth: 'deuteriumSynthesizer',
-  solarPlant: 'solarArray',
-  fusionReactor: 'fusionReactor',
-  alloyStorage: 'alloyStorage',
-  crystalStorage: 'crystalStorage',
-  deuteriumStorage: 'deuteriumTank',
+  alloyMine: 'alloy-extractor',
+  crystalMine: 'crystal-refinery',
+  deuteriumSynth: 'deuterium-synthesizer',
+  solarPlant: 'solar-array',
+  fusionReactor: 'fusion-reactor',
+  alloyStorage: 'alloy-depot',
+  crystalStorage: 'crystal-vault',
+  deuteriumStorage: 'deuterium-tank',
 };
+// The engine `field` for a catalog key, or null when the key doesn't affect production.
+const FIELD_BY_KEY = new Map<string, keyof Structures>(
+  (Object.entries(STRUCTURE_KEYS) as [keyof Structures, string][]).map(([field, key]) => [
+    key,
+    field,
+  ]),
+);
 const ENERGY_TECH_KEY = 'energyTechnology';
 const PLASMA_TECH_KEY = 'plasmaTechnology';
 const SOLAR_SATELLITE_KEY = 'solarSatellite';
+
+/** The Build Slots currently occupied on a Planet, as engine state. */
+export function readBuildSlots(db: DatabaseSync, planetId: number): BuildSlot[] {
+  const rows = db
+    .prepare(
+      `SELECT slot, structure_key, target_level, ends_at FROM build_slots WHERE planet_id = ?`,
+    )
+    .all(planetId) as {
+    slot: number;
+    structure_key: string;
+    target_level: number;
+    ends_at: number;
+  }[];
+  return rows.map((r) => ({
+    slot: r.slot,
+    structureKey: r.structure_key,
+    field: FIELD_BY_KEY.get(r.structure_key) ?? null,
+    targetLevel: r.target_level,
+    endsAt: r.ends_at,
+  }));
+}
 
 // `Tmax = Tavg + 20` on every OGame Planet, so `Tavg = Tmax − 20` (rules reference §6.1).
 const TAVG_OFFSET = 20;
@@ -59,6 +88,7 @@ export function readEconomyState(db: DatabaseSync, planet: PlanetRow): EconomySt
     plasmaTech: techLevels.get(PLASMA_TECH_KEY) ?? 0,
     position: planet.position,
     tavg: planet.tmax - TAVG_OFFSET,
+    buildSlots: readBuildSlots(db, planet.id),
   };
 }
 
@@ -77,7 +107,28 @@ export function advanceAndPersist(
   db.prepare(
     `UPDATE planets SET alloy = ?, crystal = ?, deuterium = ?, resources_updated_at = ? WHERE id = ?`,
   ).run(alloy, crystal, deuterium, now, planet.id);
+  finalizeFinishedUpgrades(db, planet.id, now);
   return { ...planet, alloy, crystal, deuterium, resources_updated_at: now };
+}
+
+/**
+ * Apply every Build Slot upgrade whose `ends_at` has passed: raise the Structure level and free the
+ * slot. The resource integration in `advance` already accounted for these level changes at their
+ * boundaries, so this only reconciles the stored levels and slots.
+ */
+function finalizeFinishedUpgrades(db: DatabaseSync, planetId: number, now: number): void {
+  const finished = db
+    .prepare(
+      `SELECT slot, structure_key, target_level FROM build_slots WHERE planet_id = ? AND ends_at <= ?`,
+    )
+    .all(planetId, now) as { slot: number; structure_key: string; target_level: number }[];
+  for (const f of finished) {
+    db.prepare(
+      `INSERT INTO planet_structures (planet_id, structure_key, level) VALUES (?, ?, ?)
+         ON CONFLICT(planet_id, structure_key) DO UPDATE SET level = excluded.level`,
+    ).run(planetId, f.structure_key, f.target_level);
+    db.prepare(`DELETE FROM build_slots WHERE planet_id = ? AND slot = ?`).run(planetId, f.slot);
+  }
 }
 
 /**

@@ -113,3 +113,32 @@ export function productionFactor(produced: number, consumed: number): number {
 export function storageCapacity(level: number): number {
   return 5000 * Math.floor(2.5 * Math.exp((20 * level) / 33));
 }
+
+/**
+ * Cost of building `level` (1 for the first level): `floor(base·factor^(level−1))` (§2). Applied to
+ * each Resource separately. Not scaled by Universe Speed.
+ */
+export function levelCost(base: number, factor: number, level: number): number {
+  return Math.floor(base * factor ** (level - 1));
+}
+
+/**
+ * Structure build time in seconds (§5). The early-level divisor `max(4 − L/2, 1)` speeds up the
+ * first five levels and is skipped for the Nanite Foundry. Robotics Works and the Nanite Foundry
+ * both shorten the time, and Universe Speed divides it. `alloyCost`/`crystalCost` are the (already
+ * computed) cost of the level being built.
+ */
+export function structureDurationSec(
+  alloyCost: number,
+  crystalCost: number,
+  targetLevel: number,
+  robotics: number,
+  nanite: number,
+  speed = 1,
+  isNaniteFoundry = false,
+): number {
+  const earlyDivisor = isNaniteFoundry ? 1 : Math.max(4 - targetLevel / 2, 1);
+  const hours =
+    (alloyCost + crystalCost) / (2500 * earlyDivisor * (1 + robotics) * 2 ** nanite * speed);
+  return Math.max(1, Math.floor(hours * 3600));
+}

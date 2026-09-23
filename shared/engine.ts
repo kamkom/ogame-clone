@@ -35,6 +35,20 @@ export interface Structures {
   deuteriumStorage: number;
 }
 
+/**
+ * An upgrade running in a Build Slot. `field` is the production Structure it raises (or null for a
+ * Structure that doesn't affect the economy, e.g. Robotics Works); `slot` and `structureKey` are
+ * carried through for the caller's bookkeeping and ignored by the integrator.
+ */
+export interface BuildSlot {
+  slot: number;
+  structureKey: string;
+  field: keyof Structures | null;
+  targetLevel: number;
+  /** Epoch-ms the upgrade finishes and the level takes effect. */
+  endsAt: number;
+}
+
 export interface EconomyState {
   /** Current Resource stock (fractional; only floored for display and spending). */
   resources: Resources;
@@ -47,6 +61,8 @@ export interface EconomyState {
   position: number;
   /** Average temperature, `round((Tmin+Tmax)/2)` = `Tmax − 20`. */
   tavg: number;
+  /** Upgrades running in the 2 Build Slots. Absent or empty when nothing is building. */
+  buildSlots?: BuildSlot[];
 }
 
 /** The instantaneous production picture used to integrate one boundary-free segment. */
@@ -161,16 +177,22 @@ export function advance(
   sources: EventSource[] = [deuteriumDepletion],
 ): EconomyState {
   const resources = { ...state.resources };
+  let structures = { ...state.structures };
+  let buildSlots = (state.buildSlots ?? []).map((s) => ({ ...s }));
   let t = state.lastUpdatedAt;
 
   while (t < now - EPSILON) {
-    const cursor: EconomyState = { ...state, resources };
+    const cursor: EconomyState = { ...state, resources, structures, buildSlots };
     const profile = computeProfile(cursor, speed, deuteriumAvailable(cursor));
 
     let segEnd = now;
     for (const source of sources) {
       const boundary = source.next(cursor, profile, t);
       if (boundary !== null && boundary > t && boundary < segEnd) segEnd = boundary;
+    }
+    // A finished upgrade is a boundary: production is recomputed from its endsAt on (§Build Slots).
+    for (const bs of buildSlots) {
+      if (bs.endsAt > t && bs.endsAt < segEnd) segEnd = bs.endsAt;
     }
     if (segEnd <= t) segEnd = now; // guard against a degenerate zero-length segment
 
@@ -189,9 +211,26 @@ export function advance(
       profile.storage.deuterium,
     );
     t = segEnd;
+
+    // Apply any upgrades that finish exactly at `t`: raise the level and free the slot.
+    const remaining: BuildSlot[] = [];
+    for (const bs of buildSlots) {
+      if (bs.endsAt <= t + EPSILON) {
+        if (bs.field !== null) structures = { ...structures, [bs.field]: bs.targetLevel };
+      } else {
+        remaining.push(bs);
+      }
+    }
+    buildSlots = remaining;
   }
 
-  return { ...state, resources, lastUpdatedAt: Math.max(now, state.lastUpdatedAt) };
+  return {
+    ...state,
+    resources,
+    structures,
+    buildSlots,
+    lastUpdatedAt: Math.max(now, state.lastUpdatedAt),
+  };
 }
 
 /** The live profile at the current stock, for building a snapshot. */
@@ -211,6 +250,10 @@ export function nextEventAt(
   for (const source of sources) {
     const boundary = source.next(state, profile, from);
     if (boundary !== null && (soonest === null || boundary < soonest)) soonest = boundary;
+  }
+  // A finishing upgrade is a boundary too, so the client refetches when a Build Slot frees.
+  for (const bs of state.buildSlots ?? []) {
+    if (bs.endsAt > from && (soonest === null || bs.endsAt < soonest)) soonest = bs.endsAt;
   }
   return soonest;
 }

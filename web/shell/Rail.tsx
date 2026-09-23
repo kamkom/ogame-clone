@@ -3,21 +3,29 @@ import { Icon, Logo, NAV } from './icons.tsx';
 interface RailProps {
   onLogout: () => void;
   loggingOut: boolean;
+  /** Index into NAV of the active screen. */
+  active: number;
+  /** Navigate to the NAV item at `index` (ignored for SOON items). */
+  onNavigate: (index: number) => void;
 }
 
-/** The left nav rail: Overview active; Fleet/Galaxy/Alliance shown with a SOON lock; logout. */
-export function Rail({ onLogout, loggingOut }: RailProps) {
+/** The left nav rail: the active screen is highlighted; Fleet/Galaxy/Alliance are SOON; logout. */
+export function Rail({ onLogout, loggingOut, active: activeIndex, onNavigate }: RailProps) {
   return (
     <nav style={railStyle}>
       <div style={{ marginBottom: 18 }}>
         <Logo />
       </div>
       {NAV.map((item, i) => {
-        const active = i === 0;
+        const active = i === activeIndex;
         return (
           <div
             key={item.label}
+            role="button"
+            tabIndex={item.soon ? -1 : 0}
+            onClick={() => !item.soon && onNavigate(i)}
             aria-disabled={item.soon}
+            aria-current={active ? 'page' : undefined}
             title={item.soon ? `${item.label} — SOON` : item.label}
             style={{
               width: 72,

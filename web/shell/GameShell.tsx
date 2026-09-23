@@ -1,28 +1,48 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type PlanetSnapshot, type Session } from '../lib/api.ts';
 import { refetchDelay } from '../lib/liveResources.ts';
 import { CommandDeck } from './CommandDeck.tsx';
 import { Rail } from './Rail.tsx';
+import { Structures } from './Structures.tsx';
 import { TopBar } from './TopBar.tsx';
 import { WelcomeWindow } from './WelcomeWindow.tsx';
 
 interface GameShellProps {
   session: Session;
+  universeSpeed: number;
   onRename: (name: string) => Promise<PlanetSnapshot>;
   onLogout: () => void;
   loggingOut: boolean;
 }
 
+// NAV indices: 0 Overview, 1 Build (Structures). Research/Shipyard have no screen yet.
+type Screen = 'overview' | 'structures';
+const SCREEN_BY_NAV: Record<number, Screen> = { 0: 'overview', 1: 'structures' };
+
 /** The logged-in game shell: rail, top bar, screen content, and the one-time welcome window. */
-export function GameShell({ session, onRename, onLogout, loggingOut }: GameShellProps) {
+export function GameShell({
+  session,
+  universeSpeed,
+  onRename,
+  onLogout,
+  loggingOut,
+}: GameShellProps) {
   const { player } = session;
+  const queryClient = useQueryClient();
   const planetQuery = useQuery({
     queryKey: ['planet'],
     queryFn: () => api.planet(),
     initialData: session.planet,
   });
   const planet = planetQuery.data;
+
+  const [screen, setScreen] = useState<Screen>('overview');
+
+  const upgrade = useMutation({
+    mutationFn: (key: string) => api.upgradeStructure(key),
+    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+  });
 
   // Refetch when the next server-side boundary is due (e.g. Deuterium depletion changes the rates).
   useEffect(() => {
@@ -41,11 +61,30 @@ export function GameShell({ session, onRename, onLogout, loggingOut }: GameShell
   // either button dismisses it, this stays false for the rest of the session.
   const [showWelcome, setShowWelcome] = useState(session.firstLogin ?? false);
 
+  const activeNav = screen === 'structures' ? 1 : 0;
+
   return (
     <>
-      <Rail onLogout={onLogout} loggingOut={loggingOut} />
+      <Rail
+        onLogout={onLogout}
+        loggingOut={loggingOut}
+        active={activeNav}
+        onNavigate={(i) => {
+          const next = SCREEN_BY_NAV[i];
+          if (next) setScreen(next);
+        }}
+      />
       <TopBar planet={planet} onRename={onRename} />
-      <CommandDeck planet={planet} />
+      {screen === 'structures' ? (
+        <Structures
+          planet={planet}
+          universeSpeed={universeSpeed}
+          onUpgrade={(key) => upgrade.mutate(key)}
+          pendingKey={upgrade.isPending ? (upgrade.variables ?? null) : null}
+        />
+      ) : (
+        <CommandDeck planet={planet} />
+      )}
       {planetQuery.isError && !dismissed && <ErrorBanner onDismiss={() => setDismissed(true)} />}
       {showWelcome && (
         <WelcomeWindow

@@ -16,7 +16,7 @@ function snapshot(overrides: Partial<PlanetSnapshot> = {}): PlanetSnapshot {
     coordinates: { galaxy: 1, system: 1, position: 4 },
     coordinatesLabel: '[1:1:4]',
     temperature: { min: 30, max: 70 },
-    fields: { used: 0, max: 163 },
+    fields: { used: 0, inProgress: 0, max: 163 },
     diameterKm: 12800,
     resources: { alloy: 500, crystal: 500, deuterium: 0 },
     serverNow: 0,
@@ -24,6 +24,8 @@ function snapshot(overrides: Partial<PlanetSnapshot> = {}): PlanetSnapshot {
     ratesPerHour: { alloy: 30, crystal: 15, deuterium: 0 },
     storageCapacity: { alloy: 10000, crystal: 10000, deuterium: 10000 },
     energy: { produced: 0, consumed: 0, productionFactor: 1 },
+    structures: {},
+    buildSlots: [null, null],
     nextEventAt: null,
     ...overrides,
   };

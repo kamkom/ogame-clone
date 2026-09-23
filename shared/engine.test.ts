@@ -102,6 +102,66 @@ describe('advance — Storage Capacity', () => {
   });
 });
 
+describe('advance — Build Slots', () => {
+  // An Alloy Extractor finishing at 1h, with a Solar Array already up so Energy never limits it.
+  const s = state({
+    resources: { alloy: 500, crystal: 500, deuterium: 0 },
+    structures: { ...NO_STRUCTURES, alloyMine: 0, solarPlant: 10 },
+    buildSlots: [
+      {
+        slot: 1,
+        structureKey: 'alloy-extractor',
+        field: 'alloyMine',
+        targetLevel: 1,
+        endsAt: HOUR,
+      },
+    ],
+  });
+
+  it('raises the level and frees the slot once the clock passes endsAt', () => {
+    const after = advance(s, 2 * HOUR, 1);
+    expect(after.structures.alloyMine).toBe(1);
+    expect(after.buildSlots).toEqual([]);
+  });
+
+  it('keeps the slot busy and the level unchanged before endsAt', () => {
+    const before = advance(s, HOUR / 2, 1);
+    expect(before.structures.alloyMine).toBe(0);
+    expect(before.buildSlots).toHaveLength(1);
+    // Only base income so far: +30/h for half an hour.
+    expect(before.resources.alloy).toBe(500 + 15);
+  });
+
+  it('splits the integration at endsAt: old level before, new level after', () => {
+    const after = advance(s, 2 * HOUR, 1);
+    // [0,1h] base income only (+30); [1h,2h] base + Alloy Extractor 1 at factor 1 (+63).
+    const perHourAfter = 30 + alloyMineOutput(1, { factor: 1, position: 4 });
+    expect(after.resources.alloy).toBe(500 + 30 + perHourAfter);
+  });
+
+  it('schedules the completion as the next boundary', () => {
+    expect(nextEventAt(s, 1, 0)).toBe(HOUR);
+  });
+
+  it('does not change production for a non-economy Structure (field null)', () => {
+    const robotics = state({
+      structures: { ...NO_STRUCTURES },
+      buildSlots: [
+        {
+          slot: 1,
+          structureKey: 'robotics-works',
+          field: null,
+          targetLevel: 1,
+          endsAt: HOUR,
+        },
+      ],
+    });
+    const after = advance(robotics, 2 * HOUR, 1);
+    expect(after.buildSlots).toEqual([]); // slot still frees
+    expect(after.resources.alloy).toBe(500 + 60); // base income across the whole 2h, unaffected
+  });
+});
+
 describe('advance — determinism property', () => {
   it('advancing through an intermediate time equals advancing straight there', () => {
     const arbState = fc.record({

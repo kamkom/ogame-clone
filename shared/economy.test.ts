@@ -7,11 +7,14 @@ import {
   deuteriumSynthOutput,
   fusionDeuteriumBurn,
   fusionReactorEnergy,
+  levelCost,
   productionFactor,
   solarPlantEnergy,
   solarSatelliteEnergy,
   storageCapacity,
+  structureDurationSec,
 } from './economy.ts';
+import { structureDef } from './catalog.ts';
 
 // Golden values cite the rules-reference doc (docs/research/ogame-rules-reference.md) and the
 // design-catalog-mapping doc. Where the doc gives only the formula, the expected integer is
@@ -116,5 +119,63 @@ describe('storage capacity', () => {
     expect(storageCapacity(3)).toBe(75000);
     expect(storageCapacity(4)).toBe(140000);
     expect(storageCapacity(5)).toBe(255000);
+  });
+});
+
+describe('level cost (§2)', () => {
+  it('is floor(base·factor^(L−1)) per Resource', () => {
+    const ext = structureDef('alloy-extractor')!;
+    // L1 is the base cost.
+    expect(levelCost(ext.baseCost.alloy, ext.factor, 1)).toBe(60);
+    expect(levelCost(ext.baseCost.crystal, ext.factor, 1)).toBe(15);
+    // L2 scales by 1.5, floored.
+    expect(levelCost(ext.baseCost.alloy, ext.factor, 2)).toBe(90);
+    expect(levelCost(ext.baseCost.crystal, ext.factor, 2)).toBe(22);
+    // design-catalog-mapping: Metal Mine L18 ≈ 59.1k Alloy.
+    expect(levelCost(ext.baseCost.alloy, ext.factor, 18)).toBe(59115);
+    expect(levelCost(ext.baseCost.crystal, ext.factor, 18)).toBe(14778);
+  });
+
+  it('matches the exact facility values cited in the mapping doc', () => {
+    const robotics = structureDef('robotics-works')!; // 400/120 ×2 → L9 = 102,400 / 30,720
+    expect(levelCost(robotics.baseCost.alloy, robotics.factor, 9)).toBe(102400);
+    expect(levelCost(robotics.baseCost.crystal, robotics.factor, 9)).toBe(30720);
+    const shipyard = structureDef('orbital-shipyard')!; // 400/200 ×2 → L11 = 409,600 / 204,800
+    expect(levelCost(shipyard.baseCost.alloy, shipyard.factor, 11)).toBe(409600);
+    expect(levelCost(shipyard.baseCost.crystal, shipyard.factor, 11)).toBe(204800);
+    const lab = structureDef('research-lab')!; // 200/400 ×2 → L10 = 102,400 / 204,800
+    expect(levelCost(lab.baseCost.alloy, lab.factor, 10)).toBe(102400);
+    expect(levelCost(lab.baseCost.crystal, lab.factor, 10)).toBe(204800);
+  });
+
+  it('charges Deuterium where OGame does (Fusion Reactor)', () => {
+    const fusion = structureDef('fusion-reactor')!; // 900/360/180 ×1.8
+    expect(levelCost(fusion.baseCost.deuterium, fusion.factor, 1)).toBe(180);
+    expect(levelCost(fusion.baseCost.deuterium, fusion.factor, 2)).toBe(324);
+  });
+});
+
+describe('structure build time (§5)', () => {
+  it('applies the early-level divisor to the first levels', () => {
+    // L1 Alloy Extractor: (60+15)/(2500·3.5) h = 30 s.
+    expect(structureDurationSec(60, 15, 1, 0, 0, 1, false)).toBe(30);
+  });
+
+  it('speeds up with Robotics Works, Nanite Foundry and Universe Speed, to the second', () => {
+    // L6 Alloy Extractor costs 455/113; divisor is 1 from level 6 on.
+    expect(structureDurationSec(455, 113, 6, 0, 0, 1, false)).toBe(817);
+    expect(structureDurationSec(455, 113, 6, 5, 0, 1, false)).toBe(136); // ÷(1+5)
+    expect(structureDurationSec(455, 113, 6, 0, 1, 1, false)).toBe(408); // ÷2^1
+    expect(structureDurationSec(455, 113, 6, 0, 0, 2, false)).toBe(408); // ÷speed 2
+    expect(structureDurationSec(455, 113, 6, 5, 1, 2, false)).toBe(34); // combined
+  });
+
+  it('skips the early-level divisor for the Nanite Foundry', () => {
+    // (1_000_000+500_000)/2500 h = 600 h = 2,160,000 s, with no ÷3.5 speed-up at level 1.
+    expect(structureDurationSec(1_000_000, 500_000, 1, 0, 0, 1, true)).toBe(2_160_000);
+  });
+
+  it('never returns less than one second', () => {
+    expect(structureDurationSec(1, 1, 1, 0, 0, 1, false)).toBe(1);
   });
 });

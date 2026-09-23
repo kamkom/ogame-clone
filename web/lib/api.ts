@@ -7,13 +7,22 @@ export interface Player {
   username: string;
 }
 
+export interface BuildSlotView {
+  slot: number;
+  structure: string;
+  targetLevel: number;
+  cost: { alloy: number; crystal: number; deuterium: number };
+  startedAt: number;
+  endsAt: number;
+}
+
 export interface PlanetSnapshot {
   id: number;
   name: string;
   coordinates: { galaxy: number; system: number; position: number };
   coordinatesLabel: string;
   temperature: { min: number; max: number };
-  fields: { used: number; max: number };
+  fields: { used: number; inProgress: number; max: number };
   diameterKm: number;
   resources: { alloy: number; crystal: number; deuterium: number };
   serverNow: number;
@@ -21,6 +30,8 @@ export interface PlanetSnapshot {
   ratesPerHour: { alloy: number; crystal: number; deuterium: number };
   storageCapacity: { alloy: number; crystal: number; deuterium: number };
   energy: { produced: number; consumed: number; productionFactor: number };
+  structures: Record<string, number>;
+  buildSlots: (BuildSlotView | null)[];
   nextEventAt: number | null;
 }
 
@@ -96,4 +107,6 @@ export const api = {
   logout: (fetchImpl?: FetchImpl) => post<{ ok: true }>('/api/auth/logout', {}, fetchImpl),
   renamePlanet: (name: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>('/api/planet/rename', { name }, fetchImpl),
+  upgradeStructure: (key: string, fetchImpl?: FetchImpl) =>
+    post<PlanetSnapshot>(`/api/structures/${key}/upgrade`, {}, fetchImpl),
 };

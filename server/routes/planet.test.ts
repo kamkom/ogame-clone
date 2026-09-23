@@ -41,7 +41,7 @@ describe('GET /api/planet', () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.name).toBe('Homeworld');
-    expect(body.fields).toEqual({ used: 0, max: 163 });
+    expect(body.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
     expect(body.coordinatesLabel).toMatch(/^\[\d+:\d+:\d+\]$/);
     expect(body.temperature.min).toBe(body.temperature.max - 40);
     // Live-resource fields: base income only, capacity 10 000 each, Energy balanced.

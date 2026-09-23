@@ -13,6 +13,7 @@ import { LoginLimiter } from './auth/limiter.ts';
 import { sweepExpiredSessions } from './auth/sessions.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerPlanetRoutes } from './routes/planet.ts';
+import { registerStructureRoutes } from './routes/structures.ts';
 
 export interface BuildAppOptions {
   dbPath: string;
@@ -58,6 +59,7 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
 
   registerAuthRoutes(app);
   registerPlanetRoutes(app);
+  registerStructureRoutes(app);
 
   // Serve the built SPA and fall back to index.html for client routes.
   if (options.config.SERVE_WEB && existsSync(WEB_DIST)) {

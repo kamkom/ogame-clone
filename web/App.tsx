@@ -47,6 +47,7 @@ export function App() {
       return (
         <GameShell
           session={me.data}
+          universeSpeed={universeSpeed}
           onRename={(name) => rename.mutateAsync(name)}
           onLogout={() => logout.mutate()}
           loggingOut={logout.isPending}

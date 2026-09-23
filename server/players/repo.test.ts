@@ -112,7 +112,7 @@ describe('registerPlayer', () => {
     });
     expect(snap.name).toBe('Homeworld');
     expect(snap.coordinatesLabel).toBe('[1:1:4]');
-    expect(snap.fields).toEqual({ used: 0, max: 163 });
+    expect(snap.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
     expect(snap.diameterKm).toBe(12800);
     expect(snap.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
     expect(snap.temperature.min).toBe(snap.temperature.max - 40);
