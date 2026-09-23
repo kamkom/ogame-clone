@@ -38,10 +38,10 @@ export function placeShipyardOrder(
   if (!def) return { error: 'not_found' };
   if (!isValidQuantity(quantity)) return { error: 'invalid_quantity' };
 
-  const { count } = db
-    .prepare(`SELECT COUNT(*) AS count FROM shipyard_orders WHERE planet_id = ?`)
-    .get(planet.id) as { count: number };
-  if (count >= SHIPYARD_ORDERS_MAX) return { error: 'shipyard_orders_full' };
+  const { placed } = db
+    .prepare(`SELECT COUNT(*) AS placed FROM shipyard_orders WHERE planet_id = ?`)
+    .get(planet.id) as { placed: number };
+  if (placed >= SHIPYARD_ORDERS_MAX) return { error: 'shipyard_orders_full' };
 
   const structures = structureLevels(db, planet.id);
   const technologies = technologyLevels(db, planet.player_id);
@@ -60,7 +60,7 @@ export function placeShipyardOrder(
 
   let startedAt: number | null = null;
   let unitDurationMs: number | null = null;
-  if (count === 0) {
+  if (placed === 0) {
     startedAt = now;
     unitDurationMs =
       shipUnitDurationSec(

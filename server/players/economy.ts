@@ -243,20 +243,20 @@ function persistShipyardOrders(
 ): void {
   const remaining = new Map((advanced.shipyardOrders ?? []).map((o) => [o.id, o]));
   for (const o of before) {
-    const now = remaining.get(o.id);
-    const finished = (now?.completed ?? o.quantity) - o.completed;
+    const after = remaining.get(o.id);
+    const finished = (after?.completed ?? o.quantity) - o.completed;
     if (finished > 0) {
       db.prepare(
         `INSERT INTO planet_ships (planet_id, ship_key, count) VALUES (?, ?, ?)
            ON CONFLICT(planet_id, ship_key) DO UPDATE SET count = count + excluded.count`,
       ).run(planetId, o.shipKey, finished);
     }
-    if (!now) {
+    if (!after) {
       db.prepare(`DELETE FROM shipyard_orders WHERE id = ?`).run(o.id);
     } else {
       db.prepare(
         `UPDATE shipyard_orders SET completed = ?, unit_duration_ms = ?, started_at = ? WHERE id = ?`,
-      ).run(now.completed, now.unitDurationMs, now.startedAt, o.id);
+      ).run(after.completed, after.unitDurationMs, after.startedAt, o.id);
     }
   }
 }

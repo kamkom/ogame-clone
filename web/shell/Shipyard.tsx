@@ -6,6 +6,7 @@ import { formatCompact } from '../lib/affordability.ts';
 import { formatCountdown, formatDuration } from '../lib/duration.ts';
 import { type LiveResources, liveResources } from '../lib/liveResources.ts';
 import {
+  averageTemperature,
   clampQuantity,
   fleetStrength,
   orderAction,
@@ -203,7 +204,7 @@ function DetailPanel({
     def.shipClass === 'energy'
       ? [
           { n: 'ENERGY / SATELLITE', v: `+${energyEach}` },
-          { n: 'AVG TEMPERATURE', v: `${planet.temperature.max - 20}°C` },
+          { n: 'AVG TEMPERATURE', v: `${averageTemperature(planet)}°C` },
           { n: 'FROM DOCKED', v: `+${(energyEach * view.count).toLocaleString('en-US')}` },
         ]
       : [

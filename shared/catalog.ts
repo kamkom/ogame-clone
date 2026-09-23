@@ -701,7 +701,7 @@ export interface RequirementStatus {
  * finished level — never one still being built).
  */
 export function requirementStatus(
-  def: { requires: Requirement[] },
+  def: StructureDef,
   levelOf: (key: string) => number,
 ): RequirementStatus[] {
   return def.requires.map((r) => {
