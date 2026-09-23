@@ -50,10 +50,10 @@ describe('GET /api/planet', () => {
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.name).toBe('Homeworld');
-    expect(body.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
-    expect(body.coordinatesLabel).toMatch(/^\[\d+:\d+:\d+\]$/);
-    expect(body.temperature.min).toBe(body.temperature.max - 40);
+    expect(body.planet.name).toBe('Homeworld');
+    expect(body.planet.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
+    expect(body.planet.coordinatesLabel).toMatch(/^\[\d+:\d+:\d+\]$/);
+    expect(body.planet.tmin).toBe(body.planet.tmax - 40);
     // Live-resource fields: base income only, capacity 10 000 each, Energy balanced.
     expect(body.ratesPerHour).toEqual({ alloy: 30, crystal: 15, deuterium: 0 });
     expect(body.storageCapacity).toEqual({ alloy: 10000, crystal: 10000, deuterium: 10000 });
@@ -99,9 +99,9 @@ describe('GET /api/planet', () => {
       await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } })
     ).json();
 
-    expect(body.fields).toEqual({ used: 46, inProgress: 0, max: maxFields(3) });
-    expect(body.temperature).toEqual({ min: tmax - 40, max: tmax });
-    expect(body.diameterKm).toBe(12_800);
+    expect(body.planet.fields).toEqual({ used: 46, inProgress: 0, max: maxFields(3) });
+    expect(body.planet).toMatchObject({ tmin: tmax - 40, tmax });
+    expect(body.planet.diameterKm).toBe(12_800);
     const produced =
       solarPlantEnergy(10) + fusionReactorEnergy(3, 4) + solarSatelliteEnergy(7, tmax - 20);
     const consumed = alloyMineEnergyUse(12) + crystalMineEnergyUse(10) + deuteriumSynthEnergyUse(8);
@@ -186,7 +186,7 @@ describe('POST /api/planet/rename', () => {
       payload: { name: '  New Terra  ' },
     });
     expect(res.statusCode).toBe(200);
-    expect(res.json().name).toBe('New Terra');
+    expect(res.json().planet.name).toBe('New Terra');
 
     // The change survives a fresh read.
     const after = await app.inject({
@@ -194,7 +194,7 @@ describe('POST /api/planet/rename', () => {
       url: '/api/planet',
       headers: { cookie: `session=${cookie}` },
     });
-    expect(after.json().name).toBe('New Terra');
+    expect(after.json().planet.name).toBe('New Terra');
   });
 
   it('rejects too short, too long, bad characters and double spaces with a 400 code', async () => {

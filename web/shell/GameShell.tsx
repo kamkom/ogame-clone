@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type PlanetSnapshot, type Session } from '../lib/api.ts';
+import { api, type PlanetSnapshot, type Player } from '../lib/api.ts';
+import { PLANET_KEY } from '../lib/queryClient.ts';
 import { refetchDelay } from '../lib/liveResources.ts';
 import { CommandDeck } from './CommandDeck.tsx';
 import { Rail } from './Rail.tsx';
@@ -10,10 +11,12 @@ import { Structures } from './Structures.tsx';
 import { TopBar } from './TopBar.tsx';
 import { WelcomeWindow } from './WelcomeWindow.tsx';
 import { ServerBanner } from './ErrorBanner.tsx';
+import { LoadingChrome } from './LoadingChrome.tsx';
 
 interface GameShellProps {
-  session: Session;
-  universeSpeed: number;
+  player: Player;
+  /** True right after register: shows the one-time welcome window. */
+  firstLogin: boolean;
   onRename: (name: string) => Promise<PlanetSnapshot>;
   onLogout: () => void;
   loggingOut: boolean;
@@ -34,45 +37,63 @@ const NAV_BY_SCREEN: Record<Screen, number> = {
   shipyard: 3,
 };
 
-/** The logged-in game shell: rail, top bar, screen content, and the one-time welcome window. */
-export function GameShell({
-  session,
-  universeSpeed,
+/**
+ * The logged-in game: loads the Planet snapshot (already cached after register), showing the
+ * loading chrome until it arrives, then the shell.
+ */
+export function GameShell(props: GameShellProps) {
+  const planetQuery = useQuery({ queryKey: PLANET_KEY, queryFn: () => api.planet() });
+  if (!planetQuery.data) {
+    return (
+      <LoadingChrome
+        failureCount={planetQuery.failureCount}
+        failureReason={planetQuery.failureReason}
+      />
+    );
+  }
+  return <Shell {...props} planetQuery={planetQuery} planet={planetQuery.data} />;
+}
+
+interface ShellProps extends GameShellProps {
+  planet: PlanetSnapshot;
+  planetQuery: { refetch: () => unknown; failureCount: number; failureReason: unknown };
+}
+
+/** The game shell: rail, top bar, screen content, and the one-time welcome window. */
+function Shell({
+  player,
+  firstLogin,
   onRename,
   onLogout,
   loggingOut,
-}: GameShellProps) {
-  const { player } = session;
+  planet,
+  planetQuery,
+}: ShellProps) {
   const queryClient = useQueryClient();
-  const planetQuery = useQuery({
-    queryKey: ['planet'],
-    queryFn: () => api.planet(),
-    initialData: session.planet,
-  });
-  const planet = planetQuery.data;
+  const { universeSpeed } = planet;
 
   const [screen, setScreen] = useState<Screen>('overview');
 
   const upgrade = useMutation({
     mutationFn: (key: string) => api.upgradeStructure(key),
-    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
   const cancel = useMutation({
     mutationFn: (slot: number) => api.cancelBuildSlot(slot),
-    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
   const enqueue = useMutation({
     mutationFn: (technology: string) => api.enqueueResearch(technology),
-    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
   const placeOrder = useMutation({
     mutationFn: ({ ship, quantity }: { ship: string; quantity: number }) =>
       api.placeShipyardOrder(ship, quantity),
-    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
   const cancelResearch = useMutation({
     mutationFn: (entryId: number) => api.cancelResearch(entryId),
-    onSuccess: (snapshot) => queryClient.setQueryData(['planet'], snapshot),
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
 
   // Refetch when the next server-side boundary is due (e.g. Deuterium depletion changes the rates).
@@ -85,7 +106,7 @@ export function GameShell({
 
   // The welcome window trigger is the register response (firstLogin), not a persisted flag. Once
   // either button dismisses it, this stays false for the rest of the session.
-  const [showWelcome, setShowWelcome] = useState(session.firstLogin ?? false);
+  const [showWelcome, setShowWelcome] = useState(firstLogin);
 
   const activeNav = NAV_BY_SCREEN[screen];
 

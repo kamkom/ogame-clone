@@ -32,7 +32,7 @@ export function TopBar({ planet, onRename }: TopBarProps) {
           ref={pickerRef}
           type="button"
           style={pickerStyle}
-          title={`${planet.name} ${planet.coordinatesLabel}`}
+          title={`${planet.planet.name} ${planet.planet.coordinatesLabel}`}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -49,10 +49,10 @@ export function TopBar({ planet, onRename }: TopBarProps) {
               whiteSpace: 'nowrap',
             }}
           >
-            {planet.name}
+            {planet.planet.name}
           </span>
           <span className="coords" style={{ fontSize: 13, flexShrink: 0 }}>
-            {planet.coordinatesLabel}
+            {planet.planet.coordinatesLabel}
           </span>
         </button>
         {open && (

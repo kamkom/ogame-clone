@@ -11,13 +11,17 @@ const HOUR = 3_600_000;
 
 function snapshot(overrides: Partial<PlanetSnapshot> = {}): PlanetSnapshot {
   return {
-    id: 1,
-    name: 'Homeworld',
-    coordinates: { galaxy: 1, system: 1, position: 4 },
-    coordinatesLabel: '[1:1:4]',
-    temperature: { min: 30, max: 70 },
-    fields: { used: 0, inProgress: 0, max: 163 },
-    diameterKm: 12800,
+    universeSpeed: 1,
+    planet: {
+      id: 1,
+      name: 'Homeworld',
+      coordinates: { galaxy: 1, system: 1, position: 4 },
+      coordinatesLabel: '[1:1:4]',
+      tmin: 30,
+      tmax: 70,
+      fields: { used: 0, inProgress: 0, max: 163 },
+      diameterKm: 12800,
+    },
     resources: { alloy: 500, crystal: 500, deuterium: 0 },
     serverNow: 0,
     lastUpdatedAt: 0,

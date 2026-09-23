@@ -17,7 +17,7 @@ interface PlanetPopoverProps {
  * footer. Esc or a click outside closes it; an invalid name shows an inline error.
  */
 export function PlanetPopover({ planet, onRename, onClose, anchor }: PlanetPopoverProps) {
-  const [name, setName] = useState(planet.name);
+  const [name, setName] = useState(planet.planet.name);
   const [error, setError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -65,21 +65,21 @@ export function PlanetPopover({ planet, onRename, onClose, anchor }: PlanetPopov
           className="disp"
           style={{ fontSize: 17, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
-          {planet.name}
+          {planet.planet.name}
         </div>
         <div className="coords" style={{ fontSize: 13 }}>
-          {planet.coordinatesLabel}
+          {planet.planet.coordinatesLabel}
         </div>
       </div>
 
       <div style={statsStyle}>
         <div className="label">Fields</div>
         <div className="disp" style={valueStyle}>
-          {planet.fields.used} / {planet.fields.max}
+          {planet.planet.fields.used} / {planet.planet.fields.max}
         </div>
         <div className="label">Diameter</div>
         <div className="disp" style={valueStyle}>
-          {planet.diameterKm.toLocaleString('en-US')} km
+          {planet.planet.diameterKm.toLocaleString('en-US')} km
         </div>
       </div>
 

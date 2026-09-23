@@ -212,7 +212,7 @@ export function ordersLabel(count: number): string {
 
 /** The Planet's average temperature: `Tavg = Tmax − 20` on every OGame Planet (§6.1). */
 export function averageTemperature(planet: PlanetSnapshot): number {
-  return planet.temperature.max - 20;
+  return planet.planet.tmax - 20;
 }
 
 /** Energy each Solar Satellite gives at this Planet's temperature. */

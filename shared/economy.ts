@@ -94,6 +94,20 @@ export function fusionDeuteriumBurn(level: number, speed = 1, pct = 1): number {
   return Math.ceil(10 * level * 1.1 ** level * speed * pct);
 }
 
+/**
+ * The fraction of full power the Fusion Reactor runs at (story 30). With Deuterium in stock it
+ * runs flat out; once it runs out, the reactor burns only what arrives, so net Deuterium holds at
+ * 0 instead of toggling on and off. Both rates are per hour.
+ */
+export function fusionThrottle(
+  deuteriumInStock: boolean,
+  deuteriumIncome: number,
+  fullBurn: number,
+): number {
+  if (deuteriumInStock || fullBurn <= 0) return 1;
+  return Math.min(1, deuteriumIncome / fullBurn);
+}
+
 /** Solar Satellite Energy, each: `floor((Tavg+160)/6)`, × count × pct. Not scaled by Speed. */
 export function solarSatelliteEnergy(count: number, tavg: number, pct = 1): number {
   return Math.floor((tavg + 160) / 6) * count * pct;

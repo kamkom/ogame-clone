@@ -7,7 +7,7 @@ function fakeFetch(status: number, body: unknown) {
   const impl = (url: string | URL | Request, init: RequestInit = {}) => {
     calls.push({ url: String(url), init });
     return Promise.resolve(
-      new Response(body === undefined ? '' : JSON.stringify(body), { status }),
+      new Response(body === undefined ? null : JSON.stringify(body), { status }),
     );
   };
   return { impl: impl as unknown as typeof fetch, calls };
@@ -42,13 +42,19 @@ describe('api wrapper', () => {
   });
 
   it('renames the Planet and returns the updated snapshot', async () => {
-    const { impl, calls } = fakeFetch(200, { id: 1, name: 'New Terra' });
-    const planet = await api.renamePlanet('New Terra', impl);
-    expect(planet.name).toBe('New Terra');
+    const { impl, calls } = fakeFetch(200, { planet: { id: 1, name: 'New Terra' } });
+    const snapshot = await api.renamePlanet('New Terra', impl);
+    expect(snapshot.planet.name).toBe('New Terra');
     const { url, init } = calls[0]!;
     expect(url).toBe('/api/planet/rename');
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body as string)).toEqual({ name: 'New Terra' });
+  });
+
+  it('logs out on a bodiless 204', async () => {
+    const { impl, calls } = fakeFetch(204, undefined);
+    await expect(api.logout(impl)).resolves.toBeNull();
+    expect(calls[0]!.url).toBe('/api/auth/logout');
   });
 
   it('POSTs JSON with a content-type header', async () => {

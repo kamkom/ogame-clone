@@ -36,7 +36,8 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
   // Opening also sweeps dead sessions, so the table doesn't fill with expired rows (story 93).
   const db: DatabaseSync = open(options.dbPath, { now: clock.now() });
 
-  const app = Fastify({ logger: false });
+  // No Ajv type coercion: a body field of the wrong JSON type is a 400, not silently converted.
+  const app = Fastify({ logger: false, ajv: { customOptions: { coerceTypes: false } } });
 
   app.decorate('db', db);
   app.decorate('clock', clock);

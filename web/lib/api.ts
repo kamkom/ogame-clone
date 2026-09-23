@@ -2,70 +2,29 @@
 // typed `ApiError` on any non-2xx, and flags 401s so the app can fall back to the auth screen
 // (spec story 15). `fetchImpl` is injectable so the wrapper is unit-testable without a browser.
 
-export interface Player {
-  id: number;
-  username: string;
-}
+import type {
+  BuildSlotSnapshot,
+  PlanetSnapshot,
+  Player,
+  ResearchEntrySnapshot,
+  ShipyardOrderSnapshot,
+} from '#shared/snapshot.ts';
 
-export interface BuildSlotView {
-  slot: number;
-  structure: string;
-  targetLevel: number;
-  cost: { alloy: number; crystal: number; deuterium: number };
-  startedAt: number;
-  endsAt: number;
-}
+// The wire types live in shared, so the server and the screens agree on them.
+export type { PlanetSnapshot, Player };
+export type BuildSlotView = BuildSlotSnapshot;
+export type ResearchEntryView = ResearchEntrySnapshot;
+export type ShipyardOrderView = ShipyardOrderSnapshot;
 
-export interface ResearchEntryView {
-  id: number;
-  technology: string;
-  targetLevel: number;
-  cost: { alloy: number; crystal: number; deuterium: number };
-  startedAt: number | null;
-  endsAt: number | null;
-  waitingOnLab: boolean;
-}
-
-export interface ShipyardOrderView {
-  id: number;
-  ship: string;
-  quantity: number;
-  completed: number;
-  /** The total paid for the whole Order. */
-  cost: { alloy: number; crystal: number; deuterium: number };
-  unitDurationMs: number | null;
-  startedAt: number | null;
-  nextUnitAt: number | null;
-  endsAt: number | null;
-}
-
-export interface PlanetSnapshot {
-  id: number;
-  name: string;
-  coordinates: { galaxy: number; system: number; position: number };
-  coordinatesLabel: string;
-  temperature: { min: number; max: number };
-  fields: { used: number; inProgress: number; max: number };
-  diameterKm: number;
-  resources: { alloy: number; crystal: number; deuterium: number };
-  serverNow: number;
-  lastUpdatedAt: number;
-  ratesPerHour: { alloy: number; crystal: number; deuterium: number };
-  storageCapacity: { alloy: number; crystal: number; deuterium: number };
-  energy: { produced: number; consumed: number; productionFactor: number };
-  structures: Record<string, number>;
-  buildSlots: (BuildSlotView | null)[];
-  technologies: Record<string, number>;
-  researchQueue: ResearchEntryView[];
-  ships: Record<string, number>;
-  shipyardOrders: ShipyardOrderView[];
-  nextEventAt: number | null;
-}
-
+/** The signed-in Player, from login and /api/auth/me. */
 export interface Session {
   player: Player;
-  planet: PlanetSnapshot;
-  firstLogin?: boolean;
+}
+
+/** Register also returns the new Planet, so the game renders without a second request. */
+export interface Registration {
+  player: Player;
+  snapshot: PlanetSnapshot;
 }
 
 export type FieldErrors = { username?: string; password?: string };
@@ -110,6 +69,7 @@ async function apiFetch<T>(
   const body = text ? JSON.parse(text) : null;
 
   if (!res.ok) throw new ApiError(res.status, body);
+  // A 204 (logout) has no body; callers typed `void` ignore the null.
   return body as T;
 }
 
@@ -128,10 +88,10 @@ export const api = {
   me: (fetchImpl?: FetchImpl) => apiFetch<Session>('/api/auth/me', {}, fetchImpl),
   planet: (fetchImpl?: FetchImpl) => apiFetch<PlanetSnapshot>('/api/planet', {}, fetchImpl),
   register: (username: string, password: string, fetchImpl?: FetchImpl) =>
-    post<Session>('/api/auth/register', { username, password }, fetchImpl),
+    post<Registration>('/api/auth/register', { username, password }, fetchImpl),
   login: (username: string, password: string, fetchImpl?: FetchImpl) =>
     post<Session>('/api/auth/login', { username, password }, fetchImpl),
-  logout: (fetchImpl?: FetchImpl) => post<{ ok: true }>('/api/auth/logout', {}, fetchImpl),
+  logout: (fetchImpl?: FetchImpl) => post<void>('/api/auth/logout', {}, fetchImpl),
   renamePlanet: (name: string, fetchImpl?: FetchImpl) =>
     post<PlanetSnapshot>('/api/planet/rename', { name }, fetchImpl),
   upgradeStructure: (key: string, fetchImpl?: FetchImpl) =>

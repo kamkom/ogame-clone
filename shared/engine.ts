@@ -12,6 +12,7 @@ import {
   deuteriumSynthOutput,
   fusionDeuteriumBurn,
   fusionReactorEnergy,
+  fusionThrottle,
   productionFactor,
   researchDurationSec,
   shipUnitDurationSec,
@@ -160,15 +161,12 @@ export function computeProfile(
   // Resolve the Fusion throttle / production-factor coupling in a single pass: assume full Fusion,
   // derive the Deuterium it could be fed, then re-derive the factor at that throttle.
   const f1 = productionFactor(solar + fusionFull, consumed);
-  let theta = 1;
-  if (!deuteriumAvailable && burnFull > 0) {
-    const deutProdFull = deuteriumSynthOutput(s.deuteriumSynth, state.tavg, {
-      speed,
-      plasma: state.plasmaTech,
-      factor: f1,
-    });
-    theta = Math.min(1, deutProdFull / burnFull);
-  }
+  const deutIncomeFull = deuteriumSynthOutput(s.deuteriumSynth, state.tavg, {
+    speed,
+    plasma: state.plasmaTech,
+    factor: f1,
+  });
+  const theta = fusionThrottle(deuteriumAvailable, deutIncomeFull, burnFull);
   const produced = solar + fusionFull * theta;
   const factor = productionFactor(produced, consumed);
 

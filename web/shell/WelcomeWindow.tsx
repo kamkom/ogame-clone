@@ -18,7 +18,7 @@ interface WelcomeWindowProps {
  * it for good — the trigger is the register response, not a persisted flag.
  */
 export function WelcomeWindow({ planet, username, onRename, onDismiss }: WelcomeWindowProps) {
-  const [name, setName] = useState(planet.name);
+  const [name, setName] = useState(planet.planet.name);
   const [error, setError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
 
@@ -33,7 +33,7 @@ export function WelcomeWindow({ planet, username, onRename, onDismiss }: Welcome
     setSaving(true);
     setError(undefined);
     try {
-      if (result.name !== planet.name) await onRename(result.name);
+      if (result.name !== planet.planet.name) await onRename(result.name);
       onDismiss();
     } catch (err) {
       setError(renameErrorMessage(err));
@@ -50,7 +50,7 @@ export function WelcomeWindow({ planet, username, onRename, onDismiss }: Welcome
             <div style={planetStyle} />
           </div>
           <div className="coords" style={{ fontSize: 16 }}>
-            {planet.coordinatesLabel}
+            {planet.planet.coordinatesLabel}
           </div>
         </div>
 
@@ -61,8 +61,10 @@ export function WelcomeWindow({ planet, username, onRename, onDismiss }: Welcome
           <div style={{ color: 'var(--text-body)', lineHeight: 1.5 }}>
             Welcome, {username}.
             <br />
-            Your Planet sits at <span className="coords">{planet.coordinatesLabel}</span> with{' '}
-            {formatResource(planet.resources.alloy)} Alloy and{' '}
+            Your Planet sits at <span className="coords">
+              {planet.planet.coordinatesLabel}
+            </span>{' '}
+            with {formatResource(planet.resources.alloy)} Alloy and{' '}
             {formatResource(planet.resources.crystal)} Crystal to start. You can rename it any time
             from the planet picker.
           </div>

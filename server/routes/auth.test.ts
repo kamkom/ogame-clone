@@ -55,9 +55,8 @@ describe('auth routes', () => {
     expect(res.statusCode).toBe(201);
     const body = res.json();
     expect(body.player.username).toBe('Vega');
-    expect(body.planet.name).toBe('Homeworld');
-    expect(body.planet.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
-    expect(body.firstLogin).toBe(true);
+    expect(body.snapshot.planet.name).toBe('Homeworld');
+    expect(body.snapshot.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
     const cookie = res.cookies.find((c) => c.name === 'session')!;
     expect(cookie.httpOnly).toBe(true);
     expect(cookie.sameSite).toBe('Lax');
@@ -145,7 +144,7 @@ describe('auth routes', () => {
     const cookieB = sessionCookie(login);
 
     const out = await json(app, 'POST', '/api/auth/logout', {}, cookieA);
-    expect(out.statusCode).toBe(200);
+    expect(out.statusCode).toBe(204);
 
     const meA = await app.inject({
       method: 'GET',

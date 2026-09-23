@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stage } from './stage/Stage.tsx';
-import { ApiError, api, type Session } from './lib/api.ts';
+import { ApiError, api, type PlanetSnapshot, type Player, type Session } from './lib/api.ts';
 import { AuthScreen } from './auth/AuthScreen.tsx';
 import { GameShell } from './shell/GameShell.tsx';
-import { Rail } from './shell/Rail.tsx';
-import { ServerBanner } from './shell/ErrorBanner.tsx';
+import { LoadingChrome } from './shell/LoadingChrome.tsx';
 import { ME_KEY, PLANET_KEY, signOut } from './lib/queryClient.ts';
 import { retryPolicy } from './lib/queryErrors.ts';
 
@@ -24,24 +24,30 @@ export function App() {
     retry: retryPolicy(Infinity),
   });
 
+  // Set by register only: the one-time welcome window shows over the new Planet (story 19).
+  const [firstLogin, setFirstLogin] = useState(false);
+
   const logout = useMutation({
     mutationFn: () => api.logout(),
-    onSuccess: () => signOut(queryClient),
+    onSuccess: () => {
+      setFirstLogin(false);
+      signOut(queryClient);
+    },
   });
 
   const rename = useMutation({
     mutationFn: (name: string) => api.renamePlanet(name),
-    onSuccess: (planet) => {
-      // The shell renders from the ['planet'] query; keep the session copy in sync too.
-      queryClient.setQueryData<Session>(ME_KEY, (prev) => (prev ? { ...prev, planet } : prev));
-      queryClient.setQueryData(PLANET_KEY, planet);
-    },
+    onSuccess: (snapshot) => queryClient.setQueryData(PLANET_KEY, snapshot),
   });
 
+  // Only the auth screen needs this; once signed in, the snapshot carries `universeSpeed`.
   const universeSpeed = health.data?.universeSpeed ?? 1;
 
-  function onAuthenticated(session: Session) {
-    queryClient.setQueryData(ME_KEY, session);
+  function onAuthenticated(player: Player, snapshot?: PlanetSnapshot) {
+    // Seed the Planet first, so a new Player's shell renders without a second request.
+    if (snapshot) queryClient.setQueryData(PLANET_KEY, snapshot);
+    setFirstLogin(snapshot !== undefined);
+    queryClient.setQueryData<Session>(ME_KEY, { player });
   }
 
   return <Stage>{renderContent()}</Stage>;
@@ -50,8 +56,8 @@ export function App() {
     if (me.isSuccess) {
       return (
         <GameShell
-          session={me.data}
-          universeSpeed={universeSpeed}
+          player={me.data.player}
+          firstLogin={firstLogin}
           onRename={(name) => rename.mutateAsync(name)}
           onLogout={() => logout.mutate()}
           loggingOut={logout.isPending}
@@ -63,22 +69,6 @@ export function App() {
     if (me.isError) {
       return <AuthScreen universeSpeed={universeSpeed} onAuthenticated={onAuthenticated} />;
     }
-    return (
-      <>
-        <Rail active={-1} onNavigate={() => {}} />
-        <div style={loadingStyle}>Loading…</div>
-        <ServerBanner failureCount={me.failureCount} failureReason={me.failureReason} />
-      </>
-    );
+    return <LoadingChrome failureCount={me.failureCount} failureReason={me.failureReason} />;
   }
 }
-
-// Where the screen content goes: right of the rail, below the top bar.
-const loadingStyle = {
-  position: 'absolute' as const,
-  left: 'calc(var(--rail-w) + 24px)',
-  top: 'calc(var(--topbar-h) + 24px)',
-  color: 'var(--text-muted)',
-  fontFamily: 'var(--font-body)',
-  fontSize: 14,
-};

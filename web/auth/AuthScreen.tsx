@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { ApiError, api, type FieldErrors, type Session } from '../lib/api.ts';
+import { ApiError, api, type FieldErrors, type PlanetSnapshot, type Player } from '../lib/api.ts';
 import { Logo } from '../shell/icons.tsx';
 import { bannerMessage, passwordMessage, usernameMessage } from './messages.ts';
 
 interface AuthScreenProps {
   universeSpeed: number;
-  onAuthenticated: (session: Session) => void;
+  /** `snapshot` is set only after register: the new Planet, for the one-time welcome window. */
+  onAuthenticated: (player: Player, snapshot?: PlanetSnapshot) => void;
 }
 
 type Mode = 'login' | 'register';
@@ -31,10 +32,12 @@ export function AuthScreen({ universeSpeed, onAuthenticated }: AuthScreenProps) 
     setFields({});
     setSubmitting(true);
     try {
-      const session = register
-        ? await api.register(username.trim(), password)
-        : await api.login(username.trim(), password);
-      onAuthenticated(session);
+      if (register) {
+        const { player, snapshot } = await api.register(username.trim(), password);
+        onAuthenticated(player, snapshot);
+      } else {
+        onAuthenticated((await api.login(username.trim(), password)).player);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.body?.fields) {
         setFields(err.body.fields);

@@ -41,7 +41,7 @@ export function CommandDeck({
   const now = useServerNow(planet.serverNow);
   const rows = deckStructureRows(planet, universeSpeed, now);
   const hasShipyard = (planet.structures['orbital-shipyard'] ?? 0) > 0;
-  const { used, max } = planet.fields;
+  const { used, max } = planet.planet.fields;
 
   return (
     <div style={contentStyle}>
@@ -64,11 +64,11 @@ export function CommandDeck({
       </Callout>
       <Callout x={32} y={228} label="TEMPERATURE">
         <span style={calloutValueStyle}>
-          {formatTemp(planet.temperature.min)}° / {formatTemp(planet.temperature.max)}°C
+          {formatTemp(planet.planet.tmin)}° / {formatTemp(planet.planet.tmax)}°C
         </span>
       </Callout>
       <Callout x={32} y={320} label="DIAMETER">
-        <span style={calloutValueStyle}>{planet.diameterKm.toLocaleString('en-US')} km</span>
+        <span style={calloutValueStyle}>{planet.planet.diameterKm.toLocaleString('en-US')} km</span>
       </Callout>
 
       {/* right callouts: placeholders until moons and defenses exist */}
@@ -84,10 +84,10 @@ export function CommandDeck({
       {/* name and Coordinates under the planet */}
       <div style={planetNameStyle}>
         <span className="disp" style={{ fontSize: 20, fontWeight: 600 }}>
-          {planet.name}
+          {planet.planet.name}
         </span>
         <span className="coords" style={{ fontSize: 13 }}>
-          {planet.coordinatesLabel}
+          {planet.planet.coordinatesLabel}
         </span>
       </div>
 

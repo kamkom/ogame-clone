@@ -59,7 +59,7 @@ export function Structures({
   const [selectedKey, setSelectedKey] = useState<string>(STRUCTURES[0]!.key);
 
   const slotsUsed = planet.buildSlots.filter((s) => s !== null).length;
-  const { used, max } = planet.fields;
+  const { used, max } = planet.planet.fields;
 
   const views = useMemo(
     () => structureViews(planet, universeSpeed, live),
@@ -505,7 +505,7 @@ function DetailAction({
     const name = firstFree ? (STRUCTURE_NAMES.get(firstFree.structure) ?? firstFree.structure) : '';
     footnote = `No waiting list — come back when ${name} finishes`;
   } else if (state === 'fields_full') {
-    const { used, inProgress, max } = planet.fields;
+    const { used, inProgress, max } = planet.planet.fields;
     label = 'NO FREE FIELDS';
     footnote = `${used} used + ${inProgress} building of ${max} Fields`;
   } else if (state === 'energy') {

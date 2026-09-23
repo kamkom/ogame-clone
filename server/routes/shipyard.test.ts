@@ -116,7 +116,7 @@ describe('POST /api/shipyard/orders', () => {
     const cookie = await register();
     seed(100_000, { 'orbital-shipyard': 1 });
     const before = (await order(cookie, 'solar-satellite', 3)).json();
-    const perSatellite = solarSatelliteEnergy(1, before.temperature.max - 20);
+    const perSatellite = solarSatelliteEnergy(1, before.planet.tmax - 20);
     expect(before.energy.produced).toBe(0);
 
     for (const n of [1, 2]) {
@@ -226,10 +226,10 @@ describe('POST /api/shipyard/orders', () => {
     expect(res.json()).toEqual({ error: 'cannot_afford' });
   });
 
-  it('rejects an unknown ship with 404 not_found', async () => {
+  it('rejects an unknown ship with 409 not_found', async () => {
     const cookie = await register();
     const res = await order(cookie, 'death-star', 1);
-    expect(res.statusCode).toBe(404);
+    expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({ error: 'not_found' });
   });
 

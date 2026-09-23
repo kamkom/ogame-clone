@@ -59,7 +59,7 @@ describe('POST /api/structures/:key/upgrade', () => {
       cost: { alloy: 60, crystal: 15, deuterium: 0 },
     });
     expect(body.buildSlots[1]).toBeNull();
-    expect(body.fields.inProgress).toBe(1);
+    expect(body.planet.fields.inProgress).toBe(1);
     expect(body.nextEventAt).toBe(body.buildSlots[0].endsAt);
   });
 
@@ -88,10 +88,10 @@ describe('POST /api/structures/:key/upgrade', () => {
     expect(res.json()).toEqual({ error: 'cannot_afford' });
   });
 
-  it('rejects an unknown Structure key with 404 not_found', async () => {
+  it('rejects an unknown Structure key with 409 not_found', async () => {
     const cookie = await register();
     const res = await upgrade(cookie, 'death-star');
-    expect(res.statusCode).toBe(404);
+    expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({ error: 'not_found' });
   });
 
@@ -112,8 +112,8 @@ describe('POST /api/structures/:key/upgrade', () => {
     expect(after.structures['alloy-extractor']).toBe(1);
     expect(after.structures['solar-array']).toBe(1);
     expect(after.buildSlots).toEqual([null, null]);
-    expect(after.fields.used).toBe(2);
-    expect(after.fields.inProgress).toBe(0);
+    expect(after.planet.fields.used).toBe(2);
+    expect(after.planet.fields.inProgress).toBe(0);
     // Alloy income is now higher than base income alone.
     expect(after.ratesPerHour.alloy).toBeGreaterThan(baseRate);
   });
@@ -202,11 +202,11 @@ describe('POST /api/structures/:key/upgrade', () => {
 
   it('raises max Fields by the Terraformer bonus 5·L + floor(L/2)', async () => {
     const cookie = await register();
-    expect((await planet(cookie)).fields.max).toBe(163);
+    expect((await planet(cookie)).planet.fields.max).toBe(163);
     setLevel('terraformer', 3);
     const after = await planet(cookie);
-    expect(after.fields.max).toBe(163 + 15 + 1);
-    expect(after.fields.used).toBe(3);
+    expect(after.planet.fields.max).toBe(163 + 15 + 1);
+    expect(after.planet.fields.used).toBe(3);
   });
 
   it('lets a Terraformer-raised max admit an upgrade the base Fields would refuse', async () => {
@@ -256,7 +256,7 @@ describe('POST /api/build-slots/:slot/cancel', () => {
   it('refunds exactly the paid cost, frees the slot and returns the Field', async () => {
     const cookie = await register();
     const started = (await post(cookie, '/api/structures/alloy-extractor/upgrade')).json();
-    expect(started.fields.inProgress).toBe(1);
+    expect(started.planet.fields.inProgress).toBe(1);
 
     const res = await post(cookie, '/api/build-slots/1/cancel');
     expect(res.statusCode).toBe(200);
@@ -264,8 +264,8 @@ describe('POST /api/build-slots/:slot/cancel', () => {
     // No time passed: back to exactly the starting 500 / 500 / 0.
     expect(body.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
     expect(body.buildSlots).toEqual([null, null]);
-    expect(body.fields.inProgress).toBe(0);
-    expect(body.fields.used).toBe(0);
+    expect(body.planet.fields.inProgress).toBe(0);
+    expect(body.planet.fields.used).toBe(0);
     expect(body.structures['alloy-extractor']).toBe(0);
     expect(body.nextEventAt).toBeNull();
   });

@@ -182,10 +182,10 @@ describe('POST /api/research', () => {
     expect(res.json()).toEqual({ error: 'cannot_afford' });
   });
 
-  it('rejects an unknown Technology with 404 not_found and a missing one with 400', async () => {
+  it('rejects an unknown Technology with 409 not_found and a missing one with 400', async () => {
     const cookie = await register();
     const unknown = await enqueue(cookie, 'time-travel');
-    expect(unknown.statusCode).toBe(404);
+    expect(unknown.statusCode).toBe(409);
     expect(unknown.json()).toEqual({ error: 'not_found' });
     const missing = await app.inject({
       method: 'POST',
@@ -376,7 +376,7 @@ describe('POST /api/research', () => {
       expect(finished.statusCode).toBe(409);
       expect(finished.json()).toEqual({ error: 'not_found' });
       expect((await cancel(cookie, 9999)).statusCode).toBe(409);
-      expect((await cancel(cookie, 'abc')).statusCode).toBe(409);
+      expect((await cancel(cookie, 'abc')).statusCode).toBe(400);
       expect((await cancel('', e1.id)).statusCode).toBe(401);
     });
   });

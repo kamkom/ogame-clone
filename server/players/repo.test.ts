@@ -110,12 +110,12 @@ describe('registerPlayer', () => {
       serverNow: 1,
       speed: 1,
     });
-    expect(snap.name).toBe('Homeworld');
-    expect(snap.coordinatesLabel).toBe('[1:1:4]');
-    expect(snap.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
-    expect(snap.diameterKm).toBe(12800);
+    expect(snap.planet.name).toBe('Homeworld');
+    expect(snap.planet.coordinatesLabel).toBe('[1:1:4]');
+    expect(snap.planet.fields).toEqual({ used: 0, inProgress: 0, max: 163 });
+    expect(snap.planet.diameterKm).toBe(12800);
     expect(snap.resources).toEqual({ alloy: 500, crystal: 500, deuterium: 0 });
-    expect(snap.temperature.min).toBe(snap.temperature.max - 40);
+    expect(snap.planet.tmin).toBe(snap.planet.tmax - 40);
     expect(snap.ratesPerHour).toEqual({ alloy: 30, crystal: 15, deuterium: 0 });
   });
 });

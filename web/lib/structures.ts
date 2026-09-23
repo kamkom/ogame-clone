@@ -101,7 +101,7 @@ function viewFor(
     planet.storageCapacity,
   );
   const slotsFull = planet.buildSlots.every((s) => s !== null);
-  const { used, inProgress, max } = planet.fields;
+  const { used, inProgress, max } = planet.planet.fields;
 
   let state: UpgradeState = 'ready';
   if (slot) state = 'building';

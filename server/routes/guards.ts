@@ -25,23 +25,20 @@ function originHost(origin: string): string | null {
 }
 
 /**
- * CSRF guard for mutating routes: a present `Origin` must match the request host, and the body
- * must be JSON. Returns true when the request is allowed; otherwise it has already replied.
+ * CSRF guard for mutating routes, run as a `preValidation` hook (after `requireSession`, before
+ * the JSON schema): a present `Origin` must match the request host, and the body must be JSON.
  */
-export function passesCsrf(request: FastifyRequest, reply: FastifyReply): boolean {
+export async function csrf(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const origin = request.headers.origin;
   // A malformed Origin yields a null host, which never matches and so is rejected too.
   if (origin && originHost(origin) !== request.headers.host) {
-    reply.code(403).send({ error: 'forbidden_origin' });
-    return false;
+    return reply.code(403).send({ error: 'forbidden_origin' });
   }
 
   const contentType = request.headers['content-type'] ?? '';
   if (!contentType.includes('application/json')) {
-    reply.code(415).send({ error: 'unsupported_media_type' });
-    return false;
+    return reply.code(415).send({ error: 'unsupported_media_type' });
   }
-  return true;
 }
 
 /**
@@ -54,4 +51,22 @@ export function resolvePlayerId(request: FastifyRequest, reply: FastifyReply): n
   const playerId = lookupSession(request.server.db, hashToken(token), request.server.clock.now());
   if (playerId !== null) reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions());
   return playerId;
+}
+
+/**
+ * The session guard, run as an `onRequest` hook so it answers before anything else: every route
+ * except register/login is 401 without a session, whatever its Origin or body. Sets
+ * `request.playerId` for the handler.
+ */
+export async function requireSession(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const playerId = resolvePlayerId(request, reply);
+  if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
+  request.playerId = playerId;
+}
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    /** The signed-in Player; set by `requireSession`. */
+    playerId: number;
+  }
 }

@@ -7,6 +7,7 @@ import {
   deuteriumSynthOutput,
   fusionDeuteriumBurn,
   fusionReactorEnergy,
+  fusionThrottle,
   levelCost,
   maxFields,
   productionFactor,
@@ -114,6 +115,23 @@ describe('production factor', () => {
     expect(productionFactor(50, 100)).toBe(0.5);
     expect(productionFactor(200, 100)).toBe(1);
     expect(productionFactor(999, 1000)).toBe(0.99); // 0.999 floored to 0.99
+  });
+});
+
+describe('Fusion throttle (story 30)', () => {
+  it('runs at full power while Deuterium is in stock', () => {
+    expect(fusionThrottle(true, 0, 81)).toBe(1);
+  });
+
+  it('with Deuterium out, runs at the fraction its incoming Deuterium can feed', () => {
+    // A Fusion Reactor 5 burns 81/h (§6.1); 40.5/h incoming feeds exactly half of it.
+    expect(fusionThrottle(false, 40.5, 81)).toBe(0.5);
+    expect(fusionThrottle(false, 0, 81)).toBe(0);
+  });
+
+  it('never runs above full power, and a reactor that burns nothing is never throttled', () => {
+    expect(fusionThrottle(false, 200, 81)).toBe(1);
+    expect(fusionThrottle(false, 0, 0)).toBe(1);
   });
 });
 
