@@ -25,14 +25,16 @@ describe('ship catalog', () => {
     expect(catalogName('scout-drone')).toBe('Scout Drone');
   });
 
-  it("carries OGame's stats (rules reference §10.1)", () => {
-    // The Cruiser matches the design's detail panel exactly.
+  it("carries OGame's stats (alaingilbert/ogame @325667f)", () => {
+    // [AG] cruiser_test: GetPrice(1), cargo 800 at Hyperspace Technology 0, fuel 300. Attack,
+    // shields, hull and speed are [AG] cruiser.go base values. They also match the design panel.
     expect(shipDef('cruiser')).toMatchObject({
       ogame: 'Cruiser',
       role: 'Line ship',
       cost: { alloy: 20_000, crystal: 7000, deuterium: 2000 },
       stats: { attack: 400, shields: 50, hull: 27_000, speed: 15_000, cargo: 800, fuel: 300 },
     });
+    // [AG] solarSatellite.go: Price{Crystal: 2000, Deuterium: 500}.
     expect(shipDef('solar-satellite')!.cost).toEqual({ alloy: 0, crystal: 2000, deuterium: 500 });
   });
 

@@ -9,8 +9,10 @@ import {
   technologyEnergyRequired,
 } from './research.ts';
 
-// Golden values cite the rules-reference doc (docs/research/ogame-rules-reference.md §2, §4) and
-// the design-catalog-mapping doc (Technologies, Gaps).
+// Golden values cite their primary source; the rules-reference doc only picks between them.
+//   [AG] alaingilbert/ogame @325667f, pkg/ogame/<name>_test.go (values checked against live
+//        servers) and <name>.go (base costs, factors, requirements).
+// Rows marked "formula" have no published value; the expected integer is worked out by hand.
 
 describe('Technology catalog', () => {
   it('has the 16 Technologies in the four design lanes of four', () => {
@@ -38,7 +40,8 @@ describe('Technology catalog', () => {
     expect(technologyDef('warp-drive')!.requires).toEqual([{ key: 'fold-drive', level: 3 }]);
   });
 
-  it('uses the rules-reference direct requirements', () => {
+  // [AG] energyTechnology.go / hyperspaceTechnology.go / plasmaTechnology.go Requirements.
+  it('uses the direct requirements from alaingilbert/ogame', () => {
     expect(technologyDef('energy-theory')!.requires).toEqual([{ key: 'research-lab', level: 1 }]);
     expect(technologyDef('fold-drive')!.requires).toEqual([
       { key: 'research-lab', level: 7 },
@@ -62,7 +65,7 @@ describe('Technology catalog', () => {
   });
 });
 
-describe('Technology cost (§2, §4)', () => {
+describe('Technology cost ([AG] baseLevelable.go)', () => {
   it('is floor(base·2^(L−1)) per Resource for the ×2 Technologies', () => {
     const energy = technologyDef('energy-theory')!; // 0 / 800 / 400
     expect(technologyCost(energy, 1)).toEqual({ alloy: 0, crystal: 800, deuterium: 400 });
@@ -74,7 +77,7 @@ describe('Technology cost (§2, §4)', () => {
     });
     const plasma = technologyDef('plasma-containment')!; // 2000 / 4000 / 1000
     expect(technologyCost(plasma, 1)).toEqual({ alloy: 2000, crystal: 4000, deuterium: 1000 });
-    // design-catalog-mapping: "OGame L4 = 80k M / 160k C / 48k D" for Hyperspace Drive.
+    // Formula on [AG] hyperspaceDrive.go's 10,000 / 20,000 / 6,000: L4 = 80k / 160k / 48k.
     const warp = technologyDef('warp-drive')!;
     expect(technologyCost(warp, 4)).toEqual({ alloy: 80_000, crystal: 160_000, deuterium: 48_000 });
   });
@@ -82,8 +85,14 @@ describe('Technology cost (§2, §4)', () => {
   it('scales Astrophysics by 1.75 and rounds to the nearest 100', () => {
     const astro = technologyDef('astrophysics')!; // 4000 / 8000 / 4000
     expect(technologyCost(astro, 1)).toEqual({ alloy: 4000, crystal: 8000, deuterium: 4000 });
+    // [AG] astrophysics_test: GetPrice(2) and GetPrice(9).
     expect(technologyCost(astro, 2)).toEqual({ alloy: 7000, crystal: 14_000, deuterium: 7000 });
-    // 12,250 / 24,500 / 12,250 → nearest 100.
+    expect(technologyCost(astro, 9)).toEqual({
+      alloy: 351_900,
+      crystal: 703_700,
+      deuterium: 351_900,
+    });
+    // Formula: 12,250 / 24,500 / 12,250 → nearest 100.
     expect(technologyCost(astro, 3)).toEqual({ alloy: 12_300, crystal: 24_500, deuterium: 12_300 });
   });
 
@@ -168,7 +177,8 @@ describe('cancelCascade', () => {
 });
 
 describe('Terraformer Energy requirement', () => {
-  // Rules reference §3: Base Energy 1000, factor 2, a requirement on available Energy.
+  // [AG] terraformer_test: GetPrice(1..3) carries Energy 1000 / 2000 / 4000. The rules doc (§3)
+  // reads it as Energy produced, checked not spent, as for Graviton Lance.
   it('needs 1000 Energy at level 1, doubling per level', () => {
     const terraformer = structureDef('terraformer')!;
     expect([1, 2, 3].map((l) => energyRequiredAt(terraformer, l))).toEqual([1000, 2000, 4000]);
@@ -177,6 +187,7 @@ describe('Terraformer Energy requirement', () => {
 });
 
 describe('technologyEnergyRequired', () => {
+  // [AG] gravitonTechnology_test: available with 300,000 Energy, not with 299,999.
   it('is 300,000 for Graviton Lance 1, tripling per level, and 0 elsewhere', () => {
     const graviton = technologyDef('graviton-lance')!;
     expect(technologyEnergyRequired(graviton, 1)).toBe(300_000);
