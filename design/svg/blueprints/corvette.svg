@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M25 41 H63 L88 31 H180 L256 55 L180 79 H88 L63 69 H25 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M63 41 V69 M88 31 V79 M180 31 L190 55 L180 79 M128 43 H189 M128 67 H189" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M132 49 H176 L182 55 L176 61 H132 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M106 43 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M106 67 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M114 43 H124 M114 67 H124" stroke="#b7c6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M13 43 h12 v8 H13 z M13 59 h12 v8 H13 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M25 100 H256 M25 97 V103 M256 97 V103" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="140" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">62 M</text>
+  <path d="M182 55 L214 18 H240" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="216" y="15" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">GUN DECK</text>
+</svg>

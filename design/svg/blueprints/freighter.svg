@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M25 21 H180 L214 34 L256 55 L214 76 L180 89 H25 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M25 55 H214 M67 21 V89 M126 21 V89 M180 21 V89 M214 34 V76" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M218 48 H238 L246 55 L238 62 H218 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M76 28 h42 v20 h-42 z M76 62 h42 v20 h-42 z M135 28 h38 v20 h-38 z M135 62 h38 v20 h-38 z" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M13 29 h12 v14 H13 z M13 67 h12 v14 H13 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M25 100 H256 M25 97 V103 M256 97 V103" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="140" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">168 M</text>
+  <path d="M154 28 L176 8 H206" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="178" y="6" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">HOLD</text>
+</svg>

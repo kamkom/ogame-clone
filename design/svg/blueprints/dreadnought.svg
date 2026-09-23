@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M17 31 L50 14 H206 L264 41 V69 L206 96 H50 L17 79 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M50 14 V96 M96 14 V96 M206 14 L216 41 V69 L206 96 M138 31 H200 M138 79 H200 M60 48 H86 M60 62 H86" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150 49 H226 L234 55 L226 61 H150 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M114 40 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M164 40 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M114 70 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M164 70 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M126 40 H142 M176 40 H192 M126 70 H142 M176 70 H192" stroke="#b7c6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M5 29 h12 v12 H5 z M5 49 h12 v12 H5 z M5 69 h12 v12 H5 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M17 105 H264 M17 102 V108 M264 102 V108" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="140" y="103" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">412 M</text>
+  <path d="M214 55 L232 9 H262" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="234" y="6" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">MAIN GUN</text>
+</svg>

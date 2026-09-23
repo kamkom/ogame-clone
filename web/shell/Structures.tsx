@@ -26,6 +26,7 @@ import {
   reasonListStyle,
   XIcon,
 } from './stateControls.tsx';
+import { ArtIcon, StructureIllustration } from './art.tsx';
 
 interface StructuresProps {
   planet: PlanetSnapshot;
@@ -183,59 +184,68 @@ function StructureCard({
       onKeyDown={onKeyDown}
       style={{ ...cardStyle, border }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ArtWell art={def.art} />
-        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 600 }}>{def.name}</span>
-          <span style={cardCategoryStyle}>{def.category}</span>
+      <StructureIllustration art={def.art} />
+      <div style={cardShadeStyle} />
+      <div style={cardFootShadeStyle} />
+      <div style={cardBodyStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <IconWell art={def.art} />
+          <div
+            style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}
+          >
+            <span style={{ fontSize: 16, fontWeight: 600 }}>{def.name}</span>
+            <span style={cardCategoryStyle}>{def.category}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            {state === 'locked' ? (
+              <Chip>LOCKED</Chip>
+            ) : (
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 28,
+                  lineHeight: 1,
+                  color: slot ? 'var(--accent)' : 'var(--text)',
+                }}
+              >
+                {level}
+              </span>
+            )}
+            <span style={cardLevelLabelStyle}>{level === 0 ? 'NOT BUILT' : 'LEVEL'}</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          {state === 'locked' ? (
-            <Chip>LOCKED</Chip>
-          ) : (
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 28,
-                lineHeight: 1,
-                color: slot ? 'var(--accent)' : 'var(--text)',
-              }}
-            >
-              {level}
-            </span>
-          )}
-          <span style={cardLevelLabelStyle}>{level === 0 ? 'NOT BUILT' : 'LEVEL'}</span>
-        </div>
+        <div style={{ flexGrow: 1 }} />
+        {slot ? (
+          <div
+            style={{ ...cardFooterStyle, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: 'var(--accent)', flexGrow: 1 }}>
+                Building level {slot.targetLevel}
+              </span>
+              <span>{formatCountdown(slot.endsAt - now)}</span>
+              <CancelX label={def.name} onClick={() => onCancel(slot.slot)} />
+            </div>
+            <RefundLine cost={slot.cost} />
+          </div>
+        ) : (
+          <div style={cardFooterStyle}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+              <CostFigures checks={view.checks} />
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {formatDuration(view.durationSec)}
+              </span>
+            </div>
+            <CardAction
+              view={view}
+              now={now}
+              nextFreeAt={nextFreeAt}
+              pending={pending}
+              onUpgrade={onUpgrade}
+            />
+          </div>
+        )}
       </div>
-      <div style={{ flexGrow: 1 }} />
-      {slot ? (
-        <div style={{ ...cardFooterStyle, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: 'var(--accent)', flexGrow: 1 }}>
-              Building level {slot.targetLevel}
-            </span>
-            <span>{formatCountdown(slot.endsAt - now)}</span>
-            <CancelX label={def.name} onClick={() => onCancel(slot.slot)} />
-          </div>
-          <RefundLine cost={slot.cost} />
-        </div>
-      ) : (
-        <div style={cardFooterStyle}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <CostFigures checks={view.checks} />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {formatDuration(view.durationSec)}
-            </span>
-          </div>
-          <CardAction
-            view={view}
-            now={now}
-            nextFreeAt={nextFreeAt}
-            pending={pending}
-            onUpgrade={onUpgrade}
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -326,7 +336,11 @@ function DetailPanel({
   return (
     <aside style={panelStyle}>
       <div style={panelArtStyle}>
-        <ArtWell art={def.art} large />
+        <StructureIllustration art={def.art} skyWidth={1.6} />
+        <div style={panelArtShadeStyle} />
+        <div style={panelIconBadgeStyle}>
+          <ArtIcon art={def.art} size={24} />
+        </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={panelKickerStyle}>
@@ -570,24 +584,11 @@ function ResourceDot({ resource }: { resource: CostCheck['resource'] }) {
   );
 }
 
-/** A neutral art well; the per-Structure scene art lands in the art ticket. */
-function ArtWell({ art, large }: { art: string | null; large?: boolean }) {
-  const size = large ? 56 : 52;
+/** The card's icon well: the Structure's own icon over the scene. */
+function IconWell({ art }: { art: string }) {
   return (
-    <div style={{ ...artWellStyle, width: size, height: size }} aria-hidden="true">
-      <svg
-        width={size * 0.5}
-        height={size * 0.5}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--text-icon)"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M3 21h18 M5.5 21v-9l3.5-3.5h6l3.5 3.5v9 M10 21v-5h4v5 M12 8.5V3" />
-        {art === null && <path d="M10.8 2h2.4v2.4h-2.4z" fill="var(--text-icon)" stroke="none" />}
-      </svg>
+    <div style={iconWellStyle} aria-hidden="true">
+      <ArtIcon art={art} size={28} />
     </div>
   );
 }
@@ -659,17 +660,42 @@ const gridStyle = {
 };
 
 const cardStyle = {
+  position: 'relative' as const,
+  overflow: 'hidden',
   boxSizing: 'border-box' as const,
   height: 176,
   textAlign: 'left' as const,
-  padding: 16,
   borderRadius: 12,
   background: 'var(--panel)',
   color: 'var(--text)',
+  cursor: 'pointer',
+};
+
+// The design's two shades keep the text readable over the scene: left to right, then the foot.
+const cardShadeStyle = {
+  position: 'absolute' as const,
+  inset: 0,
+  background:
+    'linear-gradient(90deg, rgba(11,17,25,0.94) 0%, rgba(11,17,25,0.62) 42%, rgba(11,17,25,0.04) 100%)',
+};
+
+const cardFootShadeStyle = {
+  position: 'absolute' as const,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  height: 96,
+  background: 'linear-gradient(0deg, rgba(11,17,25,0.97) 20%, rgba(11,17,25,0))',
+};
+
+const cardBodyStyle = {
+  position: 'relative' as const,
+  boxSizing: 'border-box' as const,
+  height: '100%',
+  padding: 16,
   display: 'flex',
   flexDirection: 'column' as const,
   gap: 12,
-  cursor: 'pointer',
 };
 
 const cardCategoryStyle = {
@@ -696,10 +722,12 @@ const cardFooterStyle = {
   fontSize: 13,
 };
 
-const artWellStyle = {
+const iconWellStyle = {
   flexShrink: 0,
+  width: 52,
+  height: 52,
   borderRadius: 10,
-  background: 'var(--panel-art)',
+  background: 'var(--icon-well)',
   border: '1px solid var(--line-icon)',
   display: 'flex',
   alignItems: 'center',
@@ -724,11 +752,32 @@ const panelStyle = {
 
 const panelArtStyle = {
   position: 'relative' as const,
+  overflow: 'hidden',
   height: 150,
   flexShrink: 0,
   borderRadius: 10,
   border: '1px solid var(--line-icon)',
-  background: 'var(--panel-art)',
+  background: 'var(--panel)',
+};
+
+const panelArtShadeStyle = {
+  position: 'absolute' as const,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  height: 50,
+  background: 'linear-gradient(0deg, rgba(11,17,25,0.85), rgba(11,17,25,0))',
+};
+
+const panelIconBadgeStyle = {
+  position: 'absolute' as const,
+  left: 12,
+  top: 12,
+  width: 40,
+  height: 40,
+  borderRadius: 9,
+  background: 'rgba(11,17,25,0.85)',
+  border: '1px solid var(--line-icon)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

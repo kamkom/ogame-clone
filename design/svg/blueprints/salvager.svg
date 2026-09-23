@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="220" viewBox="0 0 280 110" fill="none">
+  <path d="M33 38 H164 L197 48 V62 L164 72 H33 Z" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M80 38 V72 M164 38 V72 M92 44 H100 M92 66 H100" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M104 50 H148 L152 55 L148 60 H104 Z" fill="#5fe3c0" fill-opacity="0.1" stroke="#5fe3c0" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M228 28 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M228 83 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M194 55 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="M199 53 L229 30 M233 29 L256 34 M199 57 L229 81 M233 82 L256 76" stroke="#b7c6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M21 46 h12 v18 H21 z" fill="#5fe3c0" fill-opacity="0.85"/>
+  <path d="M33 100 H197 M33 97 V103 M197 97 V103" stroke="#4d5f74" stroke-width="0.6"/>
+  <text x="115" y="98" text-anchor="middle" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">140 M</text>
+  <path d="M231 25 L240 12 H270" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="242" y="9" fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">GRAPPLE</text>
+</svg>

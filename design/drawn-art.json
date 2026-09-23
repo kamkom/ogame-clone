@@ -1,0 +1,154 @@
+{
+  "_note": "Art the bundle doesn't draw (#16, #31), in the design's path-data style. extract.mjs merges it into data/*.json and svg/ next to the originals. The Cruiser blueprint is transcribed from the bundle's inline SVG so every blueprint shares one shape.",
+  "icons": {
+    "depot": {
+      "stroke": "M3 21h18 M5 21V9.5a3 2 0 0 1 6 0V21 M13 21V9.5a3 2 0 0 1 6 0V21 M5 13.5h6 M13 13.5h6",
+      "fill": "M7 16h2v2.5H7z"
+    },
+    "vault": {
+      "stroke": "M3 21h18 M4.5 21V8.5L8 5h8l3.5 3.5V21 M8 21v-9h8v9 M4.5 8.5h15",
+      "fill": "M12 13.5l1.6 2.2-1.6 2.8-1.6-2.8z"
+    },
+    "tank": {
+      "stroke": "M3 21h18 M6.5 8.5h11a3 4.5 0 0 1 0 9h-11a3 4.5 0 0 1 0-9z M7 17.5V21 M17 17.5V21 M12 8.5V5 M10 5h4",
+      "fill": "M9.5 12.2h5v1.6h-5z"
+    },
+    "terraformer": {
+      "stroke": "M20 12a8 8 0 1 1-16 0a8 8 0 1 1 16 0z M4.3 14.5h4.2l2-3h3l2 3h4.2",
+      "fill": "M11 6.5h2v2h-2z"
+    },
+    "satellite": {
+      "stroke": "M2.5 9l5.5-.8v7.6l-5.5-.8z M21.5 9l-5.5-.8v7.6l5.5.8z M10 10.5l2-1.3 2 1.3v3l-2 1.3-2-1.3z M8 12h2 M14 12h2 M12 9.2V6",
+      "fill": "M11 3.5h2v2h-2z"
+    }
+  },
+  "ships": {
+    "Solar Satellite": {
+      "hull": "M3 10 L20 8 V24 L3 22 Z M61 10 L44 8 V24 L61 22 Z M27 11 L32 8 L37 11 V21 L32 24 L27 21 Z",
+      "detail": "M20 16 H27 M37 16 H44 M9 9.3 V22.7 M14.5 8.6 V23.4 M49.5 8.6 V23.4 M55 9.3 V22.7 M3 16 H20 M44 16 H61 M32 8 V4",
+      "glow": "M30.5 14.5h3v3h-3z"
+    }
+  },
+  "structureArt": {
+    "depot": {
+      "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M0 104 Q150 76 300 106",
+      "far": "M0 170 L40 160 L90 166 L140 150 L190 162 L240 154 L300 164 V224 H0 Z",
+      "main": "M0 184 H300 V224 H0 Z M166 184 V96 a18 8 0 0 1 36 0 V184 Z M212 184 V80 a18 8 0 0 1 36 0 V184 Z M258 184 V104 a18 8 0 0 1 36 0 V184 Z M112 184 V162 H150 L158 170 V184 Z",
+      "det": "M166 120 H202 M166 150 H202 M212 110 H248 M212 144 H248 M258 128 H294 M258 158 H294 M184 88 V66 H276 V96 M207 184 V118 M253 184 V118 M50 200 a16 4 0 1 0 32 0 a16 4 0 1 0 -32 0 M150 162 V184",
+      "glow": "M182 164 h4 v12 h-4 Z M228 156 h4 v20 h-4 Z M274 168 h4 v8 h-4 Z M228 60 h4 v4 h-4 Z M122 170 h6 v3 h-6 Z M134 170 h6 v3 h-6 Z"
+    },
+    "vault": {
+      "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M236 44 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 M226 50 q24 -14 48 -10",
+      "far": "M0 168 L50 158 L96 166 L150 150 L206 164 L256 152 L300 160 V224 H0 Z",
+      "main": "M0 182 H300 V224 H0 Z M150 182 V128 L176 106 H260 L286 128 V182 Z M114 182 L122 152 L130 136 L138 154 L142 182 Z",
+      "det": "M150 128 H286 M176 106 V128 M260 106 V128 M196 182 V142 H240 V182 M218 142 V182 M204 160 H212 M224 160 H232 M130 136 L129 182 M160 140 V172 M276 140 V172",
+      "glow": "M218 110 l6 7 -6 8 -6 -8 Z M198 146 h40 v2 h-40 Z M128 158 l2 4 -2 4 -2 -4 Z M158 176 h4 v3 h-4 Z M274 176 h4 v3 h-4 Z"
+    },
+    "tank": {
+      "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M204 28 L250 52 M212 22 L254 44",
+      "far": "M0 172 L70 164 L130 170 L200 160 L300 168 V224 H0 Z",
+      "main": "M0 186 H300 V224 H0 Z M160 126 a32 32 0 1 0 64 0 a32 32 0 1 0 -64 0 Z M236 142 a24 24 0 1 0 48 0 a24 24 0 1 0 -48 0 Z M108 186 V164 H144 V186 Z",
+      "det": "M170 149 L166 186 M214 149 L218 186 M192 158 V186 M244 159 L240 186 M276 159 L280 186 M160 126 H224 M236 142 H284 M144 176 H164 M220 176 H240 M192 94 V82 M260 118 V106 M8 204 q10 -4 20 0 t20 0 t20 0 M126 164 V150 H138",
+      "glow": "M190 78 h4 v4 h-4 Z M258 102 h4 v4 h-4 Z M186 134 h12 v3 h-12 Z M254 150 h12 v3 h-12 Z M118 172 h6 v4 h-6 Z M250 50 h4 v4 h-4 Z"
+    },
+    "terraformer": {
+      "sky": "M18 24h0.5 M46 52h0.5 M84 14h0.5 M122 36h0.5 M160 20h0.5 M196 44h0.5 M232 16h0.5 M268 34h0.5 M290 58h0.5 M140 62h0.5 M70 78h0.5 M252 70h0.5 M0 112 Q150 84 300 114",
+      "far": "M0 170 H30 V160 H70 V150 H110 V162 H150 V170 H300 V224 H0 Z",
+      "main": "M0 188 H300 V224 H0 Z M204 188 L214 110 H250 L260 188 Z M196 110 L206 92 H258 L268 110 Z M168 110 H196 V118 H168 Z M112 188 V178 H132 V168 H164 V178 H184 V188 Z",
+      "det": "M214 140 H250 M210 166 H254 M232 92 V70 M222 70 H242 M206 92 L214 110 M258 92 L250 110 M178 118 V166 M132 178 H164 M226 188 V172 H238 V188",
+      "glow": "M177 122 h2 v44 h-2 Z M230 64 h4 v4 h-4 Z M226 100 h12 v3 h-12 Z M146 164 h6 v3 h-6 Z"
+    }
+  },
+  "blueprints": {
+    "Interceptor": {
+      "hull": "M38 55 L96 43 L172 46 L248 55 L172 64 L96 67 Z M96 43 L75 14 H109 L143 45 Z M96 67 L75 96 H109 L143 65 Z",
+      "detail": "M96 43 V67 M122 55 H164 M189 55 H198 M88 32 H128 M88 78 H128",
+      "module": "M200 51 H224 L232 55 L224 59 H200 Z",
+      "fixtures": "",
+      "barrels": "M109 14 H135 M109 96 H135",
+      "glow": "M24 50 h14 v10 H24 z",
+      "dimension": { "path": "M38 104 H248 M38 101 V107 M248 101 V107", "x": 143, "y": 102, "label": "38 M" },
+      "callout": { "path": "M216 51 L236 22 H262", "x": 238, "y": 19, "label": "COCKPIT" }
+    },
+    "Corvette": {
+      "hull": "M25 41 H63 L88 31 H180 L256 55 L180 79 H88 L63 69 H25 Z",
+      "detail": "M63 41 V69 M88 31 V79 M180 31 L190 55 L180 79 M128 43 H189 M128 67 H189",
+      "module": "M132 49 H176 L182 55 L176 61 H132 Z",
+      "fixtures": "M106 43 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M106 67 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0",
+      "barrels": "M114 43 H124 M114 67 H124",
+      "glow": "M13 43 h12 v8 H13 z M13 59 h12 v8 H13 z",
+      "dimension": { "path": "M25 100 H256 M25 97 V103 M256 97 V103", "x": 140, "y": 98, "label": "62 M" },
+      "callout": { "path": "M182 55 L214 18 H240", "x": 216, "y": 15, "label": "GUN DECK" }
+    },
+    "Cruiser": {
+      "hull": "M14 38 L52 24 H198 L268 55 L198 86 H52 L14 72 Z",
+      "detail": "M52 24 V86 M198 24 L208 55 L198 86 M62 36 H186 M62 74 H186 M24 50 H44 M24 60 H44",
+      "module": "M148 47 H180 L188 55 L180 63 H148 Z",
+      "fixtures": "M86 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 36 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M86 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M116 74 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0",
+      "barrels": "M91 36 H103 M121 36 H133 M91 74 H103 M121 74 H133",
+      "glow": "M4 32 h10 v12 H4 z M4 66 h10 v12 H4 z",
+      "dimension": { "path": "M52 100 H198 M52 97 V103 M198 97 V103", "x": 125, "y": 98, "label": "184 M" },
+      "callout": { "path": "M208 55 L236 14 H262", "x": 238, "y": 11, "label": "BRIDGE" }
+    },
+    "Dreadnought": {
+      "hull": "M17 31 L50 14 H206 L264 41 V69 L206 96 H50 L17 79 Z",
+      "detail": "M50 14 V96 M96 14 V96 M206 14 L216 41 V69 L206 96 M138 31 H200 M138 79 H200 M60 48 H86 M60 62 H86",
+      "module": "M150 49 H226 L234 55 L226 61 H150 Z",
+      "fixtures": "M114 40 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M164 40 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M114 70 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 M164 70 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0",
+      "barrels": "M126 40 H142 M176 40 H192 M126 70 H142 M176 70 H192",
+      "glow": "M5 29 h12 v12 H5 z M5 49 h12 v12 H5 z M5 69 h12 v12 H5 z",
+      "dimension": { "path": "M17 105 H264 M17 102 V108 M264 102 V108", "x": 140, "y": 103, "label": "412 M" },
+      "callout": { "path": "M214 55 L232 9 H262", "x": 234, "y": 6, "label": "MAIN GUN" }
+    },
+    "Hauler": {
+      "hull": "M33 31 H189 L239 41 V69 L189 79 H33 Z",
+      "detail": "M75 31 V79 M117 31 V79 M159 31 V79 M189 31 V79",
+      "module": "M199 47 H222 L228 55 L222 63 H199 Z",
+      "fixtures": "M42 40 h24 v30 h-24 z M84 40 h24 v30 h-24 z M126 40 h24 v30 h-24 z",
+      "barrels": "",
+      "glow": "M22 43 h11 v24 H22 z",
+      "dimension": { "path": "M33 100 H239 M33 97 V103 M239 97 V103", "x": 136, "y": 98, "label": "96 M" },
+      "callout": { "path": "M138 40 L160 14 H198", "x": 162, "y": 11, "label": "CARGO PODS" }
+    },
+    "Freighter": {
+      "hull": "M25 21 H180 L214 34 L256 55 L214 76 L180 89 H25 Z",
+      "detail": "M25 55 H214 M67 21 V89 M126 21 V89 M180 21 V89 M214 34 V76",
+      "module": "M218 48 H238 L246 55 L238 62 H218 Z",
+      "fixtures": "M76 28 h42 v20 h-42 z M76 62 h42 v20 h-42 z M135 28 h38 v20 h-38 z M135 62 h38 v20 h-38 z",
+      "barrels": "",
+      "glow": "M13 29 h12 v14 H13 z M13 67 h12 v14 H13 z",
+      "dimension": { "path": "M25 100 H256 M25 97 V103 M256 97 V103", "x": 140, "y": 98, "label": "168 M" },
+      "callout": { "path": "M154 28 L176 8 H206", "x": 178, "y": 6, "label": "HOLD" }
+    },
+    "Scout Drone": {
+      "hull": "M96 55 A42 21 0 1 0 180 55 A42 21 0 1 0 96 55 Z",
+      "detail": "M110 55 A28 13 0 1 0 166 55 A28 13 0 1 0 110 55 M122 55 H154 M180 55 H232 M138 34 V17 M138 76 V93",
+      "module": "M232 49 H244 L250 55 L244 61 H232 Z",
+      "fixtures": "M135 14 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M135 96 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0",
+      "barrels": "",
+      "glow": "M82 51 h14 v8 H82 z",
+      "dimension": { "path": "M96 106 H250 M96 103 V109 M250 103 V109", "x": 173, "y": 104, "label": "12 M" },
+      "callout": { "path": "M244 49 L252 24 H276", "x": 252, "y": 21, "label": "SENSOR" }
+    },
+    "Salvager": {
+      "hull": "M33 38 H164 L197 48 V62 L164 72 H33 Z",
+      "detail": "M80 38 V72 M164 38 V72 M92 44 H100 M92 66 H100",
+      "module": "M104 50 H148 L152 55 L148 60 H104 Z",
+      "fixtures": "M228 28 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M228 83 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M194 55 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0",
+      "barrels": "M199 53 L229 30 M233 29 L256 34 M199 57 L229 81 M233 82 L256 76",
+      "glow": "M21 46 h12 v18 H21 z",
+      "dimension": { "path": "M33 100 H197 M33 97 V103 M197 97 V103", "x": 115, "y": 98, "label": "140 M" },
+      "callout": { "path": "M231 25 L240 12 H270", "x": 242, "y": 9, "label": "GRAPPLE" }
+    },
+    "Solar Satellite": {
+      "hull": "M17 34 L88 28 V83 L17 76 Z M260 34 L189 28 V83 L260 76 Z M117 38 L138 28 L159 38 V72 L138 83 L117 72 Z",
+      "detail": "M42 32 V78.5 M65 30 V81 M212 30 V81 M235 32 V78.5 M17 55 H88 M189 55 H260 M17 44 H88 M17 66 H88 M189 44 H260 M189 66 H260",
+      "module": "M128 44 L138 39 L148 44 V66 L138 71 L128 66 Z",
+      "fixtures": "M138 28 V14 M131 14 a7 3 0 0 0 14 0",
+      "barrels": "M88 55 H117 M159 55 H189",
+      "glow": "M136 5 h4 v4 h-4 z",
+      "dimension": { "path": "M17 100 H260 M17 97 V103 M260 97 V103", "x": 138, "y": 98, "label": "22 M" },
+      "callout": { "path": "M235 44 L250 16 H276", "x": 252, "y": 13, "label": "PANEL" }
+    }
+  }
+}

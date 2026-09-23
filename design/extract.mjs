@@ -129,9 +129,18 @@ for (const [uuid, name] of Object.entries(PAGES)) {
 }
 write('fonts/fonts.css', fontCss.trim() + '\n');
 
+// ── The art the bundle doesn't draw (drawn-art.json), merged in next to the originals ──
+const drawn = JSON.parse(readFileSync(join(OUT, 'drawn-art.json'), 'utf8'));
+for (const [k, { stroke, fill }] of Object.entries(drawn.icons)) icons[k] = [stroke, fill];
+for (const [k, { hull, detail, glow }] of Object.entries(drawn.ships)) ships[k] = [hull, detail, glow];
+Object.assign(structureArt, drawn.structureArt);
+const blueprints = drawn.blueprints;
+
 // ── Pass 2: SVG art as files + JSON for the port ──
 const svg = (vb, w, h, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${vb}" fill="none">\n${body}\n</svg>\n`;
+
+const fileName = (k) => k.toLowerCase().replace(/ /g, '-');
 
 for (const [k, [stroke, fill]] of Object.entries(icons)) {
   write(`svg/icons/${k}.svg`, svg('0 0 24 24', 24, 24,
@@ -139,7 +148,7 @@ for (const [k, [stroke, fill]] of Object.entries(icons)) {
     `  <path d="${fill}" fill="${ACCENT}"/>`));
 }
 for (const [k, [hull, det, glow]] of Object.entries(ships)) {
-  write(`svg/ships/${k.toLowerCase().replace(/ /g, '-')}.svg`, svg('0 0 64 32', 64, 32,
+  write(`svg/ships/${fileName(k)}.svg`, svg('0 0 64 32', 64, 32,
     `  <path d="${hull}" fill="rgba(159,177,197,0.12)" stroke="#a9bacd" stroke-width="1.3" stroke-linejoin="round"/>\n` +
     `  <path d="${det}" stroke="#5d6f84" stroke-width="1"/>\n` +
     `  <path d="${glow}" fill="${ACCENT}"/>`));
@@ -154,6 +163,22 @@ for (const [k, a] of Object.entries(structureArt)) {
     `  <path d="${a.det}" stroke="#40546b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>\n` +
     `  <path d="${a.glow}" fill="${ACCENT}" filter="url(#bglow)" opacity="0.8"/>\n` +
     `  <path d="${a.glow}" fill="${ACCENT}"/>`));
+}
+for (const [k, b] of Object.entries(blueprints)) {
+  const text = (t, anchor) =>
+    `  <text x="${t.x}" y="${t.y}"${anchor}fill="#6f8196" font-family="Chakra Petch, sans-serif" font-size="6">${t.label}</text>`;
+  write(`svg/blueprints/${fileName(k)}.svg`, svg('0 0 280 110', 560, 220, [
+    `  <path d="${b.hull}" fill="rgba(159,177,197,0.08)" stroke="#b7c6d6" stroke-width="1" stroke-linejoin="round"/>`,
+    `  <path d="${b.detail}" stroke="#4d5f74" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>`,
+    `  <path d="${b.module}" fill="${ACCENT}" fill-opacity="0.1" stroke="${ACCENT}" stroke-width="0.8" stroke-linejoin="round"/>`,
+    b.fixtures && `  <path d="${b.fixtures}" stroke="#b7c6d6" stroke-width="0.8" stroke-linecap="round"/>`,
+    b.barrels && `  <path d="${b.barrels}" stroke="#b7c6d6" stroke-width="1.4" stroke-linecap="round"/>`,
+    `  <path d="${b.glow}" fill="${ACCENT}" fill-opacity="0.85"/>`,
+    `  <path d="${b.dimension.path}" stroke="#4d5f74" stroke-width="0.6"/>`,
+    text(b.dimension, ' text-anchor="middle" '),
+    `  <path d="${b.callout.path}" stroke="#4d5f74" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+    text(b.callout, ' '),
+  ].filter(Boolean).join('\n')));
 }
 // One-off art that lives inline in the templates.
 const cd = readFileSync(join(OUT, 'screens/command-deck.html'), 'utf8');
@@ -170,6 +195,7 @@ write('svg/logo.svg', svg('0 0 40 40', 40, 40,
 write('data/icons.json', JSON.stringify(Object.fromEntries(Object.entries(icons).map(([k, [stroke, fill]]) => [k, { stroke, fill }])), null, 2) + '\n');
 write('data/ships.json', JSON.stringify(Object.fromEntries(Object.entries(ships).map(([k, [hull, detail, glow]]) => [k, { hull, detail, glow }])), null, 2) + '\n');
 write('data/structure-art.json', JSON.stringify(structureArt, null, 2) + '\n');
+write('data/blueprints.json', JSON.stringify(blueprints, null, 2) + '\n');
 write('data/mock-values.json', JSON.stringify(pageVals, (k, v) => (k === 'stars' ? `[${v.length} generated stars]` : v), 2) + '\n');
 
-console.log(`fonts ${Object.keys(fontFiles).length / 4} · icons ${Object.keys(icons).length} · ships ${Object.keys(ships).length} · structure art ${Object.keys(structureArt).length}`);
+console.log(`fonts ${Object.keys(fontFiles).length / 4} · icons ${Object.keys(icons).length} · ships ${Object.keys(ships).length} · structure art ${Object.keys(structureArt).length} · blueprints ${Object.keys(blueprints).length}`);
