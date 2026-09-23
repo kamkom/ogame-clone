@@ -43,11 +43,6 @@ export function ShipSilhouette({
 /** The detail panel's blueprint, in the layers of the design's Cruiser drawing. */
 export function ShipBlueprint({ def }: { def: ShipDef }) {
   const b = blueprintFor(def.art);
-  const labelStyle = {
-    fill: 'var(--text-muted)',
-    fontFamily: 'Chakra Petch, sans-serif',
-    fontSize: 6,
-  };
   return (
     <svg
       width="560"
@@ -76,13 +71,19 @@ export function ShipBlueprint({ def }: { def: ShipDef }) {
       {b.barrels && <path d={b.barrels} stroke="var(--art-blueprint)" strokeWidth={1.4} />}
       <path d={b.glow} fill="var(--accent)" fillOpacity={0.85} />
       <path d={b.dimension.path} stroke="var(--art-blueprint-detail)" strokeWidth={0.6} />
-      <text x={b.dimension.x} y={b.dimension.y} textAnchor="middle" style={labelStyle}>
+      <text x={b.dimension.x} y={b.dimension.y} textAnchor="middle" style={blueprintLabelStyle}>
         {b.dimension.label}
       </text>
       <path d={b.callout.path} stroke="var(--art-blueprint-detail)" strokeWidth={0.6} />
-      <text x={b.callout.x} y={b.callout.y} style={labelStyle}>
+      <text x={b.callout.x} y={b.callout.y} style={blueprintLabelStyle}>
         {b.callout.label}
       </text>
     </svg>
   );
 }
+
+const blueprintLabelStyle = {
+  fill: 'var(--text-muted)',
+  fontFamily: 'Chakra Petch, sans-serif',
+  fontSize: 6,
+};
