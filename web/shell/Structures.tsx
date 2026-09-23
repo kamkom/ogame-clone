@@ -16,6 +16,7 @@ import {
   structureViews,
   type StructureView,
 } from '../lib/structures.ts';
+import type { StructureEffect } from '../lib/structureEffect.ts';
 import { useServerNow } from '../lib/useServerNow.ts';
 import {
   CancelX,
@@ -214,7 +215,7 @@ function StructureCard({
             <span style={cardLevelLabelStyle}>{level === 0 ? 'NOT BUILT' : 'LEVEL'}</span>
           </div>
         </div>
-        <div style={{ flexGrow: 1 }} />
+        <EffectLine effect={view.effects[0]} />
         {slot ? (
           <div
             style={{ ...cardFooterStyle, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}
@@ -246,6 +247,20 @@ function StructureCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** The card's effect line, as in the design: "Alloy/h +42.1k → +46.9k". */
+function EffectLine({ effect }: { effect: StructureEffect | undefined }) {
+  return (
+    <div style={cardEffectStyle}>
+      {effect && (
+        <>
+          {effect.label} {effect.current}{' '}
+          <span style={{ color: 'var(--accent)' }}>→ {effect.next}</span>
+        </>
+      )}
     </div>
   );
 }
@@ -351,6 +366,9 @@ function DetailPanel({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {view.effects.map((e) => (
+          <StatRow key={e.label} label={e.label} value={`${e.current} → ${e.next}`} />
+        ))}
         <StatRow label="Build time" value={formatDuration(durationSec)} />
         <StatRow label="Fields" value="+1" />
       </div>
@@ -703,6 +721,13 @@ const cardFootShadeStyle = {
   bottom: 0,
   height: 96,
   background: 'linear-gradient(0deg, rgba(11,17,25,0.97) 20%, rgba(11,17,25,0))',
+};
+
+const cardEffectStyle = {
+  flexGrow: 1,
+  paddingTop: 10,
+  fontSize: 14,
+  color: 'var(--text-body)',
 };
 
 const cardBodyStyle = {

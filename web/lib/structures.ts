@@ -21,6 +21,7 @@ import { formatResource } from './format.ts';
 import type { LiveResources } from './liveResources.ts';
 import { labLockEndsAt } from './research.ts';
 import { ordersEndAt } from './shipyard.ts';
+import { type StructureEffect, structureEffects } from './structureEffect.ts';
 
 /**
  * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
@@ -46,6 +47,8 @@ export interface StructureView {
   targetLevel: number;
   cost: { alloy: number; crystal: number; deuterium: number };
   durationSec: number;
+  /** What the Structure does now and at `targetLevel`, headline first (story 38). */
+  effects: StructureEffect[];
   slot: BuildSlotView | null;
   requirements: RequirementStatus[];
   checks: CostCheck[];
@@ -124,6 +127,7 @@ function viewFor(
     targetLevel,
     cost,
     durationSec,
+    effects: structureEffects(def.key, planet, speed),
     slot,
     requirements,
     checks,
