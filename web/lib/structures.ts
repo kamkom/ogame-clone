@@ -7,11 +7,17 @@ import {
   STRUCTURES,
   type StructureDef,
 } from '#shared/catalog.ts';
-import { levelCost, secondsUntilAffordable, structureDurationSec } from '#shared/economy.ts';
+import {
+  energyRequiredAt,
+  levelCost,
+  secondsUntilAffordable,
+  structureDurationSec,
+} from '#shared/economy.ts';
 import { SHIPYARD_LOCK_STRUCTURES } from '#shared/shipyard.ts';
 import type { BuildSlotView, PlanetSnapshot } from './api.ts';
 import { type CostCheck, costChecks, shortLabel } from './affordability.ts';
 import { formatCountdown } from './duration.ts';
+import { formatResource } from './format.ts';
 import type { LiveResources } from './liveResources.ts';
 import { labLockEndsAt } from './research.ts';
 import { ordersEndAt } from './shipyard.ts';
@@ -20,7 +26,8 @@ import { ordersEndAt } from './shipyard.ts';
  * Why a Structure can or can't start an upgrade right now, in the order the UI explains it (#14
  * picks): already building, requirements not met (B), the Research Lab while Research runs (C),
  * the Orbital Shipyard and Nanite Foundry while Shipyard Orders exist (C),
- * both Build Slots busy (C), no free Field, can't afford (B+C), or ready.
+ * both Build Slots busy (C), no free Field, too little Energy produced (Terraformer), can't afford
+ * (B+C), or ready.
  */
 export type UpgradeState =
   | 'building'
@@ -29,6 +36,7 @@ export type UpgradeState =
   | 'shipyard_busy'
   | 'slots_full'
   | 'fields_full'
+  | 'energy'
   | 'short'
   | 'ready';
 
@@ -41,6 +49,9 @@ export interface StructureView {
   slot: BuildSlotView | null;
   requirements: RequirementStatus[];
   checks: CostCheck[];
+  /** Energy produced the next level needs, checked not spent (Terraformer); 0 for the rest. */
+  energyRequired: number;
+  energyMet: boolean;
   /** Seconds until the cost is covered at current production; null when it never will be. */
   affordableInSec: number | null;
   state: UpgradeState;
@@ -81,6 +92,8 @@ function viewFor(
     (k) => planet.structures[k] ?? planet.technologies[k] ?? 0,
   );
   const checks = costChecks(cost, live);
+  const energyRequired = energyRequiredAt(def, targetLevel);
+  const energyMet = planet.energy.produced >= energyRequired;
   const affordableInSec = secondsUntilAffordable(
     cost,
     live,
@@ -98,6 +111,7 @@ function viewFor(
     state = 'shipyard_busy';
   } else if (slotsFull) state = 'slots_full';
   else if (used + inProgress >= max) state = 'fields_full';
+  else if (!energyMet) state = 'energy';
   else if (checks.some((c) => !c.met)) state = 'short';
 
   let lockEndsAt: number | null = null;
@@ -113,6 +127,8 @@ function viewFor(
     slot,
     requirements,
     checks,
+    energyRequired,
+    energyMet,
     affordableInSec,
     state,
     lockEndsAt,
@@ -172,6 +188,8 @@ export function structureAction(
         : clock(nextFreeAt);
     case 'fields_full':
       return lock('NO FIELDS');
+    case 'energy':
+      return lock(`NEEDS ${formatResource(view.energyRequired)} ENERGY`);
     case 'short':
       return lock(shortLabel(view.checks));
   }

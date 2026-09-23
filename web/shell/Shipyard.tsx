@@ -81,7 +81,12 @@ export function Shipyard({
           <p style={blockingTextStyle}>
             Build an Orbital Shipyard on the Structures screen to start building ships.
           </p>
-          <button type="button" onClick={onGoToStructures} style={primaryButtonStyle(true)}>
+          <button
+            type="button"
+            className="accent-btn"
+            onClick={onGoToStructures}
+            style={primaryButtonStyle(true)}
+          >
             GO TO STRUCTURES
           </button>
         </div>
@@ -409,6 +414,7 @@ function OrderButton({
     return (
       <button
         type="button"
+        className="accent-btn"
         disabled={pending}
         onClick={onOrder}
         style={primaryButtonStyle(!pending)}

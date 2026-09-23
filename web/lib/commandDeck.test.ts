@@ -101,6 +101,30 @@ describe('slotProgress', () => {
 });
 
 describe('deckStructureRows', () => {
+  it('locks the Terraformer until 1000 Energy is produced', () => {
+    const ready = {
+      structures: { 'nanite-foundry': 1 },
+      technologies: { 'energy-theory': 12 },
+      resources: { alloy: 1e6, crystal: 1e6, deuterium: 1e6 },
+    };
+    const short = deckStructureRows(
+      snapshot({ ...ready, energy: { produced: 999, consumed: 0, productionFactor: 1 } }),
+      1,
+      0,
+    ).find((r) => r.def.key === 'terraformer')!;
+    expect(short.state).toBe('energy');
+    expect(short.energyRequired).toBe(1000);
+    expect(short.action).toEqual({ enabled: false, label: 'ENERGY', icon: 'lock' });
+    expect(short.reason).toBe('NEEDS 1,000 ENERGY · 999 PRODUCED');
+
+    const met = deckStructureRows(
+      snapshot({ ...ready, energy: { produced: 1000, consumed: 0, productionFactor: 1 } }),
+      1,
+      0,
+    ).find((r) => r.def.key === 'terraformer')!;
+    expect(met.action.enabled).toBe(true);
+  });
+
   it('lists all 13 Structures in design order with their levels', () => {
     const rows = deckStructureRows(snapshot({ structures: { 'solar-array': 4 } }), 1, 0);
     expect(rows.map((r) => r.def.key)).toEqual(STRUCTURES.map((d) => d.key));

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { validatePlanetName } from '#shared/planetName.ts';
 import type { PlanetSnapshot } from '../lib/api.ts';
 import { planetNameMessage, renameErrorMessage } from './planetName.ts';
@@ -7,6 +7,8 @@ interface PlanetPopoverProps {
   planet: PlanetSnapshot;
   onRename: (name: string) => Promise<PlanetSnapshot>;
   onClose: () => void;
+  /** The picker that toggles the popover; a mousedown on it is left to its own click. */
+  anchor: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -14,7 +16,7 @@ interface PlanetPopoverProps {
  * Planet's name, Coordinates, Fields and diameter, a RENAME PLANET field (Enter saves), and the
  * footer. Esc or a click outside closes it; an invalid name shows an inline error.
  */
-export function PlanetPopover({ planet, onRename, onClose }: PlanetPopoverProps) {
+export function PlanetPopover({ planet, onRename, onClose, anchor }: PlanetPopoverProps) {
   const [name, setName] = useState(planet.name);
   const [error, setError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
@@ -25,7 +27,9 @@ export function PlanetPopover({ planet, onRename, onClose }: PlanetPopoverProps)
       if (e.key === 'Escape') onClose();
     }
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      if (anchor.current?.contains(target)) return;
+      if (ref.current && !ref.current.contains(target)) onClose();
     }
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
@@ -33,7 +37,7 @@ export function PlanetPopover({ planet, onRename, onClose }: PlanetPopoverProps)
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onDown);
     };
-  }, [onClose]);
+  }, [onClose, anchor]);
 
   async function save(event: FormEvent) {
     event.preventDefault();

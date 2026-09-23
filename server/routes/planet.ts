@@ -7,7 +7,7 @@ import { passesCsrf, resolvePlayerId } from './guards.ts';
 
 export function registerPlanetRoutes(app: FastifyInstance): void {
   app.get('/api/planet', (request: FastifyRequest, reply: FastifyReply) => {
-    const playerId = resolvePlayerId(request);
+    const playerId = resolvePlayerId(request, reply);
     if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
 
     const now = app.clock.now();
@@ -19,7 +19,7 @@ export function registerPlanetRoutes(app: FastifyInstance): void {
 
   app.post('/api/planet/rename', (request: FastifyRequest, reply: FastifyReply) => {
     if (!passesCsrf(request, reply)) return;
-    const playerId = resolvePlayerId(request);
+    const playerId = resolvePlayerId(request, reply);
     if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
 
     const { name } = (request.body ?? {}) as { name?: unknown };

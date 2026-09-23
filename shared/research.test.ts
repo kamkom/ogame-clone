@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TECH_LANES, TECHNOLOGIES, technologyDef } from './catalog.ts';
+import { structureDef, TECH_LANES, TECHNOLOGIES, technologyDef } from './catalog.ts';
+import { energyRequiredAt } from './economy.ts';
 import {
   cancelCascade,
   requirementStatus,
@@ -163,6 +164,15 @@ describe('cancelCascade', () => {
       { id: 6, technology: 'photon-lasers', targetLevel: 1 },
     ];
     expect(cancelCascade(later, 5, done)).toEqual(new Set([5]));
+  });
+});
+
+describe('Terraformer Energy requirement', () => {
+  // Rules reference §3: Base Energy 1000, factor 2, a requirement on available Energy.
+  it('needs 1000 Energy at level 1, doubling per level', () => {
+    const terraformer = structureDef('terraformer')!;
+    expect([1, 2, 3].map((l) => energyRequiredAt(terraformer, l))).toEqual([1000, 2000, 4000]);
+    expect(energyRequiredAt(structureDef('alloy-extractor')!, 1)).toBe(0);
   });
 });
 

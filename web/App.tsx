@@ -3,12 +3,15 @@ import { Stage } from './stage/Stage.tsx';
 import { ApiError, api, type Session } from './lib/api.ts';
 import { AuthScreen } from './auth/AuthScreen.tsx';
 import { GameShell } from './shell/GameShell.tsx';
-
-const ME_KEY = ['me'] as const;
+import { Rail } from './shell/Rail.tsx';
+import { ServerBanner } from './shell/ErrorBanner.tsx';
+import { ME_KEY, PLANET_KEY, signOut } from './lib/queryClient.ts';
+import { retryPolicy } from './lib/queryErrors.ts';
 
 /**
  * Top-level flow: fetch the current session. A 401 (no or expired session) falls back to the
- * auth screen; otherwise the game shell renders. Everything lives on the scaled Stage.
+ * auth screen; otherwise the game shell renders. An unreachable server keeps the loading chrome
+ * up with the retry banner. Everything lives on the scaled Stage.
  */
 export function App() {
   const queryClient = useQueryClient();
@@ -17,12 +20,13 @@ export function App() {
   const me = useQuery<Session, ApiError>({
     queryKey: ME_KEY,
     queryFn: () => api.me(),
-    retry: false,
+    // A 4xx (401) answers at once; a network failure or 5xx retries until the server is back.
+    retry: retryPolicy(Infinity),
   });
 
   const logout = useMutation({
     mutationFn: () => api.logout(),
-    onSuccess: () => queryClient.resetQueries({ queryKey: ME_KEY }),
+    onSuccess: () => signOut(queryClient),
   });
 
   const rename = useMutation({
@@ -30,7 +34,7 @@ export function App() {
     onSuccess: (planet) => {
       // The shell renders from the ['planet'] query; keep the session copy in sync too.
       queryClient.setQueryData<Session>(ME_KEY, (prev) => (prev ? { ...prev, planet } : prev));
-      queryClient.setQueryData(['planet'], planet);
+      queryClient.setQueryData(PLANET_KEY, planet);
     },
   });
 
@@ -54,20 +58,27 @@ export function App() {
         />
       );
     }
-    // A 401 (and any other error) falls back to the auth screen so the Player is never stuck.
+    // A 401 (and any other client error) falls back to the auth screen so the Player is never
+    // stuck. Network failures and 5xx keep retrying instead, so they never land here.
     if (me.isError) {
       return <AuthScreen universeSpeed={universeSpeed} onAuthenticated={onAuthenticated} />;
     }
-    return <div style={loadingStyle}>Loading…</div>;
+    return (
+      <>
+        <Rail active={-1} onNavigate={() => {}} />
+        <div style={loadingStyle}>Loading…</div>
+        <ServerBanner failureCount={me.failureCount} failureReason={me.failureReason} />
+      </>
+    );
   }
 }
 
+// Where the screen content goes: right of the rail, below the top bar.
 const loadingStyle = {
   position: 'absolute' as const,
-  inset: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  left: 'calc(var(--rail-w) + 24px)',
+  top: 'calc(var(--topbar-h) + 24px)',
   color: 'var(--text-muted)',
   fontFamily: 'var(--font-body)',
+  fontSize: 14,
 };

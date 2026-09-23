@@ -9,6 +9,7 @@ import { Shipyard } from './Shipyard.tsx';
 import { Structures } from './Structures.tsx';
 import { TopBar } from './TopBar.tsx';
 import { WelcomeWindow } from './WelcomeWindow.tsx';
+import { ServerBanner } from './ErrorBanner.tsx';
 
 interface GameShellProps {
   session: Session;
@@ -82,11 +83,6 @@ export function GameShell({
     return () => clearTimeout(id);
   }, [planet, planetQuery]);
 
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    if (planetQuery.isSuccess) setDismissed(false);
-  }, [planetQuery.isSuccess, planet.serverNow]);
-
   // The welcome window trigger is the register response (firstLogin), not a persisted flag. Once
   // either button dismisses it, this stays false for the rest of the session.
   const [showWelcome, setShowWelcome] = useState(session.firstLogin ?? false);
@@ -143,7 +139,10 @@ export function GameShell({
           pendingKey={upgrade.isPending ? (upgrade.variables ?? null) : null}
         />
       )}
-      {planetQuery.isError && !dismissed && <ErrorBanner onDismiss={() => setDismissed(true)} />}
+      <ServerBanner
+        failureCount={planetQuery.failureCount}
+        failureReason={planetQuery.failureReason}
+      />
       {showWelcome && (
         <WelcomeWindow
           planet={planet}
@@ -155,41 +154,3 @@ export function GameShell({
     </>
   );
 }
-
-/** A dismissible red banner shown when a background refetch fails. */
-function ErrorBanner({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div role="alert" style={bannerStyle}>
-      <span>Couldn&rsquo;t reach the server — retrying</span>
-      <button type="button" onClick={onDismiss} style={dismissStyle} aria-label="Dismiss">
-        ×
-      </button>
-    </div>
-  );
-}
-
-const bannerStyle = {
-  position: 'absolute' as const,
-  left: '50%',
-  top: 12,
-  transform: 'translateX(-50%)',
-  zIndex: 10,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  padding: '8px 14px',
-  borderRadius: 8,
-  background: '#7f1d1d',
-  color: '#fee2e2',
-  border: '1px solid #b91c1c',
-  fontSize: 13,
-};
-
-const dismissStyle = {
-  background: 'none',
-  border: 'none',
-  color: 'inherit',
-  cursor: 'pointer',
-  fontSize: 18,
-  lineHeight: 1,
-};

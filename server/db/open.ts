@@ -2,17 +2,21 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { migrate } from './migrations.ts';
+import { sweepExpiredSessions } from '../auth/sessions.ts';
 
 export interface OpenOptions {
   /** Skip migrations (used only by low-level tests). Defaults to false. */
   migrations?: boolean;
+  /** When given, sessions expired at this time are swept after migrating (story 93). */
+  now?: number;
 }
 
 /**
  * Open (or create) the database at `path`:
  *  - create the parent data directory,
  *  - enable WAL, foreign keys, a busy timeout and NORMAL synchronous,
- *  - apply pending migrations.
+ *  - apply pending migrations,
+ *  - sweep expired sessions when `now` is given.
  *
  * `:memory:` databases skip the directory step. Returns the live DatabaseSync.
  */
@@ -29,6 +33,7 @@ export function open(path: string, options: OpenOptions = {}): DatabaseSync {
 
   if (options.migrations !== false) {
     migrate(db);
+    if (options.now !== undefined) sweepExpiredSessions(db, options.now);
   }
 
   return db;

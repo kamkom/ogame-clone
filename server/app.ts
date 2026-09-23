@@ -10,7 +10,6 @@ import type { Config } from './config.ts';
 import { open } from './db/open.ts';
 import type { Rng } from './coords.ts';
 import { LoginLimiter } from './auth/limiter.ts';
-import { sweepExpiredSessions } from './auth/sessions.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerPlanetRoutes } from './routes/planet.ts';
 import { registerResearchRoutes } from './routes/research.ts';
@@ -34,10 +33,8 @@ const WEB_DIST = fileURLToPath(new URL('../dist', import.meta.url));
  */
 export function buildApp(options: BuildAppOptions): FastifyInstance {
   const clock = options.clock ?? systemClock;
-  const db: DatabaseSync = open(options.dbPath);
-
-  // Sweep dead sessions once at startup so the table doesn't fill with expired rows (story 93).
-  sweepExpiredSessions(db, clock.now());
+  // Opening also sweeps dead sessions, so the table doesn't fill with expired rows (story 93).
+  const db: DatabaseSync = open(options.dbPath, { now: clock.now() });
 
   const app = Fastify({ logger: false });
 

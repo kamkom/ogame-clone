@@ -179,6 +179,36 @@ describe('auth routes', () => {
     expect(late.statusCode).toBe(200);
   });
 
+  it('re-sends the cookie so the browser keeps it 30 days after the last visit', async () => {
+    const reg = await json(app, 'POST', '/api/auth/register', {
+      username: 'Vega',
+      password: 'password1',
+    });
+    const cookie = sessionCookie(reg);
+
+    clock.set(1_000_000 + 10 * DAY);
+    const res = await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } });
+    expect(res.statusCode).toBe(200);
+    const slid = res.cookies.find((c) => c.name === 'session');
+    expect(slid?.value).toBe(cookie.slice('session='.length));
+    expect(slid?.maxAge).toBe(SESSION_TTL_MS / 1000);
+    expect(slid?.httpOnly).toBe(true);
+  });
+
+  it('expires a session left idle for 30 days', async () => {
+    const reg = await json(app, 'POST', '/api/auth/register', {
+      username: 'Vega',
+      password: 'password1',
+    });
+    const cookie = sessionCookie(reg);
+
+    clock.set(1_000_000 + SESSION_TTL_MS);
+    const me = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
+    expect(me.statusCode).toBe(401);
+    const planet = await app.inject({ method: 'GET', url: '/api/planet', headers: { cookie } });
+    expect(planet.statusCode).toBe(401);
+  });
+
   it('rejects a foreign Origin', async () => {
     const res = await app.inject({
       method: 'POST',

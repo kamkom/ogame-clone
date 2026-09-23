@@ -184,6 +184,22 @@ describe('POST /api/structures/:key/upgrade', () => {
     expect(res.json()).toEqual({ error: 'fields_full' });
   });
 
+  it('needs 1000 Energy produced for Terraformer 1, checked not spent (409 insufficient_energy)', async () => {
+    const cookie = await register();
+    setResources(1_000_000);
+    setLevel('nanite-foundry', 1);
+    setTechLevel('energy-theory', 12);
+    setLevel('solar-array', 13); // 897 Energy
+    const res = await upgrade(cookie, 'terraformer');
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'insufficient_energy' });
+
+    setLevel('solar-array', 14); // 1063 Energy
+    const ok = await upgrade(cookie, 'terraformer');
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().energy.produced).toBe(1063);
+  });
+
   it('raises max Fields by the Terraformer bonus 5·L + floor(L/2)', async () => {
     const cookie = await register();
     expect((await planet(cookie)).fields.max).toBe(163);

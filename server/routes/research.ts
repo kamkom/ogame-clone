@@ -38,7 +38,7 @@ export function registerResearchRoutes(app: FastifyInstance): void {
     notFoundStatus: 404 | 409,
   ) {
     if (!passesCsrf(request, reply)) return;
-    const playerId = resolvePlayerId(request);
+    const playerId = resolvePlayerId(request, reply);
     if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
 
     const now = app.clock.now();

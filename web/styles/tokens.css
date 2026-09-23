@@ -29,6 +29,7 @@
   /* Accent — the design exposes it as a prop with 4 options */
   --accent: #5fe3c0; /* default; alternatives #ffb35c, #7fb8ff, #ff7a8a */
   --accent-hover: #b8fff0; /* link hover */
+  --accent-fill-hover: #7ff0d2; /* filled accent button hover */
   --accent-line: rgba(95, 227, 192, 0.35); /* border of busy / active cards */
   --accent-wash: rgba(95, 227, 192, 0.1); /* active nav item */
   --accent-select: rgba(95, 227, 192, 0.07); /* selected card / list row */

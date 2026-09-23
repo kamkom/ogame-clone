@@ -12,9 +12,9 @@
   "scripts": {
     "dev": "concurrently -k -n web,api -c cyan,magenta \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "vite",
-    "dev:server": "cross-env SERVE_WEB=false node --experimental-strip-types --watch server/index.ts",
+    "dev:server": "cross-env SERVE_WEB=false node --experimental-strip-types --env-file-if-exists=.env --watch server/index.ts",
     "build": "vite build",
-    "start": "npm run build && cross-env SERVE_WEB=true node --experimental-strip-types server/index.ts",
+    "start": "npm run build && cross-env SERVE_WEB=true node --experimental-strip-types --env-file-if-exists=.env server/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --check .",

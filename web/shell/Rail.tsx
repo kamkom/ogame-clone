@@ -1,8 +1,10 @@
 import { Icon, Logo, NAV } from './icons.tsx';
+import { LockIcon } from './stateControls.tsx';
 
 interface RailProps {
-  onLogout: () => void;
-  loggingOut: boolean;
+  /** Omitted while the first snapshot loads: the rail is then chrome only, with no LOG OUT. */
+  onLogout?: () => void;
+  loggingOut?: boolean;
   /** Index into NAV of the active screen. */
   active: number;
   /** Navigate to the NAV item at `index` (ignored for SOON items). */
@@ -24,6 +26,11 @@ export function Rail({ onLogout, loggingOut, active: activeIndex, onNavigate }: 
             role="button"
             tabIndex={item.soon ? -1 : 0}
             onClick={() => !item.soon && onNavigate(i)}
+            onKeyDown={(e) => {
+              if (item.soon || (e.key !== 'Enter' && e.key !== ' ')) return;
+              e.preventDefault();
+              onNavigate(i);
+            }}
             aria-disabled={item.soon}
             aria-current={active ? 'page' : undefined}
             title={item.soon ? `${item.label} — SOON` : item.label}
@@ -50,15 +57,18 @@ export function Rail({ onLogout, loggingOut, active: activeIndex, onNavigate }: 
             {item.label}
             {item.soon && (
               <span style={soonChipStyle} aria-label="Coming soon">
+                <LockIcon size={7} />
                 SOON
               </span>
             )}
           </div>
         );
       })}
-      <button type="button" onClick={onLogout} disabled={loggingOut} style={logoutStyle}>
-        LOG OUT
-      </button>
+      {onLogout && (
+        <button type="button" onClick={onLogout} disabled={loggingOut} style={logoutStyle}>
+          LOG OUT
+        </button>
+      )}
     </nav>
   );
 }
@@ -89,6 +99,9 @@ const soonChipStyle = {
   border: '1px solid var(--line-strong)',
   borderRadius: 3,
   padding: '0 2px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 2,
 };
 
 const logoutStyle = {

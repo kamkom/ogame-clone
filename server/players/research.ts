@@ -101,7 +101,12 @@ export function enqueueResearch(
  * duration fixed from the current Lab level. While the Lab upgrades the head keeps waiting, and the
  * engine starts it at the Lab's boundary (queue rule 14).
  */
-function startWaitingHead(db: DatabaseSync, planet: PlanetRow, now: number, speed: number): void {
+export function startWaitingHead(
+  db: DatabaseSync,
+  planet: PlanetRow,
+  now: number,
+  speed: number,
+): void {
   const head = readResearchQueue(db, planet.player_id)[0];
   if (!head || head.startedAt !== null) return;
   if (labUpgrading(readBuildSlots(db, planet.id))) return;

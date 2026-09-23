@@ -8,7 +8,7 @@ import {
   type TechnologyDef,
   technologyDef,
 } from './catalog.ts';
-import { levelCost } from './economy.ts';
+import { energyRequiredAt, levelCost } from './economy.ts';
 
 /** At most 5 entries: one running, four waiting (spec story 53). */
 export const RESEARCH_QUEUE_MAX = 5;
@@ -51,7 +51,7 @@ export function technologyCost(def: TechnologyDef, level: number): StructureCost
  * tripling per level, rules reference §4). 0 for every Technology without an Energy requirement.
  */
 export function technologyEnergyRequired(def: TechnologyDef, level: number): number {
-  return def.energyRequired ? levelCost(def.energyRequired, def.factor, level) : 0;
+  return energyRequiredAt(def, level);
 }
 
 /** The highest level of `technology` the queue will reach, or `current` when none is queued. */

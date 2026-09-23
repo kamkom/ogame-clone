@@ -38,7 +38,7 @@ body {
   height: 900px;
   overflow: hidden;
   background: var(--bg);
-  transform-origin: top center;
+  transform-origin: top left;
   flex: none;
 }
 
@@ -51,6 +51,29 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Shared control feedback (story 84). The game screens style their buttons inline, so these
+   rules add hover, press and disabled on top; !important is needed to beat an inline
+   background on the filled accent buttons. */
+.stage button:not(:disabled):hover,
+.stage [role='button']:not([aria-disabled='true']):hover {
+  filter: brightness(1.2);
+}
+.stage .btn.fill:not(:disabled):hover {
+  filter: none;
+}
+.stage button.accent-btn:not(:disabled):hover {
+  filter: none;
+  background: var(--accent-fill-hover) !important;
+}
+.stage button:not(:disabled):active,
+.stage [role='button']:not([aria-disabled='true']):active {
+  transform: translateY(1px);
+}
+.stage button:disabled,
+.stage [aria-disabled='true'] {
+  cursor: not-allowed;
 }
 
 /* ── Auth screen + shell (ported from design D / auth prototype #11) ────────── */
@@ -140,7 +163,7 @@ body {
   border-color: var(--accent);
 }
 .btn.fill:hover {
-  background: var(--accent-hover);
+  background: var(--accent-fill-hover);
 }
 .btn:disabled {
   opacity: 0.5;

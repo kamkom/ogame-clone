@@ -269,6 +269,28 @@ describe('POST /api/research', () => {
         }),
       ]);
     });
+
+    it('starts the waiting head at once when the Lab upgrade is cancelled', async () => {
+      const cookie = await register();
+      seed(10_000, { 'research-lab': 1 });
+      await upgrade(cookie, 'research-lab');
+      await enqueue(cookie, 'energy-theory');
+
+      clock.advance(60_000);
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/build-slots/1/cancel',
+        headers: { cookie },
+        payload: {},
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      const endsAt = clock.now() + researchDurationSec(0, 800, 1, 1) * 1000;
+      expect(body.researchQueue).toEqual([
+        expect.objectContaining({ startedAt: clock.now(), endsAt, waitingOnLab: false }),
+      ]);
+      expect(body.nextEventAt).toBe(endsAt);
+    });
   });
 
   describe('POST /api/research/:entryId/cancel', () => {

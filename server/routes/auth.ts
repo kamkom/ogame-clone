@@ -88,7 +88,7 @@ export function registerAuthRoutes(app: FastifyInstance): void {
   });
 
   app.get('/api/auth/me', (request: FastifyRequest, reply: FastifyReply) => {
-    const playerId = resolvePlayerId(request);
+    const playerId = resolvePlayerId(request, reply);
     if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
     return reply.send(sessionPayload(app, playerId));
   });

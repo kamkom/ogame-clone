@@ -78,7 +78,12 @@ export function Research({
           <p style={blockingTextStyle}>
             Build a Research Lab on the Structures screen to start researching Technologies.
           </p>
-          <button type="button" onClick={onGoToStructures} style={primaryButtonStyle(true)}>
+          <button
+            type="button"
+            className="accent-btn"
+            onClick={onGoToStructures}
+            style={primaryButtonStyle(true)}
+          >
             GO TO STRUCTURES
           </button>
         </div>

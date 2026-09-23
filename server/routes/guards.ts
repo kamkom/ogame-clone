@@ -44,9 +44,14 @@ export function passesCsrf(request: FastifyRequest, reply: FastifyReply): boolea
   return true;
 }
 
-/** Resolve the session cookie to a player id, sliding the expiry. Null when absent/expired. */
-export function resolvePlayerId(request: FastifyRequest): number | null {
+/**
+ * Resolve the session cookie to a player id, sliding the expiry. Null when absent/expired. On a
+ * hit the cookie is sent again, so the browser keeps it 30 days after the last visit too.
+ */
+export function resolvePlayerId(request: FastifyRequest, reply: FastifyReply): number | null {
   const token = request.cookies[SESSION_COOKIE];
   if (!token) return null;
-  return lookupSession(request.server.db, hashToken(token), request.server.clock.now());
+  const playerId = lookupSession(request.server.db, hashToken(token), request.server.clock.now());
+  if (playerId !== null) reply.setCookie(SESSION_COOKIE, token, sessionCookieOptions());
+  return playerId;
 }

@@ -27,7 +27,7 @@ export function registerShipyardRoutes(app: FastifyInstance): void {
     { schema: orderSchema },
     (request: FastifyRequest, reply: FastifyReply) => {
       if (!passesCsrf(request, reply)) return;
-      const playerId = resolvePlayerId(request);
+      const playerId = resolvePlayerId(request, reply);
       if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
 
       const { ship, quantity } = request.body as { ship: string; quantity: number };

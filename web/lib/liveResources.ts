@@ -51,5 +51,10 @@ export function energyBalance(snapshot: PlanetSnapshot): number {
 /** Milliseconds until the next boundary refetch, or null when nothing is scheduled. */
 export function refetchDelay(snapshot: PlanetSnapshot, now: number): number | null {
   if (snapshot.nextEventAt === null) return null;
-  return Math.max(0, snapshot.nextEventAt - now);
+  const delay = snapshot.nextEventAt - now;
+  // The server settles every due event before answering, so a due one means a stale answer;
+  // back off rather than refetching in a tight loop.
+  return delay > 0 ? delay : DUE_EVENT_RETRY_MS;
 }
+
+const DUE_EVENT_RETRY_MS = 1000;

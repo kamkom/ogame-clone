@@ -1,8 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { levelCost, maxFields, structureDurationSec } from '#shared/economy.ts';
+import { energyRequiredAt, levelCost, maxFields, structureDurationSec } from '#shared/economy.ts';
+import { liveProfile } from '#shared/engine.ts';
 import { requirementStatus, structureDef } from '#shared/catalog.ts';
 import { SHIPYARD_LOCK_STRUCTURES } from '#shared/shipyard.ts';
+import { readEconomyState } from './economy.ts';
 import type { PlanetRow } from './repo.ts';
+import { startWaitingHead } from './research.ts';
 
 /** A typed reason an upgrade could not start. `not_found` is an unknown catalog key (404); the rest are 409s. */
 export type UpgradeRejection =
@@ -13,6 +16,7 @@ export type UpgradeRejection =
   | 'locked_shipyard_busy'
   | 'requirements_not_met'
   | 'fields_full'
+  | 'insufficient_energy'
   | 'cannot_afford';
 
 export type UpgradeResult = { ok: true } | { error: UpgradeRejection };
@@ -112,6 +116,9 @@ export function startUpgrade(
   if (fields.used + fields.inProgress >= fields.max) return { error: 'fields_full' };
 
   const targetLevel = currentLevel(key) + 1;
+  // An Energy requirement (Terraformer) is checked against the Energy produced, not spent.
+  const energy = liveProfile(readEconomyState(db, planet), speed).energy.produced;
+  if (energy < energyRequiredAt(def, targetLevel)) return { error: 'insufficient_energy' };
   const cost = {
     alloy: levelCost(def.baseCost.alloy, def.factor, targetLevel),
     crystal: levelCost(def.baseCost.crystal, def.factor, targetLevel),
@@ -163,9 +170,16 @@ export function startUpgrade(
 /**
  * Cancel the upgrade running in Build Slot `slot`: refund exactly what was paid for it, free the
  * slot and so return its Field (spec story 47). `planet` must already be advanced to now, so an
- * upgrade that has finished is no longer in its slot. Runs inside the caller's transaction.
+ * upgrade that has finished is no longer in its slot. Cancelling a Research Lab upgrade lets a
+ * Research head that was waiting on it start at `now`. Runs inside the caller's transaction.
  */
-export function cancelUpgrade(db: DatabaseSync, planet: PlanetRow, slot: number): CancelResult {
+export function cancelUpgrade(
+  db: DatabaseSync,
+  planet: PlanetRow,
+  slot: number,
+  now: number,
+  speed: number,
+): CancelResult {
   const row = db
     .prepare(
       `SELECT cost_alloy, cost_crystal, cost_deuterium FROM build_slots WHERE planet_id = ? AND slot = ?`,
@@ -178,5 +192,6 @@ export function cancelUpgrade(db: DatabaseSync, planet: PlanetRow, slot: number)
     `UPDATE planets SET alloy = alloy + ?, crystal = crystal + ?, deuterium = deuterium + ? WHERE id = ?`,
   ).run(row.cost_alloy, row.cost_crystal, row.cost_deuterium, planet.id);
   db.prepare(`DELETE FROM build_slots WHERE planet_id = ? AND slot = ?`).run(planet.id, slot);
+  startWaitingHead(db, planet, now, speed);
   return { ok: true };
 }

@@ -9,6 +9,7 @@ import {
 } from './economy.ts';
 import {
   advance,
+  type BuildSlot,
   type EconomyState,
   liveProfile,
   nextEventAt,
@@ -79,12 +80,22 @@ describe('advance — Energy shortfall (production factor)', () => {
 describe('advance — Deuterium depletion and Fusion throttle', () => {
   // Solar alone covers the mines, so the factor stays 1; only Fusion is starved of Deuterium.
   const s = state({
-    resources: { alloy: 500, crystal: 500, deuterium: 156 },
+    resources: { alloy: 500, crystal: 500, deuterium: 158 },
     structures: { ...NO_STRUCTURES, deuteriumSynth: 5, solarPlant: 10, fusionReactor: 8 },
   });
 
   it('schedules a boundary at the depletion moment', () => {
-    expect(nextEventAt(s, 1, 0)).toBe(2 * HOUR); // 156 / 78 per hour = 2h
+    // Synthesizer 93/h − Fusion burn ceil(171.49) = 172/h → −79/h; 158 / 79 = 2h.
+    expect(nextEventAt(s, 1, 0)).toBe(2 * HOUR);
+  });
+
+  it('throttles Fusion to the Deuterium coming in once the stock is gone', () => {
+    expect(liveProfile(s, 1).energy.produced).toBe(518 + 355); // Solar Array 10 + Fusion 8
+
+    const dry = liveProfile(advance(s, 3 * HOUR, 1), 1);
+    // Fusion runs at 93 / 172 of full: 518 + 355 × 93/172.
+    expect(dry.energy.produced).toBeCloseTo(518 + (355 * 93) / 172, 9);
+    expect(dry.rates.deuterium).toBeCloseTo(0, 9);
   });
 
   it('drains Deuterium to exactly 0 at the boundary', () => {
@@ -476,6 +487,19 @@ describe('advance — determinism property', () => {
       research: fc.boolean(),
       shipyard: fc.boolean(),
       labEndsAt: fc.option(fc.integer({ min: 1, max: 48 * HOUR })),
+      // A production-changing upgrade in the other slot, finishing mid-interval.
+      economySlot: fc.option(
+        fc.record({
+          upgrade: fc.constantFrom(
+            { structureKey: 'alloy-extractor', field: 'alloyMine' as const },
+            { structureKey: 'deuterium-synthesizer', field: 'deuteriumSynth' as const },
+            { structureKey: 'solar-array', field: 'solarPlant' as const },
+            { structureKey: 'fusion-reactor', field: 'fusionReactor' as const },
+            { structureKey: 'alloy-depot', field: 'alloyStorage' as const },
+          ),
+          endsAt: fc.integer({ min: 1, max: 48 * HOUR }),
+        }),
+      ),
     });
 
     // A queue whose later entries start mid-interval, at boundaries the stepped run must reproduce.
@@ -526,27 +550,36 @@ describe('advance — determinism property', () => {
 
     fc.assert(
       fc.property(arbState, (a) => {
-        const { research, shipyard, labEndsAt, ...rest } = a;
+        const { research, shipyard, labEndsAt, economySlot, ...rest } = a;
         // With a Lab upgrade running, the head waits for its boundary instead of running.
         const q = research ? queue(a.structures.researchLab) : [];
         if (labEndsAt !== null && q[0]) q[0] = { ...q[0], startedAt: null, endsAt: null };
+        const buildSlots: BuildSlot[] = [];
+        if (labEndsAt !== null) {
+          buildSlots.push({
+            slot: 1,
+            structureKey: 'research-lab',
+            field: 'researchLab',
+            targetLevel: a.structures.researchLab + 1,
+            endsAt: labEndsAt,
+          });
+        }
+        if (economySlot !== null) {
+          const { structureKey, field } = economySlot.upgrade;
+          buildSlots.push({
+            slot: 2,
+            structureKey,
+            field,
+            targetLevel: a.structures[field] + 1,
+            endsAt: economySlot.endsAt,
+          });
+        }
         const s: EconomyState = {
           ...rest,
           lastUpdatedAt: 0,
           researchQueue: q,
           shipyardOrders: shipyard ? orders : [],
-          buildSlots:
-            labEndsAt === null
-              ? []
-              : [
-                  {
-                    slot: 1,
-                    structureKey: 'research-lab',
-                    field: 'researchLab',
-                    targetLevel: a.structures.researchLab + 1,
-                    endsAt: labEndsAt,
-                  },
-                ],
+          buildSlots,
         };
         const t1 = Math.floor(a.t2 * a.split);
         const direct = advance(s, a.t2, a.speed);
@@ -554,6 +587,7 @@ describe('advance — determinism property', () => {
         for (const key of ['alloy', 'crystal', 'deuterium'] as const) {
           expect(Math.abs(direct.resources[key] - stepped.resources[key])).toBeLessThan(1e-3);
         }
+        expect(stepped.structures).toEqual(direct.structures);
         expect(stepped.plasmaTech).toBe(direct.plasmaTech);
         expect(stepped.energyTech).toBe(direct.energyTech);
         expect(stepped.researchQueue).toEqual(direct.researchQueue);

@@ -89,9 +89,9 @@ export function fusionReactorEnergy(level: number, energyTech: number, pct = 1):
   return Math.round(30 * level * (1.05 + 0.01 * energyTech) ** level * pct);
 }
 
-/** Fusion Reactor Deuterium burn per hour: `10·L·1.1^L·S·pct`, floored. */
+/** Fusion Reactor Deuterium burn per hour: `10·L·1.1^L·S·pct`, rounded up (rules reference §6.1). */
 export function fusionDeuteriumBurn(level: number, speed = 1, pct = 1): number {
-  return Math.floor(10 * level * 1.1 ** level * speed * pct);
+  return Math.ceil(10 * level * 1.1 ** level * speed * pct);
 }
 
 /** Solar Satellite Energy, each: `floor((Tavg+160)/6)`, × count × pct. Not scaled by Speed. */
@@ -120,6 +120,17 @@ export function storageCapacity(level: number): number {
  */
 export function levelCost(base: number, factor: number, level: number): number {
   return Math.floor(base * factor ** (level - 1));
+}
+
+/**
+ * The Energy produced that building or researching `level` needs: checked, not spent (§3, §4).
+ * Terraformer 1000 and Graviton Lance 300,000 at level 1, scaled like a cost; 0 for the rest.
+ */
+export function energyRequiredAt(
+  def: { energyRequired?: number; factor: number },
+  level: number,
+): number {
+  return def.energyRequired ? levelCost(def.energyRequired, def.factor, level) : 0;
 }
 
 /**

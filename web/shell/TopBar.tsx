@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PlanetSnapshot } from '../lib/api.ts';
 import { formatResource } from '../lib/format.ts';
 import { energyBalance, liveResources } from '../lib/liveResources.ts';
@@ -16,6 +16,7 @@ export function TopBar({ planet, onRename }: TopBarProps) {
   const now = useServerNow(planet.serverNow);
   const live = liveResources(planet, now);
   const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLButtonElement>(null);
 
   const amounts: Record<string, number> = {
     ALLOY: live.alloy,
@@ -28,6 +29,7 @@ export function TopBar({ planet, onRename }: TopBarProps) {
     <header style={headerStyle}>
       <div style={{ position: 'relative' }}>
         <button
+          ref={pickerRef}
           type="button"
           style={pickerStyle}
           title={`${planet.name} ${planet.coordinatesLabel}`}
@@ -54,7 +56,12 @@ export function TopBar({ planet, onRename }: TopBarProps) {
           </span>
         </button>
         {open && (
-          <PlanetPopover planet={planet} onRename={onRename} onClose={() => setOpen(false)} />
+          <PlanetPopover
+            planet={planet}
+            onRename={onRename}
+            onClose={() => setOpen(false)}
+            anchor={pickerRef}
+          />
         )}
       </div>
 

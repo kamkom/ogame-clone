@@ -58,4 +58,30 @@ describe('open (real temporary file)', () => {
     expect(user_version).toBe(latestVersion());
     second.close();
   });
+
+  it('turns foreign keys on', () => {
+    const db = open(dbPath);
+    const { foreign_keys } = db.prepare('PRAGMA foreign_keys').get() as { foreign_keys: number };
+    expect(foreign_keys).toBe(1);
+    db.close();
+  });
+
+  it('sweeps expired sessions when opened with a time', () => {
+    const first = open(dbPath);
+    first.exec(
+      `INSERT INTO players (id, username, username_lower, password_hash, created_at)
+       VALUES (1, 'Vega', 'vega', 'x', 0)`,
+    );
+    const insert = first.prepare(
+      'INSERT INTO sessions (token_hash, player_id, created_at, expires_at) VALUES (?, 1, 0, ?)',
+    );
+    insert.run('dead', 1_000);
+    insert.run('live', 5_000);
+    first.close();
+
+    const second = open(dbPath, { now: 2_000 });
+    const rows = second.prepare('SELECT token_hash FROM sessions').all();
+    expect(rows).toEqual([{ token_hash: 'live' }]);
+    second.close();
+  });
 });

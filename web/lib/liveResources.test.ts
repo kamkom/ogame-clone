@@ -81,8 +81,12 @@ describe('refetchDelay', () => {
     expect(refetchDelay(snapshot(), 0)).toBeNull();
   });
 
-  it('is the time until the next event, clamped at 0', () => {
+  it('is the time until the next event', () => {
     expect(refetchDelay(snapshot({ nextEventAt: 5000 }), 1000)).toBe(4000);
-    expect(refetchDelay(snapshot({ nextEventAt: 5000 }), 9000)).toBe(0);
+  });
+
+  it('waits a second for an event already due, so a stale answer cannot spin', () => {
+    expect(refetchDelay(snapshot({ nextEventAt: 5000 }), 5000)).toBe(1000);
+    expect(refetchDelay(snapshot({ nextEventAt: 5000 }), 9000)).toBe(1000);
   });
 });

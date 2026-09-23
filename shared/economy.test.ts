@@ -77,9 +77,11 @@ describe('Energy produced', () => {
     expect(fusionReactorEnergy(4, 3)).toBeGreaterThan(fusionReactorEnergy(4, 0));
   });
 
-  it('Fusion burns Deuterium at 10·L·1.1^L·S', () => {
-    expect(fusionDeuteriumBurn(4)).toBe(58);
-    expect(fusionDeuteriumBurn(4, 5)).toBe(Math.floor(10 * 4 * 1.1 ** 4 * 5));
+  // §6.1: "floor of the negative, so effectively ceil of the burn". Golden values from the
+  // OGame wiki's Fusion Reactor table (levels 1–5 burn 11, 25, 40, 59, 81 Deuterium/h at x1).
+  it('Fusion burns ceil(10·L·1.1^L·S) Deuterium', () => {
+    expect([1, 2, 3, 4, 5].map((l) => fusionDeuteriumBurn(l))).toEqual([11, 25, 40, 59, 81]);
+    expect(fusionDeuteriumBurn(4, 5)).toBe(293); // 58.564 × 5 = 292.82
   });
 
   it('Solar Satellite Energy is floor((Tavg+160)/6) each', () => {

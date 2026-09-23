@@ -30,7 +30,7 @@ export function registerStructureRoutes(app: FastifyInstance): void {
     notFoundStatus: 404 | 409,
   ) {
     if (!passesCsrf(request, reply)) return;
-    const playerId = resolvePlayerId(request);
+    const playerId = resolvePlayerId(request, reply);
     if (playerId === null) return reply.code(401).send({ error: 'unauthenticated' });
 
     const now = app.clock.now();
@@ -69,6 +69,11 @@ export function registerStructureRoutes(app: FastifyInstance): void {
   app.post('/api/build-slots/:slot/cancel', (request: FastifyRequest, reply: FastifyReply) => {
     const slot = Number((request.params as { slot: string }).slot);
     // An empty (or nonexistent) slot is a 409 not_found: the upgrade may have just finished.
-    return handle(request, reply, (db, planet) => cancelUpgrade(db, planet, slot), 409);
+    return handle(
+      request,
+      reply,
+      (db, planet, now, speed) => cancelUpgrade(db, planet, slot, now, speed),
+      409,
+    );
   });
 }

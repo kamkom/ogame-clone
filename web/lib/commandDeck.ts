@@ -3,6 +3,7 @@
 import { SHIPS, type ShipDef } from '#shared/catalog.ts';
 import type { BuildSlotView, PlanetSnapshot } from './api.ts';
 import { affordableInLabel } from './affordability.ts';
+import { formatResource } from './format.ts';
 import { liveResources } from './liveResources.ts';
 import {
   firstFreeSlot,
@@ -51,8 +52,8 @@ export interface DeckStructureRow extends StructureView {
 
 /**
  * The Structures panel: all 13 Structures in design order, each with its list button. The panel is
- * narrow, so a short row's button just reads "SHORT"; what is short and when it's affordable go
- * into the reason.
+ * narrow, so a short row's button just reads "SHORT" (and one short of Energy "ENERGY"); what is
+ * short and when it's affordable go into the reason.
  */
 export function deckStructureRows(
   planet: PlanetSnapshot,
@@ -62,6 +63,13 @@ export function deckStructureRows(
   const nextFreeAt = firstFreeSlot(planet)?.endsAt ?? null;
   return structureViews(planet, speed, liveResources(planet, now)).map((v) => {
     const action = structureAction(v, now, nextFreeAt);
+    if (v.state === 'energy') {
+      return {
+        ...v,
+        action: { ...action, label: 'ENERGY' },
+        reason: `${action.label} · ${formatResource(planet.energy.produced)} PRODUCED`,
+      };
+    }
     if (v.state !== 'short') return { ...v, action, reason: action.label };
     return {
       ...v,

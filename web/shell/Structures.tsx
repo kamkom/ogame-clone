@@ -386,6 +386,14 @@ function DetailPanel({
             color="var(--deuterium)"
           />
         )}
+        {view.energyRequired > 0 && (
+          <CostLine
+            label="Energy · checked, not spent"
+            amount={view.energyRequired}
+            have={view.energyMet}
+            color="var(--energy)"
+          />
+        )}
         {state === 'short' && (
           <div style={reasonListStyle}>
             {view.checks.map((c) => (
@@ -452,7 +460,13 @@ function DetailAction({
   if (state === 'ready') {
     return (
       <>
-        <button type="button" disabled={pending} onClick={onUpgrade} style={buttonStyle(!pending)}>
+        <button
+          type="button"
+          className="accent-btn"
+          disabled={pending}
+          onClick={onUpgrade}
+          style={buttonStyle(!pending)}
+        >
           {level === 0 ? 'BUILD' : `UPGRADE TO LEVEL ${targetLevel}`}
         </button>
         <span style={panelFootNoteStyle}>
@@ -494,6 +508,9 @@ function DetailAction({
     const { used, inProgress, max } = planet.fields;
     label = 'NO FREE FIELDS';
     footnote = `${used} used + ${inProgress} building of ${max} Fields`;
+  } else if (state === 'energy') {
+    label = `NEEDS ${formatResource(view.energyRequired)} ENERGY`;
+    footnote = `${formatResource(planet.energy.produced)} Energy produced · checked, not spent`;
   } else {
     icon = <ClockIcon size={14} />;
     label = affordableInLabel(view.affordableInSec);

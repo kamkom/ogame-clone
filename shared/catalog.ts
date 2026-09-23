@@ -47,6 +47,8 @@ export interface StructureDef {
   baseCost: StructureCost;
   factor: number;
   requires: Requirement[];
+  /** Energy produced needed (checked, not spent) at level 1, scaled by `factor` (Terraformer). */
+  energyRequired?: number;
   /** Art key into design/data/icons.json and structure-art.json. */
   art: string;
   /** One-sentence description for the detail panel. */
@@ -186,6 +188,7 @@ export const STRUCTURES: StructureDef[] = [
     tab: 'facilities',
     baseCost: { alloy: 0, crystal: 50_000, deuterium: 100_000 },
     factor: 2,
+    energyRequired: 1000,
     requires: [
       { key: 'nanite-foundry', level: 1 },
       { key: 'energy-theory', level: 12 },
